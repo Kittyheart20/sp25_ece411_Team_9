@@ -6,17 +6,16 @@ module deserializer (
     input   logic [31:0] bmem_raddr,
     input   logic [63:0] bmem_rdata,
     input   logic bmem_rvalid,
+    input logic[255:0]  dfp_wdata,
+    input logic dfp_write,
 
     output   logic [255:0] dfp_rdata,
     output   logic dfp_resp,
-
-    output logic[63:0]  bmem_wdata,
-    input logic[255:0]  dfp_wdata,
-    input logic dfp_write
+    output logic[63:0]  bmem_wdata
 );
     logic [255:0] accumulator;
     logic [1:0] word_count;
-    logic [1:0] write_count;  // Counter for write operations
+    logic [1:0] write_count;  
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin

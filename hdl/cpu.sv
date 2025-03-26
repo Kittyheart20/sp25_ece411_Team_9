@@ -21,8 +21,11 @@ module cpu
         .bmem_raddr (bmem_raddr),
         .bmem_rdata (bmem_rdata),
         .bmem_rvalid(bmem_rvalid),
+        .dfp_wdata(dfp_wdata),
+        .dfp_write(dfp_write),
         .dfp_rdata  (dfp_rdata),
-        .dfp_resp   (dfp_resp)
+        .dfp_resp   (dfp_resp),
+        .bmem_wdata(bmem_wdata)
     );
 
     // cache cache (
