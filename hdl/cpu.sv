@@ -14,11 +14,34 @@ module cpu
     input   logic               bmem_rvalid
 );
 
-    logic [31:0] pc, pc_next, next, pc_branch, prev_pc;
-    logic   inst_cache_hit;
+    logic [31:0] pc, pc_next;
+    logic clk, rst;
+
+    // Deserializer
+    logic bmem_ready;
+    logic [31:0] bmem_raddr;
+    logic [63:0] bmem_rdata;
+    logic        bmem_rvalid;
+    logic [63:0] bmem_wdata;
+
+    // Cache
+    logic   [31:0]  ufp_addr;
+    logic   [3:0]   ufp_rmask;
+    logic   [3:0]   ufp_wmask;
+    logic   [31:0]  ufp_rdata;
+    logic   [31:0]  ufp_wdata;
+    logic           ufp_resp;
+
+    logic   [31:0]  dfp_addr;
+    logic           dfp_read;
+    logic           dfp_write;
+    logic   [255:0] dfp_rdata;
+    logic   [255:0] dfp_wdata;
+    logic           dfp_resp;
 
     // Instr Queue
-    logic full_o;
+    logic full_o, empty_o;
+    logic enqueue_i, dequeue_i;
     logic [31:0] data_i, data_o;
 
     deserializer cache_line_adapter (
@@ -56,7 +79,8 @@ module cpu
 
     localparam WIDTH = 32;
     localparam DEPTH = 32;
-    localparam LEN = 32;
+    localparam ALEN = 256;
+    localparam BLEN = 32;
     queue #(
         .WIDTH(WIDTH),
         .DEPTH(DEPTH)
@@ -76,27 +100,32 @@ module cpu
     assign bmem_write = 0;
     assign bmem_wdata = 0;
 
-
-    logic [255:0] line_buffer_i;
-    logic line_buffer_valid;
-    logic [255:0] line_buffer_o;
+    logic [31:0] curr_instr_addr, last_instr_addr;
+    logic [255:0] curr_instr_data, last_instr_data;
+    assign curr_instr_addr = ufp_rdata;
+    logic enable;
+    assign enable = ufp_resp && ufp_rmask && !full_o;
 
     register #(
-        .LEN(LEN)
+        .A_LEN(ALEN),
+        .B_LEN(BLEN)
     ) line_buffer (
         .clk(clk),
         .rst(rst),
-        .data_i(line_buffer_i),
-        .data_valid(line_buffer_valid),
-        .data_o(line_buffer_o)
+        .data_a_input(curr_instr_data),
+        .data_b_input(curr_instr_addr),
+        .data_valid(enable),  // update line buffer if 1
+        .data_a_output(last_instr_data),
+        .data_b_output(last_instr_addr)
     );
+
 
     always_ff @(posedge clk) begin
         if (rst) begin
             pc    <= 32'haaaaa000;
             order <= '0;
-        end else if (ufp_resp && ufp_rmask && !full_o) begin   // fetch
-            data_i = ufp_rdata;
+        end else if (enable && curr_instr_addr != last_instr_addr) begin   // fetch
+            data_i = curr_instr_addr;
             enqueue_i = 1'b1;
             pc_next = pc_next + 'd4;
         end
@@ -107,60 +136,5 @@ module cpu
         end
     end
     
-
-
-    // cache data_cache (
-    //     .clk        (clk),
-    //     .rst        (rst),
-    //     .ufp_addr   (),
-    //     .ufp_rmask  (),
-    //     .ufp_wmask  (),
-    //     .ufp_rdata  (),
-    //     .ufp_wdata  (),
-    //     .ufp_resp   (),
-    //     .dfp_addr   (),
-    //     .dfp_read   (),
-    //     .dfp_write  (),
-    //     .dfp_rdata  (),
-    //     .dfp_wdata  (),
-    //     .dfp_resp   ()
-    // );
-    
-    // localparam RS_DEPTH = 3;
-    // localparam RS_ALU_WIDTH = 0; // valid(1) + opcode(6) + funct3(3) + funct7() + rs1(32) + rs1_ready(1) + rs2/imm(32) + rs2_ready(1) + rd_paddr(6?)
-    // queue rs_alu #(
-    //     WIDTH = 
-    // )(
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .data_i(rs_alu_input),
-    //     .enqueue_i(rs_alu_enqueue),
-    //     .full_o(rs_alu_full),
-    //     .data_o(rs_alu_output),
-    //     .dequeue_i(rs_alu_dequeue),
-    //     .empty_o(rs_alu_empty)
-    // );
-
-    // queue rs_br (
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .data_i(rs_br_input),
-    //     .enqueue_i(rs_br_enqueue),
-    //     .full_o(rs_br_full),
-    //     .data_o(rs_br_output),
-    //     .dequeue_i(rs_br_dequeue),
-    //     .empty_o(rs_br_empty)
-    // );
-
-    // queue rs_mem (
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .data_i(rs_mem_input),
-    //     .enqueue_i(rs_mem_enqueue),
-    //     .full_o(rs_mem_full),
-    //     .data_o(rs_mem_output),
-    //     .dequeue_i(rs_mem_dequeue),
-    //     .empty_o(rs_mem_empty)
-    // );
 
 endmodule : cpu
