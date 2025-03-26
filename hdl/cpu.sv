@@ -15,14 +15,10 @@ module cpu
 );
 
     logic [31:0] pc, pc_next;
-    logic clk, rst;
+    logic [63:0] order;
+    logic        commit;
 
     // Deserializer
-    logic bmem_ready;
-    logic [31:0] bmem_raddr;
-    logic [63:0] bmem_rdata;
-    logic        bmem_rvalid;
-    logic [63:0] bmem_wdata;
 
     // Cache
     logic   [31:0]  ufp_addr;
@@ -98,7 +94,6 @@ module cpu
     assign bmem_addr = 32'hAAAAA000;
     assign bmem_read = 1;
     assign bmem_write = 0;
-    assign bmem_wdata = 0;
 
     logic [31:0] curr_instr_addr, last_instr_addr;
     logic [255:0] curr_instr_data, last_instr_data;
@@ -124,15 +119,16 @@ module cpu
         if (rst) begin
             pc    <= 32'haaaaa000;
             order <= '0;
-        end else if (enable && curr_instr_addr != last_instr_addr) begin   // fetch
+        end else if (enable && curr_instr_addr[31:5] != last_instr_addr[31:5]) begin   // fetch
             data_i = curr_instr_addr;
             enqueue_i = 1'b1;
-            pc_next = pc_next + 'd4;
+            pc_next = pc + 'd4;
+            order <= order + 'd1;
         end
         else begin
             pc <= pc_next;
-            if (commit)
-                order <= order + 'd1;
+            // if (commit)
+            //     order <= order + 'd1;
         end
     end
     
