@@ -54,24 +54,6 @@ module cpu
         .dfp_resp(dfp_resp)
     );
 
-
-    cache data_cache (
-        .clk        (clk),
-        .rst        (rst),
-        .ufp_addr   (),
-        .ufp_rmask  (),
-        .ufp_wmask  (),
-        .ufp_rdata  (),
-        .ufp_wdata  (),
-        .ufp_resp   (),
-        .dfp_addr   (),
-        .dfp_read   (),
-        .dfp_write  (),
-        .dfp_rdata  (),
-        .dfp_wdata  (),
-        .dfp_resp   ()
-    );
-
     localparam WIDTH = 32;
     localparam DEPTH = 32;
     localparam LEN = 32;
@@ -127,41 +109,58 @@ module cpu
     
 
 
-    localparam RS_DEPTH = 3;
-    localparam RS_ALU_WIDTH = 0; // valid(1) + inst decoding() + rs1(32) + rs1_ready(1) + rs2/imm(32) + rs2_ready(1) + rd_paddr(6?)
-    queue rs_alu #(
-        WIDTH = 
-    )(
-        .clk(clk),
-        .rst(rst),
-        .data_i(rs_alu_input),
-        .enqueue_i(rs_alu_enqueue),
-        .full_o(rs_alu_full),
-        .data_o(rs_alu_output),
-        .dequeue_i(rs_alu_dequeue),
-        .empty_o(rs_alu_empty)
-    );
+    // cache data_cache (
+    //     .clk        (clk),
+    //     .rst        (rst),
+    //     .ufp_addr   (),
+    //     .ufp_rmask  (),
+    //     .ufp_wmask  (),
+    //     .ufp_rdata  (),
+    //     .ufp_wdata  (),
+    //     .ufp_resp   (),
+    //     .dfp_addr   (),
+    //     .dfp_read   (),
+    //     .dfp_write  (),
+    //     .dfp_rdata  (),
+    //     .dfp_wdata  (),
+    //     .dfp_resp   ()
+    // );
+    
+    // localparam RS_DEPTH = 3;
+    // localparam RS_ALU_WIDTH = 0; // valid(1) + opcode(6) + funct3(3) + funct7() + rs1(32) + rs1_ready(1) + rs2/imm(32) + rs2_ready(1) + rd_paddr(6?)
+    // queue rs_alu #(
+    //     WIDTH = 
+    // )(
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .data_i(rs_alu_input),
+    //     .enqueue_i(rs_alu_enqueue),
+    //     .full_o(rs_alu_full),
+    //     .data_o(rs_alu_output),
+    //     .dequeue_i(rs_alu_dequeue),
+    //     .empty_o(rs_alu_empty)
+    // );
 
-    queue rs_br (
-        .clk(clk),
-        .rst(rst),
-        .data_i(rs_br_input),
-        .enqueue_i(rs_br_enqueue),
-        .full_o(rs_br_full),
-        .data_o(rs_br_output),
-        .dequeue_i(rs_br_dequeue),
-        .empty_o(rs_br_empty)
-    );
+    // queue rs_br (
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .data_i(rs_br_input),
+    //     .enqueue_i(rs_br_enqueue),
+    //     .full_o(rs_br_full),
+    //     .data_o(rs_br_output),
+    //     .dequeue_i(rs_br_dequeue),
+    //     .empty_o(rs_br_empty)
+    // );
 
-    queue rs_mem (
-        .clk(clk),
-        .rst(rst),
-        .data_i(rs_mem_input),
-        .enqueue_i(rs_mem_enqueue),
-        .full_o(rs_mem_full),
-        .data_o(rs_mem_output),
-        .dequeue_i(rs_mem_dequeue),
-        .empty_o(rs_mem_empty)
-    );
+    // queue rs_mem (
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .data_i(rs_mem_input),
+    //     .enqueue_i(rs_mem_enqueue),
+    //     .full_o(rs_mem_full),
+    //     .data_o(rs_mem_output),
+    //     .dequeue_i(rs_mem_dequeue),
+    //     .empty_o(rs_mem_empty)
+    // );
 
 endmodule : cpu
