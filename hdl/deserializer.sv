@@ -3,7 +3,7 @@ module deserializer (
     input   logic rst,
 
     input   logic bmem_ready,
-    input   logic [31:0] bmem_raddr,
+    //input   logic [31:0] bmem_raddr,
     input   logic [63:0] bmem_rdata,
     input   logic bmem_rvalid,
     input logic[255:0]  dfp_wdata,
@@ -16,7 +16,6 @@ module deserializer (
     logic [255:0] accumulator;
     logic [1:0] word_count;
     logic [1:0] write_count;  
-
     always_ff @(posedge clk) begin
         if (rst) begin
             accumulator <= 256'd0;

@@ -14,6 +14,9 @@ module cpu
     input   logic               bmem_rvalid
 );
 
+    logic welp;
+    assign welp =  (bmem_raddr == 32'd0); 
+
     logic [31:0] pc, pc_next;
     logic [63:0] order;
     logic        commit;
@@ -49,7 +52,7 @@ module cpu
         .clk        (clk),
         .rst        (rst),
         .bmem_ready (bmem_ready),
-        .bmem_raddr (bmem_raddr),
+      //  .bmem_raddr (bmem_raddr),
         .bmem_rdata (bmem_rdata),
         .bmem_rvalid(bmem_rvalid),
         .dfp_wdata  (dfp_wdata),
