@@ -35,18 +35,21 @@ module top_tb;
         .empty_o(empty_o)
     );
 
-    initial begin
-        $fsdbDumpfile("dump.fsdb");
-        if ($test$plusargs("NO_DUMP_ALL_ECE411")) begin
-            $fsdbDumpvars(0, dut, "+all");
-            $fsdbDumpoff();
-        end else begin
-            $fsdbDumpvars(0, "+all");
-        end
-        rst = 1'b1;
-        repeat (2) @(posedge clk);
-        rst <= 1'b0;
-    end
+   cpu dut_cpu (
+        .clk    (clk),
+        .rst            (rst),
+
+        .bmem_addr  ( 0  ),
+        .bmem_read  (0  ),
+        .bmem_write ( 0 ),
+        .bmem_wdata ( 0 ),
+        .bmem_ready ( 0 ),
+        .bmem_raddr ( 0 ),
+        .bmem_rdata ( 0 ),
+        .bmem_rvalid( 0 )
+    );
+
+
 
         initial begin
     $display("Starting queue testt.");
@@ -142,7 +145,18 @@ module top_tb;
         $display("Queue tests completed");
         $finish;
     end
-
+    initial begin
+        $fsdbDumpfile("dump.fsdb");
+        if ($test$plusargs("NO_DUMP_ALL_ECE411")) begin
+            $fsdbDumpvars(0, dut, "+all");
+            $fsdbDumpoff();
+        end else begin
+            $fsdbDumpvars(0, "+all");
+        end
+        rst = 1'b1;
+        repeat (2) @(posedge clk);
+        rst <= 1'b0;
+    end
 
     `include "top_tb.svh"
 
