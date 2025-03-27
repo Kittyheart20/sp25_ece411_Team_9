@@ -2,6 +2,8 @@ module top_tb;
 
     timeunit 1ps;
     timeprecision 1ps;
+    logic clk = 0; // initialize if needed
+logic rst = 0;
     `include "top_tb.svh"
 
     int clock_half_period_ps;
@@ -10,9 +12,7 @@ module top_tb;
         clock_half_period_ps = clock_half_period_ps / 2;
     end
 
-    logic clk;
-    always #(clock_half_period_ps) clk = ~clk;
-    logic rst;
+    always #(clock_half_period_ps) clk <= ~clk;
     localparam WIDTH = 8;
     localparam DEPTH = 4;
     logic [WIDTH-1:0] data_i;
@@ -55,13 +55,13 @@ module top_tb;
         initial begin
     $display("Starting queue testt.");
         @(posedge clk);
-        rst = 1;
-        data_i = 0;
-        enqueue_i = 0;
-        dequeue_i = 0;
+        rst <= 1;
+        data_i <= 0;
+        enqueue_i <= 0;
+        dequeue_i <= 0;
         @(posedge clk);
         
-        rst = 0;
+        rst <= 0;
         @(posedge clk);
         
         // Test Case 1: nmpty queue check
@@ -69,30 +69,30 @@ module top_tb;
         if (full_o) $error("Queue should not be full after reset");
         
         // try dequeuing from empty queue
-        dequeue_i = 1;
+        dequeue_i <= 1;
         @(posedge clk);
         if (!empty_o) $error("Queue should still be empty after attempted dequeue");
-        dequeue_i = 0;
+        dequeue_i <= 0;
         
         // Test Case 2: normal queue operation
         // Enqueue first value
-        data_i = 8'hA1;
-        enqueue_i = 1;
+        data_i <= 8'hA1;
+        enqueue_i <= 1;
         @(posedge clk);
-        enqueue_i = 0;
+        enqueue_i <= 0;
         if (empty_o) $error("Queue should not be empty after enqueue");
         if (data_o != 8'hA1) $error("Expected first value A1, got %h", data_o);
         
         // enqueue more values
-        data_i = 8'hB2;
-        enqueue_i = 1;
+        data_i <= 8'hB2;
+        enqueue_i <= 1;
         @(posedge clk);
         data_i = 8'hC3;
         @(posedge clk);
-        enqueue_i = 0;
+        enqueue_i <= 0;
         
         // dequeue and check FIFO order
-        dequeue_i = 1;
+        dequeue_i <= 1;
         @(posedge clk);
         if (data_o != 8'hB2) $error("Expected second value B2, got %h", data_o);
         @(posedge clk);
@@ -103,13 +103,13 @@ module top_tb;
         // Test Case 3: full queue check
         @(posedge clk);
 
-        rst = 1;
+        rst <= 1;
         @(posedge clk);
-        rst = 0;
+        rst <= 0;
         @(posedge clk);
         
         // fill the queue
-        enqueue_i = 1;
+        enqueue_i <= 1;
         for (int i = 1; i <= DEPTH; i++) begin
             data_i = i;
             @(posedge clk);
@@ -118,7 +118,7 @@ module top_tb;
         if (!full_o) $error("Queue should be full");
         
         // try enqueuing when full
-        data_i = 8'hFF;
+        data_i <= 8'hFF;
         @(posedge clk);
         
         // verify last value wasn't enqueued
@@ -127,9 +127,9 @@ module top_tb;
         if (data_o != 1) $error("Expected first value 1, got %h", data_o);
         
         // Test Case 4: simultaneous enqueue/dequeue when full
-        dequeue_i = 1;
-        enqueue_i = 1;
-        data_i = 8'hFF;
+        dequeue_i <= 1;
+        enqueue_i <= 1;
+        data_i <= 8'hFF;
         @(posedge clk);
         
         // check values
@@ -140,21 +140,21 @@ module top_tb;
         if (data_o != 8'hFF) $error("Expected new value FF, got %h", data_o);
         
         // End test
-        dequeue_i = 0;
-        enqueue_i = 0;
+        dequeue_i <= 0;
+        enqueue_i <= 0;
         @(posedge clk);
         $display("Queue tests completed");
         $finish;
-    end
-    initial begin
-        $fsdbDumpfile("dump.fsdb");
+            $fsdbDumpfile("dump.fsdb");
         if ($test$plusargs("NO_DUMP_ALL_ECE411")) begin
         //    $fsdbDumpvars(0, dut, "+all");
             $fsdbDumpoff();
         end else begin
             $fsdbDumpvars(0, "+all");
         end
-        rst = 1'b1;
+    end
+    initial begin
+        rst <= 1'b1;
         repeat (2) @(posedge clk);
         rst <= 1'b0;
     end
