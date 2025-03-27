@@ -35,6 +35,7 @@ module cpu
     logic   [255:0] dfp_rdata;
     logic   [255:0] dfp_wdata;
     logic           dfp_resp;
+    logic           reached_loop; // debug value
 
     assign ufp_wmask = '0;
     assign ufp_wdata = '0;
@@ -117,8 +118,9 @@ module cpu
         .data_b_output  (last_instr_addr)
     );
 
-
+    logic bmem_flag;
     always_ff @(posedge clk) begin
+        reached_loop <= '0;
         if (rst) begin
             pc          <= 32'haaaaa000;
             order       <= '0;
@@ -129,14 +131,18 @@ module cpu
             commit <= 1'b0;
             enqueue_i <= 1'b0;
             dequeue_i <= 1'b0;
-            enable <= 1'b0;       
+            enable <= 1'b0;    
+            bmem_flag <= 1'b0;   
         end else begin
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
             if (dequeue_i)  dequeue_i <= 1'b0;
             if (enable)     enable <= 1'b0;
+            //ufp_rmask   <= '0;
 
-            if (pc[31:5] == last_instr_addr[31:5]) begin
+            if (pc[31:5] == last_instr_addr[31:5]) begin       // line buffer
+                ufp_rmask <= '0;
+                reached_loop <= '1;
                 data_i <= last_instr_data[32*pc[4:2] +: 32];
                 if (!full_o) begin
                     enqueue_i <= 1'b1;
@@ -146,7 +152,7 @@ module cpu
                 end
             end
 
-            else begin
+            else begin                                  // cache
                 if (ufp_rmask == 4'd0) begin
                     ufp_addr <= pc;
                     ufp_rmask <= '1;                   
@@ -170,9 +176,15 @@ module cpu
                     end
                 end else if (dfp_read) begin
                     bmem_addr <= dfp_addr;
-                    bmem_read <= 1'b1;
+                    if (bmem_flag == 0) begin
+                        bmem_read <= 1'b1;
+                        bmem_flag <= 1'b1;
+                    end else begin
+                        bmem_read <= 1'b0;
+                    end
                     if (dfp_resp) begin    // need a counter?
                         bmem_read <= 1'b0;
+                        bmem_flag <= 1'b0;
                     end
                 end
             end
