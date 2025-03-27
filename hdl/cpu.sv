@@ -97,7 +97,8 @@ module cpu
 
     logic [31:0] curr_instr_addr, last_instr_addr;
     logic [255:0] curr_instr_data, last_instr_data;
-    assign curr_instr_addr = ufp_rdata;
+    assign curr_instr_data = ufp_rdata;
+    assign curr_instr_addr = pc;
     logic enable;
     assign enable = /*ufp_resp && ufp_rmask && */!full_o;
 
