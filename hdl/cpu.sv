@@ -99,7 +99,7 @@ module cpu
     logic [255:0] curr_instr_data, last_instr_data;
     assign curr_instr_addr = ufp_rdata;
     logic enable;
-    assign enable = ufp_resp && ufp_rmask && !full_o;
+    assign enable = /*ufp_resp && ufp_rmask && */!full_o;
 
     register #(
         .A_LEN(ALEN),
@@ -119,10 +119,15 @@ module cpu
         if (rst) begin
             pc    <= 32'haaaaa000;
             order <= '0;
-        end else if (enable && curr_instr_addr[31:5] != last_instr_addr[31:5]) begin   // fetch
+            ufp_rmask <= '0;
+        end else if (curr_instr_addr[31:5] == last_instr_addr[31:5]) begin // use line buffer
+            // data_i <= last_instr_data[]
+            ufp_rmask <= 'd1;
+        end else if (enable) begin   // fetch from cache?
+            ufp_rmask <= 'd1;
             data_i = curr_instr_addr;
-            enqueue_i = 1'b1;
-            pc_next = pc + 'd4;
+            enqueue_i <= 1'b1;
+            pc_next <= pc + 'd4;
             order <= order + 'd1;
         end
         else begin
