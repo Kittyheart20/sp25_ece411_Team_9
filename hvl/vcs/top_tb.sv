@@ -2,6 +2,7 @@ module top_tb;
 
     timeunit 1ps;
     timeprecision 1ps;
+    `include "top_tb.svh"
 
     int clock_half_period_ps;
     initial begin
@@ -9,9 +10,9 @@ module top_tb;
         clock_half_period_ps = clock_half_period_ps / 2;
     end
 
-    bit clk;
+    logic clk;
     always #(clock_half_period_ps) clk = ~clk;
-    bit rst;
+    logic rst;
     localparam WIDTH = 8;
     localparam DEPTH = 4;
     logic [WIDTH-1:0] data_i;
@@ -148,7 +149,7 @@ module top_tb;
     initial begin
         $fsdbDumpfile("dump.fsdb");
         if ($test$plusargs("NO_DUMP_ALL_ECE411")) begin
-            $fsdbDumpvars(0, dut, "+all");
+        //    $fsdbDumpvars(0, dut, "+all");
             $fsdbDumpoff();
         end else begin
             $fsdbDumpvars(0, "+all");
@@ -158,8 +159,6 @@ module top_tb;
         rst <= 1'b0;
     end
 
-    `include "top_tb.svh"
 
 endmodule
-
 
