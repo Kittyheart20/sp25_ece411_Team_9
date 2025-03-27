@@ -36,7 +36,7 @@ run_vcs_top_tb: vcs/top_tb $(PROG)
 	python3 $(PWD)/../bin/get_options.py clock
 	python3 $(PWD)/../bin/get_options.py bmem_x
 	cd vcs && ./top_tb -l simulation.log -exitstatus -suppress=ASLR_DETECTED_INFO \
-		+TIMEOUT_ECE411=$(TIMEOUT) \
+		+TIMEOUT_ECE411=10000 \
 		+CLOCK_PERIOD_PS_ECE411=$(shell python3 $(PWD)/../bin/get_options.py clock) \
 		+BRAM_0_ON_X_ECE411=$(shell python3 $(PWD)/../bin/get_options.py bmem_x) \
 		+MEMLST_ECE411="$(PWD)/bin/memory_32.lst" \

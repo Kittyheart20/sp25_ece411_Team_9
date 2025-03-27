@@ -1,6 +1,7 @@
     longint timeout;
     initial begin
         $value$plusargs("TIMEOUT_ECE411=%d", timeout);
+        $display("timeout value", timeout);
     end
 
     mem_itf_banked mem_itf(.*);

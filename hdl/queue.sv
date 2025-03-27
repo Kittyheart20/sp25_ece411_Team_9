@@ -21,8 +21,9 @@ module queue #(
 
     
     logic [WIDTH-1:0] data [DEPTH-1:0];
-    logic [PTR_WIDTH-1:0] head, tail;
-    logic [PTR_WIDTH:0] count; 
+    // logic [PTR_WIDTH-1:0] head, tail;
+    // logic [PTR_WIDTH:0] count; 
+    logic [31:0] head, tail, count; 
     
     
     assign empty_o = (count == 0);

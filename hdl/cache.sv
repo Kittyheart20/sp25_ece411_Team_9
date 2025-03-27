@@ -7,6 +7,7 @@ module cache (
     input   logic   [3:0]   ufp_rmask,
     input   logic   [3:0]   ufp_wmask,
     output  logic   [31:0]  ufp_rdata,
+    output  logic   [255:0] ufp_rcache_line,
     input   logic   [31:0]  ufp_wdata,
     output  logic           ufp_resp,
 
@@ -332,11 +333,14 @@ module cache (
     logic [31:0] word;
     always_comb begin
         ufp_rdata = 32'b0;
+        ufp_rcache_line = 256'd0;
         
         if (state == COMPARE && hit && |ufp_rmask_prev) begin
             ufp_rdata = data_out[hit_way][addr_offset[4:2] * 32 +: 32]; 
+            ufp_rcache_line = data_out[hit_way];
         end else if (state == AHIT && |ufp_rmask_prev) begin
             ufp_rdata = dfp_rdata_stored[addr_offset[4:2] * 32 +: 32];
+            ufp_rcache_line = dfp_rdata_stored;
         end
     // if (state == COMPARE && hit && |ufp_rmask_prev) begin
     //     word = data_out[hit_way][addr_offset[4:2] * 32 +: 32]; 

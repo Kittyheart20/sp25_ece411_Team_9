@@ -17,7 +17,7 @@ module deserializer (
     logic [1:0] word_count;
     logic [1:0] write_count;  
 
-    always_ff @(posedge clk or posedge rst) begin
+    always_ff @(posedge clk) begin
         if (rst) begin
             accumulator <= 256'd0;
             word_count  <= 2'd0;
@@ -37,14 +37,14 @@ module deserializer (
                     dfp_rdata <= {bmem_rdata, accumulator[191:0]};
                     dfp_resp  <= 1'b1;
                 end
-                word_count <= (word_count == 2'd3) ? 2'd0 : word_count + 1;
+                word_count <= (word_count == 2'd3) ? 2'd0 : (word_count + 2'd1);
             end
             
             if (dfp_write && bmem_ready) begin
                 if (write_count == 2'd3)
                     dfp_resp <= 1'b1;
                     
-                write_count <= (write_count == 2'd3) ? 2'd0 : write_count + 1;
+                write_count <= (write_count == 2'd3) ? 2'd0 : (write_count + 2'd1);
             end
         end
     end

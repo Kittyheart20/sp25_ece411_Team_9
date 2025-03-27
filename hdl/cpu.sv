@@ -18,13 +18,14 @@ module cpu
     logic [63:0] order;
     logic        commit;
 
-    // Deserializer
+    assign pc_next = pc + 32'd4;
 
     // Cache
     logic   [31:0]  ufp_addr;
     logic   [3:0]   ufp_rmask;
     logic   [3:0]   ufp_wmask;
     logic   [31:0]  ufp_rdata;
+    logic   [255:0] ufp_rcache_line;
     logic   [31:0]  ufp_wdata;
     logic           ufp_resp;
 
@@ -34,6 +35,9 @@ module cpu
     logic   [255:0] dfp_rdata;
     logic   [255:0] dfp_wdata;
     logic           dfp_resp;
+
+    assign ufp_wmask = '0;
+    assign ufp_wdata = '0;
 
     // Instr Queue
     logic full_o, empty_o;
@@ -47,30 +51,31 @@ module cpu
         .bmem_raddr (bmem_raddr),
         .bmem_rdata (bmem_rdata),
         .bmem_rvalid(bmem_rvalid),
-        .dfp_wdata(dfp_wdata),
-        .dfp_write(dfp_write),
+        .dfp_wdata  (dfp_wdata),
+        .dfp_write  (dfp_write),
         .dfp_rdata  (dfp_rdata),
         .dfp_resp   (dfp_resp),
-        .bmem_wdata(bmem_wdata)
+        .bmem_wdata (bmem_wdata)
     );
 
     cache instruction_cache (
-        .clk(clk),
-        .rst (rst),
+        .clk        (clk),
+        .rst        (rst),
         
-        .ufp_addr(pc),  //.ufp_addr(ufp_addr),
-        .ufp_rmask(ufp_rmask),
-        .ufp_wmask(ufp_wmask),
-        .ufp_rdata(ufp_rdata),
-        .ufp_wdata(ufp_wdata),
-        .ufp_resp(ufp_resp),
+        .ufp_addr   (ufp_addr),
+        .ufp_rmask  (ufp_rmask),
+        .ufp_wmask  (ufp_wmask),
+        .ufp_rdata  (ufp_rdata),
+        .ufp_rcache_line (ufp_rcache_line),
+        .ufp_wdata  (ufp_wdata),
+        .ufp_resp   (ufp_resp),
 
-        .dfp_addr(dfp_addr),
-        .dfp_read(dfp_read),
-        .dfp_write(dfp_write),
-        .dfp_rdata(dfp_rdata),
-        .dfp_wdata(dfp_wdata),
-        .dfp_resp(dfp_resp)
+        .dfp_addr   (dfp_addr),
+        .dfp_read   (dfp_read),
+        .dfp_write  (dfp_write),
+        .dfp_rdata  (dfp_rdata),
+        .dfp_wdata  (dfp_wdata),
+        .dfp_resp   (dfp_resp)
     );
 
     localparam WIDTH = 32;
@@ -78,63 +83,99 @@ module cpu
     localparam ALEN = 256;
     localparam BLEN = 32;
     queue #(
-        .WIDTH(WIDTH),
-        .DEPTH(DEPTH)
+        .WIDTH      (WIDTH),
+        .DEPTH      (DEPTH)
     ) instruction_queue (
-        .clk(clk),
-        .rst(rst),
-        .data_i(data_i),
-        .enqueue_i(enqueue_i),
-        .full_o(full_o),
-        .data_o(data_o),
-        .dequeue_i(dequeue_i),
-        .empty_o(empty_o)
+        .clk        (clk),
+        .rst        (rst),
+        .data_i     (data_i),
+        .enqueue_i  (enqueue_i),
+        .full_o     (full_o),
+        .data_o     (data_o),
+        .dequeue_i  (dequeue_i),
+        .empty_o    (empty_o)
     );
 
-    assign bmem_addr = 32'hAAAAA000;
-    assign bmem_read = 1;
-    assign bmem_write = 0;
+    // assign bmem_addr = 32'hAAAAA000;
+    // assign bmem_read = 1;
+    // assign bmem_write = 0;
 
     logic [31:0] curr_instr_addr, last_instr_addr;
     logic [255:0] curr_instr_data, last_instr_data;
-    assign curr_instr_data = ufp_rdata;
-    assign curr_instr_addr = pc;
     logic enable;
-    assign enable = /*ufp_resp && ufp_rmask && */!full_o;
 
     register #(
-        .A_LEN(ALEN),
-        .B_LEN(BLEN)
+        .A_LEN          (ALEN),
+        .B_LEN          (BLEN)
     ) line_buffer (
-        .clk(clk),
-        .rst(rst),
-        .data_a_input(curr_instr_data),
-        .data_b_input(curr_instr_addr),
-        .data_valid(enable),  // update line buffer if 1
-        .data_a_output(last_instr_data),
-        .data_b_output(last_instr_addr)
+        .clk            (clk),
+        .rst            (rst),
+        .data_a_input   (curr_instr_data),
+        .data_b_input   (curr_instr_addr),
+        .data_valid     (enable),  // update line buffer if 1
+        .data_a_output  (last_instr_data),
+        .data_b_output  (last_instr_addr)
     );
 
 
     always_ff @(posedge clk) begin
         if (rst) begin
-            pc    <= 32'haaaaa000;
-            order <= '0;
-            ufp_rmask <= '0;
-        end else if (curr_instr_addr[31:5] == last_instr_addr[31:5]) begin // use line buffer
-            // data_i <= last_instr_data[]
-            ufp_rmask <= 'd1;
-        end else if (enable) begin   // fetch from cache?
-            ufp_rmask <= 'd1;
-            data_i = curr_instr_addr;
-            enqueue_i <= 1'b1;
-            pc_next <= pc + 'd4;
-            order <= order + 'd1;
-        end
-        else begin
-            pc <= pc_next;
-            // if (commit)
-            //     order <= order + 'd1;
+            pc          <= 32'haaaaa000;
+            order       <= '0;
+            ufp_rmask   <= '0;
+            data_i      <= '0;
+            bmem_read   <= 1'b0;
+            bmem_write  <= 1'b0;
+            commit <= 1'b0;
+            enqueue_i <= 1'b0;
+            dequeue_i <= 1'b0;
+            enable <= 1'b0;       
+        end else begin
+            if (commit)     commit <= 1'b0;
+            if (enqueue_i)  enqueue_i <= 1'b0;
+            if (dequeue_i)  dequeue_i <= 1'b0;
+            if (enable)     enable <= 1'b0;
+
+            if (pc[31:5] == last_instr_addr[31:5]) begin
+                data_i <= last_instr_data[32*pc[4:2] +: 32];
+                if (!full_o) begin
+                    enqueue_i <= 1'b1;
+                    pc <= pc_next;
+                    order <= order + 'd1;
+                    commit <= 1'b1;
+                end
+            end
+
+            else begin
+                if (ufp_rmask == 4'd0) begin
+                    ufp_addr <= pc;
+                    ufp_rmask <= '1;                   
+                end else if (ufp_resp) begin
+                    data_i <= ufp_rdata[32*pc[4:2] +: 32];
+                    if (!full_o) begin
+                        ufp_rmask <= '0;
+                        enqueue_i <= 1'b1;
+                        curr_instr_addr <= pc;
+                        curr_instr_data <= ufp_rcache_line;
+                        enable <= 1'b1;
+                        pc <= pc_next;
+                        order <= order + 'd1;
+                        commit <= 1'b1;
+                    end
+                end else if (dfp_write) begin
+                    bmem_addr <= dfp_addr;
+                    bmem_write <= 1'b1;
+                    if (bmem_write && bmem_wdata == 64'h0) begin 
+                        bmem_write <= 1'b0;
+                    end
+                end else if (dfp_read) begin
+                    bmem_addr <= dfp_addr;
+                    bmem_read <= 1'b1;
+                    if (dfp_resp) begin    // need a counter?
+                        bmem_read <= 1'b0;
+                    end
+                end
+            end
         end
     end
     
