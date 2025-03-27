@@ -80,7 +80,7 @@ module cpu
     );
 
     localparam WIDTH = 32;
-    localparam DEPTH = 32;
+    localparam DEPTH = 8;
     localparam ALEN = 256;
     localparam BLEN = 32;
     queue #(
