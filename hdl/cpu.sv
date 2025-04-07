@@ -15,11 +15,21 @@ module cpu
 );
 
     logic welp;
-    assign welp =  (bmem_raddr == 32'd0); 
+    assign welp =  (bmem_raddr == 32'd0); // prevents lint warning on unused variable bmem_raddr
 
     logic [31:0] pc, pc_next;
     logic [63:0] order;
     logic        commit;
+    logic        stall;
+
+    // Stage Registers
+    if_id_stage_reg_t decode_struct_in;
+    id_dis_stage_reg_t decode_struct_out;
+    id_dis_stage_reg_t dispatch_struct_in;
+
+    logic [31:0] rs1_data, rs2_data;
+    // assign rs1_data = ; // Assign to regfile output
+    // assign rs2_data = ; // Assign to regfile output
 
     assign pc_next = pc + 32'd4;
 
@@ -82,6 +92,7 @@ module cpu
         .dfp_resp   (dfp_resp)
     );
 
+    // Instruction Queue
     localparam WIDTH = 32;
     localparam DEPTH = 32;
     localparam ALEN = 256;
@@ -100,6 +111,7 @@ module cpu
         .empty_o    (empty_o)
     );
 
+    assign stall = !empty_o;
     // assign bmem_addr = 32'hAAAAA000;
     // assign bmem_read = 1;
     // assign bmem_write = 0;
@@ -119,6 +131,39 @@ module cpu
         .data_valid     (enable),  // update line buffer if 1
         .data_a_output  (last_instr_data),
         .data_b_output  (last_instr_addr)
+    );
+
+    decode decode_stage (
+        .clk,
+        .rst,
+        .rs1_data,
+        .rs2_data,
+        .decode_struct_in,
+        .decode_struct_out
+    );
+
+    rat_arf regfile (
+        // ARF
+        .clk,
+        .rst,
+        .regf_we,
+        .rd_wb_addr,
+        .rd_data,
+        .rs1_addr,
+        .rs1_data,
+        .rs2_addr,
+        .rs2_data
+        
+        // RAT
+        .rd_paddr_i,
+        .rs1_renamed,
+        .rs2_renamed,
+        .rs1_paddr_o,
+        .rs2_paddr_o,
+    )
+
+    rob rob_inst (
+        
     );
 
     logic bmem_flag;
