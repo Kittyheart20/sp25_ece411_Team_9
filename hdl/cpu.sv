@@ -1,4 +1,5 @@
 module cpu
+import rv32i_types::*;
 (
     input   logic               clk,
     input   logic               rst,
@@ -23,7 +24,7 @@ module cpu
     logic        stall;
 
     // Stage Registers
-    if_id_stage_reg_t decode_struct_in;
+    if_id_stage_reg_t  decode_struct_in;
     id_dis_stage_reg_t decode_struct_out;
     id_dis_stage_reg_t dispatch_struct_in;
 
@@ -111,7 +112,7 @@ module cpu
         .empty_o    (empty_o)
     );
 
-    assign stall = !empty_o;
+    assign stall = empty_o;
     // assign bmem_addr = 32'hAAAAA000;
     // assign bmem_read = 1;
     // assign bmem_write = 0;
@@ -133,37 +134,111 @@ module cpu
         .data_b_output  (last_instr_addr)
     );
 
+    logic [4:0] rs1_rob_idx, rs2_rob_idx;
+    logic       rs1_renamed, rs2_renamed;
+    logic       rs1_ready, rs2_ready;
+    logic       regf_we, rs_we;
+    logic [31:0]rd_data;
+
+    logic [4:0] rob_addr;
+    rob_entry_t rob_entry_i, rob_entry_o;
+    logic       rob_enqueue_i, rob_update_i, rob_dequeue_i;
+    logic [4:0] rob_head_addr, rob_tail_addr;
+    
     decode decode_stage (
-        .clk,
-        .rst,
-        .rs1_data,
-        .rs2_data,
-        .decode_struct_in,
-        .decode_struct_out
+        .clk        (clk),
+        .rst        (rst),
+        .inst       (data_o),
+        .stall      (stall),
+        //.rs1_data   (rs1_data),
+        //.rs2_data   (rs2_data),
+        .rs1_rob_idx(rs1_rob_idx),
+        .rs2_rob_idx(rs2_rob_idx),
+        .rd_rob_idx (rob_tail_addr), // rob tail
+        .decode_struct_in   (decode_struct_in),
+        .decode_struct_out  (decode_struct_out)
     );
 
     rat_arf regfile (
         // ARF
-        .clk,
-        .rst,
-        .regf_we,
-        .rd_wb_addr,
-        .rd_data,
-        .rs1_addr,
-        .rs1_data,
-        .rs2_addr,
-        .rs2_data
+        .clk        (clk),
+        .rst        (rst),
+        .regf_we    (regf_we),
+        .rd_wb_addr (decode_struct_in.inst[11:7]),
+        .rd_data    (rd_data),
+        .rs1_addr   (decode_struct_in.inst[19:15]),
+        .rs1_data   (rs1_data),
+        .rs2_addr   (decode_struct_in.inst[24:20]),
+        .rs2_data   (rs2_data),
         
         // RAT
-        .rd_paddr_i,
-        .rs1_renamed,
-        .rs2_renamed,
-        .rs1_paddr_o,
-        .rs2_paddr_o,
-    )
+        .new_entry  (rob_enqueue_i),
+        .rd_rob_idx (rob_tail_addr), 
+        .rs1_renamed(rs1_renamed),
+        .rs2_renamed(rs2_renamed),
+        .rs1_rob_idx(rs1_rob_idx),
+        .rs2_rob_idx(rs2_rob_idx),
+        .rs1_ready  (rs1_ready),
+        .rs2_ready  (rs2_ready)
+    );
+
+    reservation_station rsv (
+        .clk(clk),
+        .rst(rst),
+        .we(/*dispatch_struct_in.valid*/rs_we),
+        .dispatch_struct_in(dispatch_struct_in),
+        .rs1_data_in(/*rsv_rs1_data_in*/rs1_data),
+        .rs2_data_in(/*rsv_rs2_data_in*/rs2_data),
+        .rs1_new(rs1_new),
+        .rs2_new(rs2_new),
+        .integer_alu_available(integer_alu_available),
+        .load_store_alu_available(load_store_alu_available)
+    );
+
+    // dispatch dispatch_stage (
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .dispatch_struct_in(dispatch_struct_in),
+    //     .rs1_data(rsv_rs1_data_in),
+    //     .rs2_data(rsv_rs2_data_in),
+    //     .rs1_ready(rs1_ready),
+    //     .rs2_ready(rs2_ready),        
+    //     .integer_alu_available(integer_alu_available),
+    //     .station_assignment(station_assignment)
+    // );
+
+    always_comb begin
+        rob_entry_i.valid = 1'b1;
+        rob_entry_i.status = rob_wait;
+        rob_entry_i.rd_addr = decode_struct_in.inst[11:7];
+        rob_entry_i.rd_data = 'x;
+
+        case (decode_struct_in.inst[6:0])
+            op_b_lui, op_b_auipc, op_b_imm, op_b_reg:
+                rob_entry_i.op_type = int_;
+                
+            op_b_br, op_b_jal, op_b_jalr:
+                rob_entry_i.op_type = br;
+
+            op_b_load, op_b_store:
+                rob_entry_i.op_type = mem;
+
+            default: 
+                rob_entry_i.op_type = 'x;
+        endcase
+    end
 
     rob rob_inst (
-        
+        .clk        (clk),
+        .rst        (rst),
+        .rob_addr   (rob_addr),
+        .rob_entry_i  (rob_entry_i),
+        .rob_entry_o  (rob_entry_o),
+        .enqueue_i  (rob_enqueue_i),
+        .update_i   (rob_update_i),     // 1 at writeback
+        .dequeue_i  (rob_dequeue_i),
+        .head_addr  (rob_head_addr),
+        .tail_addr  (rob_tail_addr)
     );
 
     logic bmem_flag;
@@ -178,13 +253,13 @@ module cpu
             bmem_write  <= 1'b0;
             commit <= 1'b0;
             enqueue_i <= 1'b0;
-            dequeue_i <= 1'b0;
+            // dequeue_i <= 1'b0;
             enable <= 1'b0;    
             bmem_flag <= 1'b0;   
         end else begin
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
-            if (dequeue_i)  dequeue_i <= 1'b0;
+            // if (dequeue_i)  dequeue_i <= 1'b0;
             if (enable)     enable <= 1'b0;
             //ufp_rmask   <= '0;
 
@@ -237,6 +312,26 @@ module cpu
                 end
             end
         end
+    end
+
+    always_comb begin
+        dequeue_i = (!empty_o && !rst); 
+        decode_struct_in.inst = data_o;
+        decode_struct_in.pc = pc;
+        decode_struct_in.order = order;
+        decode_struct_in.valid = 1'b1;
+    end
+
+    always_ff @(posedge clk) begin
+        dispatch_struct_in <= decode_struct_out;
+    end
+
+    always_comb begin
+        if (rst || stall) begin
+            rs_we = 0;
+        end else if (decode_struct_out.valid == 1'b1 ) 
+            rs_we = 1;
+        else rs_we = 0;
     end
     
 

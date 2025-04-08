@@ -1,79 +1,35 @@
 package rv32i_types;
     /* --- INSTRUCTION --- */
-    typedef struct packed {
-        logic           valid;
-        logic   [31:0]  inst;
-        logic   [31:0]  pc;
-        logic   [63:0]  order;
+    typedef enum logic [1:0] { // ALU input A
+        rs1_out  = 2'b00,
+        pc_out   = 2'b01,
+	    no_out   = 2'b10
+    } alu_m1_sel_t;
 
-        logic   [6:0]   opcode;
-        logic   [2:0]   funct3;
-        logic   [6:0]   funct7;
-
-        logic   [4:0]   rd_addr;
-        logic   [4:0]   rd_paddr;
-
-        logic   [4:0]   rs1_addr;
-        logic   [31:0]  rs1_data;
-        logic   [4:0]   rs1_paddr;  // tentative width
-        logic           rs1_ready;
-
-        logic   [4:0]   rs2_addr;
-        logic   [31:0]  rs2_data;
-        logic   [4:0]   rs2_paddr;  // tentative width
-        logic           rs2_ready;
-
-        logic   [31:0]  imm_sext;
-    } inst_st_t;
-
-    typedef struct packed {
-        logic           valid;
-        logic           instr_type;
-    } reservation_station;
-
-
-
-    typedef struct packed {
-        logic   [31:0]      inst;
-        logic   [31:0]      pc;
-        //logic   [31:0]      pc_next;
-        logic   [63:0]      order;
-    	logic         	    valid;
-    } if_id_stage_reg_t;
-
-    typedef struct packed {
-        logic   [31:0]      inst;
-        logic   [31:0]      pc;
-        logic   [31:0]      pc_next;
-        logic   [63:0]      order;
-    	logic         	    valid;
-
-        logic [4:0]         rd_addr;
-        logic [4:0]         rs1_addr;
-        logic [4:0]         rs2_addr;
-        // logic [31:0]        rs1_data;
-        // logic [31:0]        rs2_data;
-        logic [31:0]        imm;
-
-	    logic               regf_we;
-        alu_m1_sel_t        alu_m1_sel;
-        alu_m2_sel_t        alu_m2_sel;
-        pc_sel_t            pc_sel;
-        alu_ops		        aluop;
-    } id_dis_stage_reg_t;
-    
+    typedef enum logic [1:0] { // ALU input B
+        rs2_out  = 2'b00,
+        imm_out  = 2'b01,
+	    four_out = 2'b10
+    } alu_m2_sel_t;
+        
     typedef enum logic { 
-        wait = 1'b0;
-        done = 1'b1;
+        rob_wait = 1'b0,
+        done = 1'b1
     } status_t;
 
     typedef enum logic [2:0] {
-        int = 3'b000;
-        mul = 3'b001;
-        div = 3'b010;
-        br  = 3'b011;
-        mem = 3'b100;
-    }
+        int_ = 3'b000,
+        mul = 3'b001,
+        div = 3'b010,
+        br  = 3'b011,
+        mem = 3'b100
+    } types_t;
+
+    typedef enum logic [1:0] {
+        IDLE = 2'b00,
+        BUSY = 2'b01,
+        COMPLETE = 2'b10
+    } status_rs_t;
 
     typedef enum logic [6:0] {
         op_b_lui       = 7'b0110111, // load upper immediate (U type)
@@ -98,6 +54,92 @@ package rv32i_types;
         arith_f3_and   = 3'b111
     } arith_f3_t;
 
+    typedef enum logic [3:0] {
+        alu_op_add     = 4'b0000,
+        alu_op_sll     = 4'b0001,
+        alu_op_sra     = 4'b0010,
+        alu_op_sub     = 4'b0011,
+        alu_op_xor     = 4'b0100,
+        alu_op_srl     = 4'b0101,
+        alu_op_or      = 4'b0110,
+        alu_op_and     = 4'b0111,
+        alu_op_slt     = 4'b1000,
+        alu_op_sltu    = 4'b1001,
+	    alu_op_none    = 4'b1010
+    } alu_ops;
+
+    typedef struct packed {
+        logic           valid;
+        logic   [31:0]  pc;
+        logic   [4:0]   rd_addr;
+        logic   [4:0]   rs1_addr;
+        logic   [4:0]   rs2_addr;
+        logic   [4:0]   rd_paddr;
+        logic   [4:0]   rs1_paddr;
+        logic   [4:0]   rs2_paddr;
+        
+        // Register stuff
+        logic   [31:0]  rs1_data;
+        logic           rs1_ready;
+        logic   [31:0]  rs2_data;
+        logic           rs2_ready;
+        logic   [31:0]  imm_sext;
+
+        // Control Signals
+        logic           regf_we;
+        alu_m1_sel_t    alu_m1_sel;
+        alu_m2_sel_t    alu_m2_sel;
+        //pc_sel_t        pc_sel;
+        alu_ops         aluop;
+
+        status_rs_t        status;
+    } reservation_station_t;
+
+    typedef struct packed {
+        logic           valid;
+        status_t        status;
+        types_t         op_type;
+        logic   [4:0]   rd_addr;
+        logic   [31:0]  rd_data;
+        // logic           br_pred;
+        // logic           br_result;
+    } rob_entry_t;
+
+    typedef struct packed {
+        logic   [31:0]      inst;
+        logic   [31:0]      pc;
+        //logic   [31:0]      pc_next;
+        logic   [63:0]      order;
+    	logic         	    valid;
+    } if_id_stage_reg_t;
+
+    typedef struct packed {
+        logic   [31:0]      inst;
+        logic   [31:0]      pc;
+        logic   [31:0]      pc_next;
+        logic   [63:0]      order;
+    	logic         	    valid;
+        logic   [6:0]       opcode;
+        logic   [2:0]       funct3;
+        logic   [6:0]       funct7;
+
+        logic [4:0]         rd_addr;
+        logic [4:0]         rd_rob_idx;
+        logic [4:0]         rs1_addr;
+        logic [4:0]         rs2_addr;
+        logic [4:0]         rs1_rob_idx;
+        logic [4:0]         rs2_rob_idx;
+        // logic [31:0]        rs1_data;
+        // logic [31:0]        rs2_data;
+        logic [31:0]        imm;
+
+	    logic               regf_we;
+        alu_m1_sel_t        alu_m1_sel;
+        alu_m2_sel_t        alu_m2_sel;
+        //pc_sel_t            pc_sel;
+        alu_ops		        aluop;
+    } id_dis_stage_reg_t;
+
     typedef enum logic [2:0] {
         load_f3_lb     = 3'b000,
         load_f3_lh     = 3'b001,
@@ -121,16 +163,10 @@ package rv32i_types;
         branch_f3_bgeu = 3'b111
     } branch_f3_t;
 
-    typedef enum logic [2:0] {
-        alu_op_add     = 3'b000,
-        alu_op_sll     = 3'b001,
-        alu_op_sra     = 3'b010,
-        alu_op_sub     = 3'b011,
-        alu_op_xor     = 3'b100,
-        alu_op_srl     = 3'b101,
-        alu_op_or      = 3'b110,
-        alu_op_and     = 3'b111
-    } alu_ops;
+    typedef enum logic [6:0] {
+        base           = 7'b0000000,
+        variant        = 7'b0100000
+    } funct7_t;
 
     // typedef enum logic [2:0] { // memory operation w/h/b
     //     mem_op_none  = 3'b000,
@@ -141,15 +177,4 @@ package rv32i_types;
     //     mem_op_w     = 3'b101
     // } mem_ops;
 
-    typedef enum logic [1:0] { // ALU input A
-        rs1_out  = 2'b00,
-        pc_out   = 2'b01,
-	    no_out   = 2'b10
-    } alu_m1_sel_t;
-
-    typedef enum logic [1:0] { // ALU input B
-        rs2_out  = 2'b00,
-        imm_out  = 2'b01,
-	    four_out = 2'b10
-    } alu_m2_sel_t;
 endpackage : rv32i_types
