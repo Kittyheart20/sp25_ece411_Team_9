@@ -23,8 +23,9 @@ import rv32i_types::*;
     //output ready instructions
     output logic integer_alu_available,
     // output logic branch_alu_available,
-    output logic load_store_alu_available
+    output logic load_store_alu_available,
     // output logic mul_div_alu_available
+    output reservation_station_t next_execute
 );
 
     reservation_station_t rs_entry [DEPTH];
