@@ -221,13 +221,13 @@ import rv32i_types::*;
     //     .station_assignment(station_assignment)
     // );
 
-    writeback writeback_stage(
-        .clk(clk),
-        .rst(rst),
-        .to_writeback(execute_output),
-        .cdbus(cdbus),
-        .
-    )
+    // writeback writeback_stage(
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .to_writeback(execute_output),
+    //     .cdbus(cdbus),
+    //     .
+    // )
 
     always_comb begin
         rob_entry_i.valid = 1'b1;
@@ -333,7 +333,7 @@ import rv32i_types::*;
     end
 
     always_comb begin : set_up_decode_in
-        dequeue_i = (!empty_o && !rst); 
+        dequeue_i = (!empty_o && !rst && !stall); 
         decode_struct_in.inst = data_o[31:0];
         decode_struct_in.pc = data_o[63:32];
         decode_struct_in.order = data_o[127:64];
