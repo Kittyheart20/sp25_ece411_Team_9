@@ -52,7 +52,9 @@ import rv32i_types::*;
         
         end
         
-        if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data
+      //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data
+        if (cdbus.valid && (cdbus.rd_addr != 5'd0)) begin       // Filling in rd data
+
             data[cdbus.rd_addr] <= cdbus.data;
             ready[cdbus.rd_addr] <= 1'b1;
 

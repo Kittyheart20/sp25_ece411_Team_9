@@ -20,6 +20,7 @@ import rv32i_types::*;
 );
     localparam DEPTH = 32;
 
+
     rob_entry_t rob_table [DEPTH];
     rob_entry_t rob_entry_i;
 

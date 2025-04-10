@@ -176,6 +176,41 @@ import rv32i_types::*;
         .rob_idx(rob_idx)
     );
 
+    always_comb begin : fill_rob_entry
+        rob_entry_i.valid = 1'b1;
+        rob_entry_i.status = rob_wait;
+        rob_entry_i.rd_addr = decode_struct_in.inst[11:7];
+        rob_entry_i.rd_data = 'x;
+
+        case (decode_struct_in.inst[6:0])
+            op_b_lui, op_b_auipc, op_b_imm, op_b_reg:
+                rob_entry_i.op_type = alu;
+                
+            op_b_br, op_b_jal, op_b_jalr:
+                rob_entry_i.op_type = br;
+
+            op_b_load, op_b_store:
+                rob_entry_i.op_type = mem;
+
+            default: 
+                rob_entry_i.op_type = none;
+        endcase
+    end
+
+    rob rob_inst (
+        .clk        (clk),
+        .rst        (rst),
+        .rob_addr   (rob_addr),
+        .dispatch_struct_in(dispatch_struct_in),
+        //.rob_entry_i  (rob_entry_i),
+        .current_rd_rob_idx(current_rd_rob_idx),
+        .rob_entry_o  (rob_entry_o),
+        .enqueue_i  (decode_struct_out.valid),
+        .update_i   (next_writeback.valid),     // 1 at writeback
+        .dequeue_i  (1'b0), // from commit
+        .head_addr  (rob_head_addr),
+        .tail_addr  (rob_tail_addr)
+    );
     logic   rs1_new, rs2_new;
 
 
@@ -216,49 +251,6 @@ import rv32i_types::*;
     //     .station_assignment(station_assignment)
     // );
 
-    // writeback writeback_stage(
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .to_writeback(execute_output),
-    //     .cdbus(cdbus),
-    //     .
-    // )
-
-    always_comb begin
-        rob_entry_i.valid = 1'b1;
-        rob_entry_i.status = rob_wait;
-        rob_entry_i.rd_addr = decode_struct_in.inst[11:7];
-        rob_entry_i.rd_data = 'x;
-
-        case (decode_struct_in.inst[6:0])
-            op_b_lui, op_b_auipc, op_b_imm, op_b_reg:
-                rob_entry_i.op_type = alu;
-                
-            op_b_br, op_b_jal, op_b_jalr:
-                rob_entry_i.op_type = br;
-
-            op_b_load, op_b_store:
-                rob_entry_i.op_type = mem;
-
-            default: 
-                rob_entry_i.op_type = none;
-        endcase
-    end
-
-    rob rob_inst (
-        .clk        (clk),
-        .rst        (rst),
-        .rob_addr   (rob_addr),
-        .dispatch_struct_in(dispatch_struct_in),
-        //.rob_entry_i  (rob_entry_i),
-        .current_rd_rob_idx(current_rd_rob_idx),
-        .rob_entry_o  (rob_entry_o),
-        .enqueue_i  (dispatch_struct_in.valid),
-        .update_i   (rob_update_i),     // 1 at writeback
-        .dequeue_i  (rob_dequeue_i),
-        .head_addr  (rob_head_addr),
-        .tail_addr  (rob_tail_addr)
-    );
 
     logic bmem_flag;
     always_ff @(posedge clk) begin : fetch
