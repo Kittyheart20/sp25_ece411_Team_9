@@ -1,26 +1,19 @@
 module decode
 import rv32i_types::*;
 (
-    input  logic        clk,
-    input  logic        rst,
-    input  logic [31:0] inst,
-    //input  logic [31:0] rs1_data,
-    //input  logic [31:0] rs2_data,
-    input  logic [4:0]  rs1_rob_idx,
-    input  logic [4:0]  rs2_rob_idx,
-    input  logic [4:0]  rd_rob_idx,
     input  logic        stall,
-//     input  logic        load_use_hazard,
     input if_id_stage_reg_t     decode_struct_in, // Will only contain instr, pc, order & valid
     output id_dis_stage_reg_t   decode_struct_out
 );
 
+    logic [31:0] inst;
     logic [2:0] funct3;
     logic [6:0] funct7;
     logic [6:0] opcode;
     logic [31:0] i_imm, s_imm, b_imm, u_imm, j_imm;
     logic [4:0] rs1_addr, rs2_addr, rd_addr;
 
+    assign inst = decode_struct_in.inst;
     assign funct3 = inst[14:12];
     assign funct7 = inst[31:25];
     assign opcode = inst[6:0];
@@ -35,7 +28,7 @@ import rv32i_types::*;
 
     always_comb begin
        // decode_struct_out = '0;
-
+        decode_struct_out.valid = 1'b0;
         if (!stall) begin
             decode_struct_out.valid = decode_struct_in.valid;
             decode_struct_out.inst = decode_struct_in.inst;
@@ -47,9 +40,9 @@ import rv32i_types::*;
             decode_struct_out.rs1_addr = rs1_addr;
             decode_struct_out.rs2_addr = rs2_addr;
             decode_struct_out.rd_addr = rd_addr;
-            decode_struct_out.rd_rob_idx = rd_rob_idx;
-            decode_struct_out.rs1_rob_idx = rs1_rob_idx;
-            decode_struct_out.rs2_rob_idx = rs2_rob_idx;
+            // decode_struct_out.rd_rob_idx = rd_rob_idx;
+            // decode_struct_out.rs1_rob_idx = rs1_rob_idx;
+            // decode_struct_out.rs2_rob_idx = rs2_rob_idx;
             
             unique case (opcode)
                 op_b_lui  : begin

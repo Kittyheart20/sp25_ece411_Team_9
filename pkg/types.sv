@@ -18,11 +18,12 @@ package rv32i_types;
     } status_t;
 
     typedef enum logic [2:0] {
-        int_ = 3'b000,
-        mul = 3'b001,
-        div = 3'b010,
-        br  = 3'b011,
-        mem = 3'b100
+        none = 3'b000,
+        alu  = 3'b001,
+        mul  = 3'b010,
+        div  = 3'b011,
+        br   = 3'b100,
+        mem  = 3'b101
     } types_t;
 
     typedef enum logic [1:0] {
@@ -87,13 +88,33 @@ package rv32i_types;
 
         // Control Signals
         logic           regf_we;
+        logic valid_out;
         alu_m1_sel_t    alu_m1_sel;
         alu_m2_sel_t    alu_m2_sel;
         //pc_sel_t        pc_sel;
         alu_ops         aluop;
 
+        logic [4:0]         rs1_rob_idx;
+        logic [4:0]         rs2_rob_idx;
+        logic [4:0]         rd_rob_idx;
         status_rs_t        status;
     } reservation_station_t;
+
+    typedef struct packed {
+        logic           valid;
+        logic   [31:0]  pc;
+        logic   [4:0]   rd_addr;
+        logic   [4:0]   rs1_addr;
+        logic   [4:0]   rs2_addr;
+        logic   [4:0]   rd_paddr;
+        logic   [4:0]   rs1_paddr;
+        logic   [4:0]   rs2_paddr;
+
+        logic           regf_we;
+        logic   [4:0]   rd_rob_idx;
+        logic   [31:0]  rd_data;    
+    } to_writeback_t;
+
 
     typedef struct packed {
         logic           valid;
@@ -101,6 +122,7 @@ package rv32i_types;
         types_t         op_type;
         logic   [4:0]   rd_addr;
         logic   [31:0]  rd_data;
+        logic   [4:0]   rd_rob_idx;
         // logic           br_pred;
         // logic           br_result;
     } rob_entry_t;
@@ -176,5 +198,12 @@ package rv32i_types;
     //     mem_op_hu    = 3'b100,
     //     mem_op_w     = 3'b101
     // } mem_ops;
+    
+    typedef struct packed {
+        logic        valid;   
+        logic [31:0] data; 
+        logic [4:0]  rob_idx;
+        logic [4:0]  rd_addr;  
+    } cdb;
 
 endpackage : rv32i_types

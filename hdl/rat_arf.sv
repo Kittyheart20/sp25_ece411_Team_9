@@ -1,89 +1,101 @@
-module rat_arf #(
+module rat_arf 
+import rv32i_types::*;
+#(
     parameter ROB_IDX_WIDTH = 5,
     parameter TAG_WIDTH     = 3
 )
 (
     input   logic           clk,
     input   logic           rst,
-    input   logic           regf_we,
+    // New Entry
+    input id_dis_stage_reg_t dispatch_struct_in,
+    //input   logic           new_entry,
+    // Writeback
     input   logic   [31:0]  rd_data,
-    input   logic   [4:0]   rs1_addr, rs2_addr, rd_wb_addr, rd_finished_addr,
-    input   logic   [4:0]   rs1_paddr, rs2_paddr, rd_wb_paddr,
-    input   logic           new_entry,
-    input   logic           free_entry,
+    input   logic   [4:0]   rd_wb_addr,
+    input logic [ROB_IDX_WIDTH-1:0] rd_rob_idx,
+    input logic regf_we,
+    //input   logic           free_entry,
 
-    //input   logic           assign_paddr,
-    //input   logic   [4:0]   rd_paddr_i,
-    input logic [ROB_IDX_WIDTH-1:0]     rd_rob_idx,
-
-    output  logic   [31:0]  rs1_data, rs2_data,
-    output  logic           rs1_renamed, rs2_renamed,
-    output  logic           rs1_ready, rs2_ready,
-    output  logic   [4:0]   rs1_rob_idx, rs2_rob_idx
+    // Read logic
+    output  logic   [31:0]  data    [32],
+    //output  logic           rs1_renamed, rs2_renamed,
+    output  logic           ready   [32],
+    output  logic   [4:0]   rob_idx [32]
 );
 
     logic   [31:0]            data    [32];
-    logic   [31:0]            paddr   [32];     
-    logic                     renamed [32];
+    //logic   [31:0]            tags    [32];     // I think the tags should be the same as the ROB idx
+    //logic                     renamed [32];     
     logic                     ready   [32];
     logic [ROB_IDX_WIDTH-1:0] rob_idx [32];
-    logic   [4:0]             free_paddr;           // We can probably make this into a stack
 
-    always_ff @(posedge clk) begin
+    logic regf_we;
+    logic   [4:0]   rs1_addr, rs2_addr, rd_wb_addr;
+    assign regf_we = '0;//dispatch_struct_in.regf_we;
+    assign rs1_addr = dispatch_struct_in.rs1_addr;
+    assign rs2_addr = dispatch_struct_in.rs2_addr;
+    assign rd_addr = dispatch_struct_in.rd_addr;
+
+
+    always_ff @(posedge clk) begin      // handles rd
         if (rst) begin
             for (integer i = 0; i < 32; i++) begin
                 data[i] <= '0;
-                paddr[i] <= 'x;
-                renamed[i] <= 1'b0;
+                //tags[i] <= 'x;
+                //renamed[i] <= 1'b0;
                 rob_idx[i] <= '0;
                 ready[i] <= 1'b1;
-                // Have the free addr stack be full of ready paddr tags
+                // Have everything start empty
             end
         
-        end else if (regf_we && (rd_wb_addr != 5'd0) && (paddr[rd_wb_addr] == rd_wb_paddr)) begin   
+        end else if (regf_we && (rd_wb_addr != 5'd0) && (rob_idx[rd_wb_addr] == rd_rob_idx)) begin       // Filling in rd data
             data[rd_wb_addr] <= rd_data;
             ready[rd_wb_addr] <= 1'b1;
 
-        end else if (/*assign_paddr*/new_entry) begin           
-            rob_idx[rd_wb_addr] <= rd_rob_idx;
-            paddr[rd_wb_addr] <= free_paddr; 
-            // and pop entry from free entry stack
-            renamed[rd_wb_addr] <= 1'b1;
-            ready[rd_wb_addr] <= 1'b0;
+        end else if (dispatch_struct_in.valid) begin           // Creating a new entry   
+            rob_idx[rd_addr] <= rd_rob_idx;
+            //tags[rd_wb_addr] <= tail; 
+            //renamed[rd_wb_addr] <= 1'b1;
+            ready[rd_addr] <= 1'b0;
 
-        end else if (free_entry) begin
-            // add entry into free entry stack
+        // end else if (free_entry) begin
+        //     // is this needed?
         end
     end
 
-    always_ff @(posedge clk) begin
-        rs1_data <= '0;
-        rs2_data <= '0;
+    // always_ff @(posedge clk) begin      // handles rs1 & rs2
+    //     // rs1_data <= '0;
+    //     // rs2_data <= '0;
 
-        if (rst) begin
-            rs1_data <= 'x;
-            rs2_data <= 'x;
+    //     if (rst) begin
+    //         // rs1_data <= '0;
+    //         // rs2_data <= '0;
 
-            rs1_renamed <= 1'b0;
-            rs2_renamed <= 1'b0;
-            rs1_rob_idx <= '0;
-            rs2_rob_idx <= '0;
-        end
-        else begin
-            rs1_ready <= ready[rs1_addr];
-            rs1_rob_idx <= rob_idx[rs1_addr];
-            if ((rs1_addr != 5'd0) && (paddr[rs1_addr] == rs1_paddr))
-                rs1_data <= data[rs1_addr];
+    //         // rs1_renamed <= 1'b0;
+    //         // rs2_renamed <= 1'b0;
+    //         // rs1_rob_idx <= '0;
+    //         // rs2_rob_idx <= '0;
+    //     end
+    //     else begin                          // If the data is ready, grab it, if it's not ready we should have an ROB instruction we're waiting on. Export which instruction we're waiting on
+    //         rs1_ready <= ready[rs1_addr];
+    //         // rs1_rob_idx <= rob_idx[rs1_addr];
+    //         if ((rs1_addr != 5'd0) && rs1_ready)
+    //             rs1_data <= data[rs1_addr];
+    //         else
+    //             rs1_rob_idx <= rob_idx[rs1_addr];
 
-            rs2_ready <= ready[rs2_addr];
-            rs2_rob_idx <= rob_idx[rs2_addr];
-            if ((rs2_addr != 5'd0) && (paddr[rs2_addr] == rs2_paddr))
-                rs2_data <= data[rs2_addr];
+    //         rs2_ready <= ready[rs2_addr];
+    //         // rs2_rob_idx <= rob_idx[rs2_addr];
+    //         if ((rs2_addr != 5'd0) && rs2_ready)
+    //             rs2_data <= data[rs2_addr];
+    //         else 
+    //             rs2_rob_idx <= rob_idx[rs2_addr];
 
-            rs1_renamed <= renamed[rs1_addr];
-            rs2_renamed <= renamed[rs2_addr];
-        end
-    end
+    //         // rs1_renamed <= renamed[rs1_addr];
+    //         // rs2_renamed <= renamed[rs2_addr];
+    //     end
+    // end
 
     // assign rs1_data = ((rs1_addr != 5'd0) && ~rst) ? data[rs1_addr] : '0;
     // assign rs2_data = ((rs2_addr != 5'd0) && ~rst) ? data[rs2_addr] : '0;

@@ -112,7 +112,7 @@
 //                 br_en = 1'b1;
 //                 pc_branch = (rs1_for + id_ex_reg.imm)  & 32'hfffffffe;
 //             end
-//             imm_off: begin
+//             imm_off: stall = begin
 //                 unique case (id_ex_reg.cmpop)
 //                     branch_f3_beq : br_en = (rs1_for == rs2_for);
 //                     branch_f3_bne : br_en = (rs1_for != rs2_for);
