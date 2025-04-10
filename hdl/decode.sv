@@ -27,7 +27,7 @@ import rv32i_types::*;
     assign rd_addr = inst[11:7];
 
     always_comb begin
-       // decode_struct_out = '0;
+        decode_struct_out = '0;
         decode_struct_out.valid = 1'b0;
         if (!stall) begin
             decode_struct_out.valid = decode_struct_in.valid;

@@ -6,12 +6,13 @@ import rv32i_types::*;
     input   logic [4:0] rob_addr,
     input id_dis_stage_reg_t dispatch_struct_in,
     //input   rob_entry_t rob_entry_i,
+    output logic [4:0] current_rd_rob_idx,
     output  rob_entry_t rob_entry_o,
 
     input   logic       enqueue_i,  // Do we need this? We can just use dispatch_struct_in.valid
     input   logic       update_i,
     input   logic       dequeue_i,
-    input cdb cdbus,
+    input   cdb         cdbus,
 
     output  logic [4:0] head_addr,
     output  logic [4:0] tail_addr,
@@ -29,6 +30,7 @@ import rv32i_types::*;
     assign empty_o = (count == '0);
     assign full_o = (count == DEPTH);
     assign rob_entry_o = rob_table[head];
+    assign current_rd_rob_idx = tail;
 
     always_comb begin
         //rob_entry_i = dispatch_struct_in;
@@ -36,23 +38,29 @@ import rv32i_types::*;
         rob_entry_i.status = rob_wait;
         //rob_entry_i.op_type = ; maybe we should add in op_type to id_dis_stage_reg_t from decode stage
         rob_entry_i.rd_addr = dispatch_struct_in.rd_addr;
-        rob_entry_i.rd_rob_idx = dispatch_struct_in.rd_rob_idx;
-        rob_entry_i.rd_data = 'x;
-
-        for (int i = 0; i < DEPTH; i++) begin
-            if ((rob_table[i].rd_addr == cdb.rd_addr) && (rob_table[i].rd_rob_idx == cdb.rob_idx))
-                rob_table[i].status = done;
-                rob_entry_i.rd_data = cdb.data;
-        end
+        rob_entry_i.rd_rob_idx = tail; //dispatch_struct_in.rd_rob_idx;
+        //rob_entry_i.rd_data = 'x;
     end
 
-    always_ff @(posedge clk) begin  // If we make this always_ff- we can't also do the rat_arf in the same cycle? (we need the new ROB tail addr)
+   always_ff @(posedge clk)  begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst) begin
             head <= '0;
             tail <= '0;
+            tail_addr <= 0;
             count <= '0;
+            for (integer i = 0; i < DEPTH; i++) begin
+                rob_table[i].status = empty;
+            end
         end
-        else begin
+        else if (dispatch_struct_in.valid) begin
+
+            // Check if rd is being written back to & update it
+            for (integer unsigned i = 0; i < DEPTH; i++) begin
+                if (cdbus.valid && (rob_table[i].rd_addr == cdbus.rd_addr) && (rob_table[i].rd_rob_idx == cdbus.rob_idx)) begin
+                    rob_table[i].status <= done;
+                    rob_table[i].rd_data <= cdbus.data;
+                end
+            end
 
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
@@ -60,7 +68,7 @@ import rv32i_types::*;
             // tail ++    
             if (enqueue_i && (!full_o || dequeue_i)) begin
                 rob_table[tail] <= rob_entry_i;
-                tail <= tail;
+                tail_addr <= tail;
                 tail <= (tail == '1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
             end
             
@@ -88,9 +96,12 @@ import rv32i_types::*;
                 default: count <= count;      
             endcase
         end
+        else begin
+            
+        end
     end
 
     assign head_addr = head;
-    assign tail_addr = tail;
+    //assign tail_addr = tail;
 
 endmodule

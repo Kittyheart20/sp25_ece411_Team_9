@@ -34,10 +34,10 @@ import rv32i_types::*;
     reservation_station_t dispatch_struct_out;  
     reservation_station_t next_execute;
     to_writeback_t   execute_output;
+    to_writeback_t   next_writeback; 
 
     logic [31:0] rs1_data, rs2_data;
-    // assign rs1_data = ; // Assign to regfile output
-    // assign rs2_data = ; // Assign to regfile output
+    logic current_rd_rob_idx;
 
     assign pc_next = pc + 32'd4;
 
@@ -60,7 +60,6 @@ import rv32i_types::*;
 
     assign ufp_wmask = '0;
     assign ufp_wdata = '0;
-
 
     deserializer cache_line_adapter (
         .clk        (clk),
@@ -120,10 +119,6 @@ import rv32i_types::*;
         .empty_o    (empty_o)
     );
 
-    // assign bmem_addr = 32'hAAAAA000;
-    // assign bmem_read = 1;
-    // assign bmem_write = 0;
-
     logic [31:0] curr_instr_addr, last_instr_addr;
     logic [255:0] curr_instr_data, last_instr_data;
     logic enable;
@@ -164,16 +159,15 @@ import rv32i_types::*;
     logic [4:0] rs1_dis_idx, rs2_dis_idx;
     assign rs1_dis_idx = dispatch_struct_in.rs1_addr;
     assign rs2_dis_idx = dispatch_struct_in.rs2_addr;
+    cdb cdbus;
     
     rat_arf regfile (
         // ARF
         .clk        (clk),
         .rst        (rst),
-        .dispatch_struct_in (decode_struct_out),    // this should output correct data by the time rsv receives new dispatch_struct_in
-        // .rd_data    (cdbus.data),
-        // .rd_wb_addr(cdbus.rd_addr),
-        // .rd_rob_idx(cdbus.rob_idx),
-        // .regf_we(execute_output.regf_we),
+        .dispatch_struct_in (decode_struct_out),    // this should output correct data by the t1me rsv receives new dispatch_struct_in
+        .cdbus(cdbus),
+        .regf_we(execute_output.regf_we),
         // RAT
         //.new_entry  (rob_enqueue_i),
         .rd_rob_idx (rob_tail_addr),
@@ -183,13 +177,14 @@ import rv32i_types::*;
     );
 
     logic   rs1_new, rs2_new;
-    cdb cdbus;
+
 
     reservation_station rsv (
         .clk(clk),
         .rst(rst),
         .we(/*dispatch_struct_in.valid*/rs_we),
         .dispatch_struct_in(dispatch_struct_in),
+        .rob_entry_o(rob_entry_o),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
         .rs1_ready(ready[rs1_dis_idx]),
         .rs2_data_in(/*rsv_rs2_data_in*/data[rs2_dis_idx]),
@@ -256,8 +251,9 @@ import rv32i_types::*;
         .rob_addr   (rob_addr),
         .dispatch_struct_in(dispatch_struct_in),
         //.rob_entry_i  (rob_entry_i),
+        .current_rd_rob_idx(current_rd_rob_idx),
         .rob_entry_o  (rob_entry_o),
-        .enqueue_i  (rob_enqueue_i),
+        .enqueue_i  (dispatch_struct_in.valid),
         .update_i   (rob_update_i),     // 1 at writeback
         .dequeue_i  (rob_dequeue_i),
         .head_addr  (rob_head_addr),
@@ -333,12 +329,27 @@ import rv32i_types::*;
     end
 
     always_comb begin : set_up_decode_in
-        dequeue_i = (!empty_o && !rst && !stall); 
-        decode_struct_in.inst = data_o[31:0];
-        decode_struct_in.pc = data_o[63:32];
-        decode_struct_in.order = data_o[127:64];
-        decode_struct_in.valid = 1'b1;
+
     end
+
+    always_ff @(posedge clk) begin
+        if(rst) begin
+        dequeue_i <= 0; 
+        decode_struct_in.inst <= 0;
+        decode_struct_in.pc <= 0;
+        decode_struct_in.order <= 0;
+        decode_struct_in.valid <= 0;
+        end else begin
+        if(!empty_o) begin
+            dequeue_i <= (!empty_o && !rst && !stall); 
+            decode_struct_in.inst <= data_o[31:0];
+            decode_struct_in.pc <= data_o[63:32];
+            decode_struct_in.order <= data_o[127:64];
+            decode_struct_in.valid <= 1'b1;
+            end
+        end
+    end
+
 
     always_comb begin : update_line_buffer
         enable = 1'b0;
@@ -350,8 +361,16 @@ import rv32i_types::*;
     end
 
     always_ff @(posedge clk) begin : update_dispatch_str
-        dispatch_struct_in <= decode_struct_out;
-        next_execute <= dispatch_struct_out;
+        if (rst) begin
+            dispatch_struct_in <= '0;
+            next_execute <= '0;
+            next_writeback <= '0;
+        end
+        else begin
+            dispatch_struct_in <= decode_struct_out;
+            next_execute <= dispatch_struct_out;
+            next_writeback <= execute_output;
+        end
     end
 
     always_comb begin : update_rs_we_cdbus
@@ -361,10 +380,12 @@ import rv32i_types::*;
         end else if (decode_struct_out.valid == 1'b1) 
             rs_we = 1'b1;
         else rs_we = 1'b0;
-
-        cdbus.data = execute_output.rd_data;
-        cdbus.rd_addr = execute_output.rd_addr;
-        cdbus.rob_idx = execute_output.rd_rob_idx;
+        if(next_writeback.valid) begin
+            cdbus.data = next_writeback.rd_data;
+            cdbus.rd_addr = next_writeback.rd_addr;
+            cdbus.rob_idx = next_writeback.rd_rob_idx;
+            cdbus.valid = next_writeback.valid;
+        end else cdbus = '0;
     end
 
     always_comb begin : update_stall

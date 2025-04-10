@@ -12,9 +12,10 @@ package rv32i_types;
 	    four_out = 2'b10
     } alu_m2_sel_t;
         
-    typedef enum logic { 
-        rob_wait = 1'b0,
-        done = 1'b1
+    typedef enum logic [1:0] { 
+        empty = 1'b00,
+        rob_wait = 2'b01,
+        done = 2'b10
     } status_t;
 
     typedef enum logic [2:0] {

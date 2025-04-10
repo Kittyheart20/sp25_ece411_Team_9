@@ -9,6 +9,7 @@ import rv32i_types::*;
     input  logic        we,         // write enable
     // New Entry Input
     input  id_dis_stage_reg_t dispatch_struct_in,
+    input  rob_entry_t rob_entry_o,
     input  [31:0]  new_rs1_paddr,
     input  [31:0]  new_rs2_paddr,
     input  [31:0]  new_rd_paddr,
@@ -49,13 +50,18 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin
         if (rst) begin
             stations[0].status <= IDLE;
+            stations[0].valid <= 1'b0;
             stations[1].status <= IDLE;
+            stations[1].valid <= 1'b0;
             stations[2].status <= IDLE;
+            stations[2].valid <= 1'b0;
             stations[3].status <= IDLE;
+            stations[3].valid <= 1'b0;
             stations[4].status <= IDLE;
+            stations[4].valid <= 1'b0;
         end
         else if (dispatch_struct_in.valid) begin 
-          //  stations[open_station].valid <= dispatch_struct_in.valid;
+            stations[open_station].valid <= dispatch_struct_in.valid;
             stations[open_station].pc <= dispatch_struct_in.pc;
             stations[open_station].rd_addr <= dispatch_struct_in.rd_addr;
             stations[open_station].rs1_addr <= dispatch_struct_in.rs1_addr;
@@ -72,7 +78,7 @@ import rv32i_types::*;
 
             stations[open_station].rs1_rob_idx <= dispatch_struct_in.rs1_rob_idx;
             stations[open_station].rs2_rob_idx <= dispatch_struct_in.rs2_rob_idx;
-            stations[open_station].rd_rob_idx <= dispatch_struct_in.rd_rob_idx;
+            stations[open_station].rd_rob_idx <= rob_entry_o.rd_rob_idx;
 
             stations[open_station].rs1_ready <= 1'b0;
             stations[open_station].rs2_ready <= 1'b0;
@@ -138,12 +144,14 @@ import rv32i_types::*;
     end
 
     always_comb begin
-        stations[0].valid = 1'b0;
-        stations[1].valid = 1'b0;
-        if (stations[0].rs1_ready && stations[0].rs2_ready) begin
-            stations[0].valid = 1'b1;
+        // stations[0].valid = 1'b0;
+        // stations[1].valid = 1'b0;
+        if(rst)
+            next_execute = '0;
+        else if (stations[0].valid && stations[0].rs1_ready && stations[0].rs2_ready) begin
             next_execute = stations[0];
         end
+        else next_execute = '0;
     end
     
 endmodule

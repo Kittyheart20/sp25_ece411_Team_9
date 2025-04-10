@@ -11,10 +11,11 @@ import rv32i_types::*;
     input id_dis_stage_reg_t dispatch_struct_in,
     //input   logic           new_entry,
     // Writeback
-    input   logic   [31:0]  rd_data,
-    input   logic   [4:0]   rd_wb_addr,
+    input cdb               cdbus,
+    //input logic   [31:0]    rd_data,
+    input logic   [4:0]     rd_wb_addr,
     input logic [ROB_IDX_WIDTH-1:0] rd_rob_idx,
-    input logic regf_we,
+    input logic             regf_we,
     //input   logic           free_entry,
 
     // Read logic
@@ -30,9 +31,9 @@ import rv32i_types::*;
     logic                     ready   [32];
     logic [ROB_IDX_WIDTH-1:0] rob_idx [32];
 
-    logic regf_we;
+    //logic curr_regf_we;
     logic   [4:0]   rs1_addr, rs2_addr, rd_wb_addr;
-    assign regf_we = '0;//dispatch_struct_in.regf_we;
+    //assign regf_we = '0;//dispatch_struct_in.regf_we;
     assign rs1_addr = dispatch_struct_in.rs1_addr;
     assign rs2_addr = dispatch_struct_in.rs2_addr;
     assign rd_addr = dispatch_struct_in.rd_addr;
@@ -49,19 +50,22 @@ import rv32i_types::*;
                 // Have everything start empty
             end
         
-        end else if (regf_we && (rd_wb_addr != 5'd0) && (rob_idx[rd_wb_addr] == rd_rob_idx)) begin       // Filling in rd data
-            data[rd_wb_addr] <= rd_data;
-            ready[rd_wb_addr] <= 1'b1;
-
-        end else if (dispatch_struct_in.valid) begin           // Creating a new entry   
-            rob_idx[rd_addr] <= rd_rob_idx;
-            //tags[rd_wb_addr] <= tail; 
-            //renamed[rd_wb_addr] <= 1'b1;
-            ready[rd_addr] <= 1'b0;
-
-        // end else if (free_entry) begin
-        //     // is this needed?
         end
+        
+        if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data
+            data[cdbus.rd_addr] <= cdbus.data;
+            ready[cdbus.rd_addr] <= 1'b1;
+
+        end 
+        
+        if (dispatch_struct_in.valid) begin           // Creating a new entry   
+            rob_idx[rd_addr] <= rd_rob_idx;
+            ready[rd_addr] <= 1'b0;
+        end
+
+        // else if (free_entry) begin
+            // is this needed?
+        // end
     end
 
     // always_ff @(posedge clk) begin      // handles rs1 & rs2
