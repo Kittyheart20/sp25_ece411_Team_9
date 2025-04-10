@@ -169,7 +169,7 @@ import rv32i_types::*;
         // ARF
         .clk        (clk),
         .rst        (rst),
-        .dispatch_struct_in (dispatch_struct_in),
+        .dispatch_struct_in (decode_struct_out),    // this should output correct data by the time rsv receives new dispatch_struct_in
         // .rd_data    (cdbus.data),
         // .rd_wb_addr(cdbus.rd_addr),
         // .rd_rob_idx(cdbus.rob_idx),
