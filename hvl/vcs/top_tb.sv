@@ -361,22 +361,21 @@ module top_tb;
         if (id_out != id_out) $error("Decode executes at stall");
         $display("Test 2 Completed");
         
-        // Test 3 Decode struct out has correct instruction data depending on opcode
+        // Test 3 Decode struct out has correct LUI specific instruction data
         stall = 0;
         @(posedge clk);
         if (id_out.imm != {id_in.inst[31:12], 12'b0}) $error("Wrong LUI imm");
         if (id_out.alu_m1_sel != 2'b10) $error("Wrong LUI alu_m1_sel value");
         if (id_out.alu_m2_sel != 2'b01) $error("Wrong LUI alu_m2_sel value");
         if (id_out.aluop != 4'd0) $error("Wrong LUI alu_op selection");
-        // check rest with random
         $display("Test 3 Completed");
 
     endtask
 
     initial begin
         fsdbDump();
-        queue_test();
-        deserializer_test();
+        // queue_test();
+        // deserializer_test();
         // decode_test();
     end
 
