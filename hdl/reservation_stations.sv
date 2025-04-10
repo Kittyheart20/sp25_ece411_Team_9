@@ -9,7 +9,7 @@ import rv32i_types::*;
     input  logic        we,         // write enable
     // New Entry Input
     input  id_dis_stage_reg_t dispatch_struct_in,
-    input  rob_entry_t rob_entry_o,
+    input  logic [4:0]  current_rd_rob_idx,
     input  [31:0]  new_rs1_paddr,
     input  [31:0]  new_rs2_paddr,
     input  [31:0]  new_rd_paddr,
@@ -78,7 +78,7 @@ import rv32i_types::*;
 
             stations[open_station].rs1_rob_idx <= dispatch_struct_in.rs1_rob_idx;
             stations[open_station].rs2_rob_idx <= dispatch_struct_in.rs2_rob_idx;
-            stations[open_station].rd_rob_idx <= rob_entry_o.rd_rob_idx;
+            stations[open_station].rd_rob_idx <= current_rd_rob_idx;
 
             stations[open_station].rs1_ready <= 1'b0;
             stations[open_station].rs2_ready <= 1'b0;
@@ -127,6 +127,12 @@ import rv32i_types::*;
                 stations[1].rs2_data <= cdbus.data; 
                 stations[1].rs2_ready <= 1'b1; 
             end
+
+            if(cdbus.rob_idx == stations[0].rd_rob_idx) begin
+                stations[0].status <= COMPLETE;
+            end else if(cdbus.rob_idx == stations[1].rd_rob_idx) begin
+                stations[1].status <= COMPLETE;
+            end
         end
     end
 
@@ -134,9 +140,9 @@ import rv32i_types::*;
         if((stations[0].status == IDLE) || (stations[0].status == COMPLETE)) begin
             open_station = 0;
             integer_alu_available = 1;
-        end else if((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
-            open_station = 1;
-            integer_alu_available = 1;
+        // end else if((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
+        //     open_station = 1;
+        //     integer_alu_available = 1;
         end else begin
             open_station = '0;
             integer_alu_available = 0;

@@ -35,6 +35,7 @@ import rv32i_types::*;
     reservation_station_t next_execute;
     to_writeback_t   execute_output;
     to_writeback_t   next_writeback; 
+    to_commit_t      next_commit;
 
     logic [31:0] rs1_data, rs2_data;
     logic current_rd_rob_idx;
@@ -167,7 +168,7 @@ import rv32i_types::*;
         .rst        (rst),
         .dispatch_struct_in (decode_struct_out),    // this should output correct data by the t1me rsv receives new dispatch_struct_in
         .cdbus(cdbus),
-        .regf_we(execute_output.regf_we),
+        //.regf_we(execute_output.regf_we),
         // RAT
         //.new_entry  (rob_enqueue_i),
         .rd_rob_idx (rob_tail_addr),
@@ -200,14 +201,15 @@ import rv32i_types::*;
     rob rob_inst (
         .clk        (clk),
         .rst        (rst),
-        .rob_addr   (rob_addr),
-        .dispatch_struct_in(dispatch_struct_in),
+        .rob_addr   (next_writeback.rd_rob_idx),
+        .dispatch_struct_in(decode_struct_out),
         //.rob_entry_i  (rob_entry_i),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rob_entry_o  (rob_entry_o),
         .enqueue_i  (decode_struct_out.valid),
         .update_i   (next_writeback.valid),     // 1 at writeback
         .dequeue_i  (1'b0), // from commit
+        .cdbus      (cdbus),
         .head_addr  (rob_head_addr),
         .tail_addr  (rob_tail_addr)
     );
@@ -219,7 +221,7 @@ import rv32i_types::*;
         .rst(rst),
         .we(/*dispatch_struct_in.valid*/rs_we),
         .dispatch_struct_in(dispatch_struct_in),
-        .rob_entry_o(rob_entry_o),
+        .current_rd_rob_idx(current_rd_rob_idx),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
         .rs1_ready(ready[rs1_dis_idx]),
         .rs2_data_in(/*rsv_rs2_data_in*/data[rs2_dis_idx]),
@@ -238,19 +240,6 @@ import rv32i_types::*;
         .next_execute(next_execute),
         .execute_output(execute_output)
     );
-
-    // dispatch dispatch_stage (
-    //     .clk(clk),
-    //     .rst(rst),
-    //     .dispatch_struct_in(dispatch_struct_in),
-    //     .rs1_data(rsv_rs1_data_in),
-    //     .rs2_data(rsv_rs2_data_in),
-    //     .rs1_ready(rs1_ready),
-    //     .rs2_ready(rs2_ready),        
-    //     .integer_alu_available(integer_alu_available),
-    //     .station_assignment(station_assignment)
-    // );
-
 
     logic bmem_flag;
     always_ff @(posedge clk) begin : fetch
@@ -320,10 +309,8 @@ import rv32i_types::*;
         end
     end
 
-    always_comb begin : set_up_decode_in
-
-    end
-
+    // assign dequeue_i = (!empty_o && !rst && !stall); 
+    
     always_ff @(posedge clk) begin
         if(rst) begin
         dequeue_i <= 0; 
@@ -357,15 +344,25 @@ import rv32i_types::*;
             dispatch_struct_in <= '0;
             next_execute <= '0;
             next_writeback <= '0;
+            next_commit <= '0;
         end
         else begin
             dispatch_struct_in <= decode_struct_out;
             next_execute <= dispatch_struct_out;
             next_writeback <= execute_output;
+
+            // Commit stage
+            next_commit.valid <= next_writeback.valid;
+            next_commit.pc <= next_writeback.pc;
+            next_commit.regf_we <= next_writeback.regf_we;
+            next_commit.rd_addr <= next_writeback.rd_addr;
+            next_commit.rd_rob_idx <= next_writeback.rd_rob_idx;
+            next_commit.rd_data <= next_writeback.rd_data;
         end
     end
 
     always_comb begin : update_rs_we_cdbus
+        cdbus = '0;
         if (rst || stall) begin
             rs_we = 1'b0;
             cdbus = '0;
@@ -377,7 +374,13 @@ import rv32i_types::*;
             cdbus.rd_addr = next_writeback.rd_addr;
             cdbus.rob_idx = next_writeback.rd_rob_idx;
             cdbus.valid = next_writeback.valid;
-        end else cdbus = '0;
+        end 
+        if (next_commit.valid) begin
+            cdbus.commit_data = next_commit.rd_data;
+            cdbus.commit_rd_addr = next_commit.rd_addr;
+            cdbus.commit_rob_idx = next_commit.rd_rob_idx;
+            cdbus.regf_we = next_commit.regf_we;
+        end
     end
 
     always_comb begin : update_stall

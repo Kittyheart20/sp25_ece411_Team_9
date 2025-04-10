@@ -15,7 +15,7 @@ import rv32i_types::*;
     //input logic   [31:0]    rd_data,
     input logic   [4:0]     rd_wb_addr,
     input logic [ROB_IDX_WIDTH-1:0] rd_rob_idx,
-    input logic             regf_we,
+    //input logic             regf_we,
     //input   logic           free_entry,
 
     // Read logic
@@ -53,11 +53,9 @@ import rv32i_types::*;
         end
         
       //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data
-        if (cdbus.valid && (cdbus.rd_addr != 5'd0)) begin       // Filling in rd data
-
-            data[cdbus.rd_addr] <= cdbus.data;
+        if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
+            data[cdbus.rd_addr] <= cdbus.commit_data;
             ready[cdbus.rd_addr] <= 1'b1;
-
         end 
         
         if (dispatch_struct_in.valid) begin           // Creating a new entry   

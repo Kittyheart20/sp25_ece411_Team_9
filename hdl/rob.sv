@@ -31,7 +31,7 @@ import rv32i_types::*;
     assign empty_o = (count == '0);
     assign full_o = (count == DEPTH);
     assign rob_entry_o = rob_table[head];
-    assign current_rd_rob_idx = tail;
+    assign current_rd_rob_idx = tail_addr;
 
     always_comb begin
         //rob_entry_i = dispatch_struct_in;
@@ -42,8 +42,7 @@ import rv32i_types::*;
         rob_entry_i.rd_rob_idx = tail; //dispatch_struct_in.rd_rob_idx;
         //rob_entry_i.rd_data = 'x;
     end
-
-   always_ff @(posedge clk)  begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
+   always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst) begin
             head <= '0;
             tail <= '0;
@@ -53,8 +52,8 @@ import rv32i_types::*;
                 rob_table[i].status = empty;
             end
         end
-        else if (dispatch_struct_in.valid) begin
-
+        //else if (dispatch_struct_in.valid) begin
+        else begin
             // Check if rd is being written back to & update it
             for (integer unsigned i = 0; i < DEPTH; i++) begin
                 if (cdbus.valid && (rob_table[i].rd_addr == cdbus.rd_addr) && (rob_table[i].rd_rob_idx == cdbus.rob_idx)) begin
@@ -67,7 +66,7 @@ import rv32i_types::*;
             // set v=1, status = wait
             // fill in type, rd_data, and br_pred if necessary
             // tail ++    
-            if (enqueue_i && (!full_o || dequeue_i)) begin
+            if (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i)) begin
                 rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
                 tail <= (tail == '1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
@@ -75,10 +74,10 @@ import rv32i_types::*;
             
             // Writeback: update == 1'b1
             // set status=done, update rd_data with write result
-            if (update_i) begin
-                rob_table[rob_addr].status <= done;
-                rob_table[rob_addr].rd_data <= rob_entry_i.rd_data;
-            end
+            // if (update_i) begin
+            //     rob_table[rob_addr].status <= done;
+            //     rob_table[rob_addr].rd_data <= rob_entry_i.rd_data;
+            // end
             
             // Commmit: dequeue == 1'b1
             // output head rd_data to update regfile
@@ -96,11 +95,9 @@ import rv32i_types::*;
                 2'b01: count <= count - 1'b1; 
                 default: count <= count;      
             endcase
+        //end
         end
-        else begin
-            
-        end
-    end
+   end
 
     assign head_addr = head;
     //assign tail_addr = tail;

@@ -13,7 +13,7 @@ package rv32i_types;
     } alu_m2_sel_t;
         
     typedef enum logic [1:0] { 
-        empty = 1'b00,
+        empty = 2'b00,
         rob_wait = 2'b01,
         done = 2'b10
     } status_t;
@@ -116,6 +116,15 @@ package rv32i_types;
         logic   [31:0]  rd_data;    
     } to_writeback_t;
 
+        typedef struct packed {
+        logic           valid;
+        logic   [31:0]  pc;
+        logic           regf_we;
+        logic   [4:0]   rd_addr;
+        logic   [4:0]   rd_rob_idx;
+        logic   [31:0]  rd_data;    
+        } to_commit_t;
+
 
     typedef struct packed {
         logic           valid;
@@ -205,6 +214,10 @@ package rv32i_types;
         logic [31:0] data; 
         logic [4:0]  rob_idx;
         logic [4:0]  rd_addr;  
+        logic        regf_we;   
+        logic [31:0] commit_data; 
+        logic [4:0]  commit_rob_idx;
+        logic [4:0]  commit_rd_addr; 
     } cdb;
 
 endpackage : rv32i_types
