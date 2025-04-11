@@ -38,7 +38,9 @@ import rv32i_types::*;
     logic [31:0]                paddr [DEPTH];
     logic [31:0] open_station;
     reservation_station_t stations[5];
-    // We probably want a stack here indicating what entries are free
+    logic [31:0] debug;
+
+
     // always_ff @(posedge clk or posedge rst) begin
     //     if (rst) begin
     //         stations[0].status = IDLE;
@@ -59,10 +61,12 @@ import rv32i_types::*;
             stations[3].valid <= 1'b0;
             stations[4].status <= IDLE;
             stations[4].valid <= 1'b0;
+            debug <= '0;
         end
         else if (dispatch_struct_in.valid) begin 
             stations[open_station].valid <= dispatch_struct_in.valid;
             stations[open_station].pc <= dispatch_struct_in.pc;
+            stations[open_station].status <= BUSY;
             stations[open_station].rd_addr <= dispatch_struct_in.rd_addr;
             stations[open_station].rs1_addr <= dispatch_struct_in.rs1_addr;
             stations[open_station].rs2_addr <= dispatch_struct_in.rs2_addr;
@@ -107,8 +111,6 @@ import rv32i_types::*;
             // end
             // else 
             //     stations[open_station].rs2_ready <= 1'b0;
-
-            stations[open_station].status <= BUSY;
         end
 
         if(cdbus.valid) begin
@@ -130,6 +132,11 @@ import rv32i_types::*;
 
             if(cdbus.rob_idx == stations[0].rd_rob_idx) begin
                 stations[0].status <= COMPLETE;
+                stations[0].rs1_ready <= 0;
+                stations[0].rs2_ready <= 0;
+                stations[0].valid <= 0;
+                
+                debug <= debug + 1;
             end else if(cdbus.rob_idx == stations[1].rd_rob_idx) begin
                 stations[1].status <= COMPLETE;
             end
@@ -140,14 +147,27 @@ import rv32i_types::*;
         if((stations[0].status == IDLE) || (stations[0].status == COMPLETE)) begin
             open_station = 0;
             integer_alu_available = 1;
-        // end else if((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
-        //     open_station = 1;
-        //     integer_alu_available = 1;
         end else begin
-            open_station = '0;
+           open_station = '0;
             integer_alu_available = 0;
         end
     end
+
+    //  always_ff @(posedge clk) begin
+    //     if (rst) begin
+    //         open_station <= '0;
+    //     //    integer_alu_available <= 0;
+    //     end else if((stations[0].status == IDLE) || (stations[0].status == COMPLETE)) begin
+    //         open_station <= 0;
+    //     //    integer_alu_available <= 1;
+    //     // end else if((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
+    //     //     open_station = 1;
+    //     //     integer_alu_available = 1;
+    //     end else begin
+    //         open_station <= '0;
+    //    //     integer_alu_available <= 0;
+    //     end
+    //  end
 
     always_comb begin
         // stations[0].valid = 1'b0;

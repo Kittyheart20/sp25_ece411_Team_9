@@ -27,110 +27,110 @@ import rv32i_types::*;
     assign rd_addr = inst[11:7];
 
     always_comb begin
-        decode_struct_out = '0;
-        decode_struct_out.valid = 1'b0;
-        if (!stall) begin
-            decode_struct_out.valid = decode_struct_in.valid;
-            decode_struct_out.inst = decode_struct_in.inst;
-            decode_struct_out.pc = decode_struct_in.pc;
-            decode_struct_out.order = decode_struct_in.order;
-            decode_struct_out.opcode = opcode;
-            decode_struct_out.funct3 = funct3;
-            decode_struct_out.funct7 = funct7;
-            decode_struct_out.rs1_addr = rs1_addr;
-            decode_struct_out.rs2_addr = rs2_addr;
-            decode_struct_out.rd_addr = rd_addr;
-            // decode_struct_out.rd_rob_idx = rd_rob_idx;
-            // decode_struct_out.rs1_rob_idx = rs1_rob_idx;
-            // decode_struct_out.rs2_rob_idx = rs2_rob_idx;
-            
-            unique case (opcode)
-                op_b_lui  : begin
-                    decode_struct_out.imm = u_imm;
-					decode_struct_out.regf_we = 1'b1;          // Control Signals
-					decode_struct_out.alu_m1_sel = no_out;
-					decode_struct_out.alu_m2_sel = imm_out;
-					decode_struct_out.aluop = alu_op_add;
-                end
-                op_b_imm  : begin
-                    // decode_struct_out.rs1_data = rs1_data;  
-                    decode_struct_out.imm = i_imm;
-					decode_struct_out.regf_we = 1'b1;          // Control Signals
-					decode_struct_out.alu_m1_sel = rs1_out;
-					decode_struct_out.alu_m2_sel = imm_out;
-                    unique case (funct3)
-						arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
-						arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;
-						arith_f3_sr: begin
-							unique case (funct7)
-								base: decode_struct_out.aluop = alu_op_srl;
-								variant: decode_struct_out.aluop = alu_op_sra;
-								default: decode_struct_out.aluop = alu_op_srl;
-							endcase
-					    end
-						default: decode_struct_out.aluop = alu_ops'(funct3);
-                    endcase
-                end
-                op_b_reg  : begin
-                    // decode_struct_out.rs1_data = rs1_data;  
-                    // decode_struct_out.rs2_data = rs2_data;  
-					decode_struct_out.regf_we = 1'b1;          // Control Signals
-					decode_struct_out.alu_m1_sel = rs1_out;
-					decode_struct_out.alu_m2_sel = rs2_out;
-                    unique case (funct3)
-						arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
-						arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;
-						arith_f3_sr: begin
-							unique case (funct7)
-								base: decode_struct_out.aluop = alu_op_srl;
-								variant: decode_struct_out.aluop = alu_op_sra;
-								default: decode_struct_out.aluop = alu_op_none;
-							endcase
-						end
-						arith_f3_add: begin
-							unique case (funct7)
-								base: decode_struct_out.aluop = alu_op_add;
-								variant: decode_struct_out.aluop = alu_op_sub;
-								default: decode_struct_out.aluop = alu_op_none;
-							endcase
-						end
-						default: decode_struct_out.aluop = alu_ops'(funct3);
-					endcase
-                end
-                // op_b_auipc: begin
-                //     decode_struct_out.imm = u_imm;
-                // end
-                // op_b_jal  : begin
-                //     decode_struct_out.imm = j_imm;
-                // end
-                // op_b_jalr : begin
-                //     decode_struct_out.rs1_addr = rs1_addr;
-                //     decode_struct_out.rs1_data = rs1_data;  
-                //     decode_struct_out.imm = i_imm;
-                // end
-                // op_b_br   : begin
-                //     decode_struct_out.rs1_addr = rs1_addr;
-                //     decode_struct_out.rs1_data = rs1_data;   
-                //     decode_struct_out.rs2_addr = rs2_addr;
-                //     decode_struct_out.rs2_data = rs2_data;    
-                //     decode_struct_out.imm = b_imm;
-                // end
-                // op_b_load : begin
-                //     decode_struct_out.rs1_addr = rs1_addr;
-                //     decode_struct_out.rs1_data = rs1_data;   
-                //     decode_struct_out.imm = i_imm;
-                //     decode_struct_out.rd_addr = rd_addr;
-                // end
-                // op_b_store: begin
-                //     decode_struct_out.rs1_addr = rs1_addr;
-                //     decode_struct_out.rs1_data = rs1_data;  
-                //     decode_struct_out.rs2_addr = rs2_addr;
-                //     decode_struct_out.rs2_data = rs2_data;   
-                //     decode_struct_out.imm = s_imm;
-                // end
-                default   : ;
-            endcase
-        end
+        // decode_struct_out = '0;
+        // decode_struct_out.valid = 1'b0;
+        // if (!stall) begin
+        decode_struct_out.valid = decode_struct_in.valid;
+        decode_struct_out.inst = decode_struct_in.inst;
+        decode_struct_out.pc = decode_struct_in.pc;
+        decode_struct_out.order = decode_struct_in.order;
+        decode_struct_out.opcode = opcode;
+        decode_struct_out.funct3 = funct3;
+        decode_struct_out.funct7 = funct7;
+        decode_struct_out.rs1_addr = rs1_addr;
+        decode_struct_out.rs2_addr = rs2_addr;
+        decode_struct_out.rd_addr = rd_addr;
+        // decode_struct_out.rd_rob_idx = rd_rob_idx;
+        // decode_struct_out.rs1_rob_idx = rs1_rob_idx;
+        // decode_struct_out.rs2_rob_idx = rs2_rob_idx;
+        
+        unique case (opcode)
+            op_b_lui  : begin
+                decode_struct_out.imm = u_imm;
+                decode_struct_out.regf_we = 1'b1;          // Control Signals
+                decode_struct_out.alu_m1_sel = no_out;
+                decode_struct_out.alu_m2_sel = imm_out;
+                decode_struct_out.aluop = alu_op_add;
+            end
+            op_b_imm  : begin
+                // decode_struct_out.rs1_data = rs1_data;  
+                decode_struct_out.imm = i_imm;
+                decode_struct_out.regf_we = 1'b1;          // Control Signals
+                decode_struct_out.alu_m1_sel = rs1_out;
+                decode_struct_out.alu_m2_sel = imm_out;
+                unique case (funct3)
+                    arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
+                    arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;
+                    arith_f3_sr: begin
+                        unique case (funct7)
+                            base: decode_struct_out.aluop = alu_op_srl;
+                            variant: decode_struct_out.aluop = alu_op_sra;
+                            default: decode_struct_out.aluop = alu_op_srl;
+                        endcase
+                    end
+                    default: decode_struct_out.aluop = alu_ops'(funct3);
+                endcase
+            end
+            op_b_reg  : begin
+                // decode_struct_out.rs1_data = rs1_data;  
+                // decode_struct_out.rs2_data = rs2_data;  
+                decode_struct_out.regf_we = 1'b1;          // Control Signals
+                decode_struct_out.alu_m1_sel = rs1_out;
+                decode_struct_out.alu_m2_sel = rs2_out;
+                unique case (funct3)
+                    arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
+                    arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;
+                    arith_f3_sr: begin
+                        unique case (funct7)
+                            base: decode_struct_out.aluop = alu_op_srl;
+                            variant: decode_struct_out.aluop = alu_op_sra;
+                            default: decode_struct_out.aluop = alu_op_none;
+                        endcase
+                    end
+                    arith_f3_add: begin
+                        unique case (funct7)
+                            base: decode_struct_out.aluop = alu_op_add;
+                            variant: decode_struct_out.aluop = alu_op_sub;
+                            default: decode_struct_out.aluop = alu_op_none;
+                        endcase
+                    end
+                    default: decode_struct_out.aluop = alu_ops'(funct3);
+                endcase
+            end
+            // op_b_auipc: begin
+            //     decode_struct_out.imm = u_imm;
+            // end
+            // op_b_jal  : begin
+            //     decode_struct_out.imm = j_imm;
+            // end
+            // op_b_jalr : begin
+            //     decode_struct_out.rs1_addr = rs1_addr;
+            //     decode_struct_out.rs1_data = rs1_data;  
+            //     decode_struct_out.imm = i_imm;
+            // end
+            // op_b_br   : begin
+            //     decode_struct_out.rs1_addr = rs1_addr;
+            //     decode_struct_out.rs1_data = rs1_data;   
+            //     decode_struct_out.rs2_addr = rs2_addr;
+            //     decode_struct_out.rs2_data = rs2_data;    
+            //     decode_struct_out.imm = b_imm;
+            // end
+            // op_b_load : begin
+            //     decode_struct_out.rs1_addr = rs1_addr;
+            //     decode_struct_out.rs1_data = rs1_data;   
+            //     decode_struct_out.imm = i_imm;
+            //     decode_struct_out.rd_addr = rd_addr;
+            // end
+            // op_b_store: begin
+            //     decode_struct_out.rs1_addr = rs1_addr;
+            //     decode_struct_out.rs1_data = rs1_data;  
+            //     decode_struct_out.rs2_addr = rs2_addr;
+            //     decode_struct_out.rs2_data = rs2_data;   
+            //     decode_struct_out.imm = s_imm;
+            // end
+            default   : ;
+        endcase
+        // end
     end
 
 endmodule

@@ -35,7 +35,7 @@ import rv32i_types::*;
     reservation_station_t next_execute;
     to_writeback_t   execute_output;
     to_writeback_t   next_writeback; 
-    to_commit_t      next_commit;
+    // to_commit_t      next_commit;
 
     logic [31:0] rs1_data, rs2_data;
     logic current_rd_rob_idx;
@@ -208,7 +208,7 @@ import rv32i_types::*;
         .rob_entry_o  (rob_entry_o),
         .enqueue_i  (decode_struct_out.valid),
         .update_i   (next_writeback.valid),     // 1 at writeback
-        .dequeue_i  (1'b0), // from commit
+        .dequeue_i  (cdbus.regf_we), // from commit
         .cdbus      (cdbus),
         .head_addr  (rob_head_addr),
         .tail_addr  (rob_tail_addr)
@@ -262,7 +262,7 @@ import rv32i_types::*;
                 ufp_rmask <= '0;
                 reached_loop <= '1;
                 data_i <= {order, pc, last_instr_data[32*pc[4:2] +: 32]};
-                if (!full_o) begin
+                if (!full_o && !stall) begin
                     enqueue_i <= 1'b1;
                     pc <= pc_next;
                     order <= order + 'd1;
@@ -309,22 +309,20 @@ import rv32i_types::*;
         end
     end
 
-    // assign dequeue_i = (!empty_o && !rst && !stall); 
-    
-    always_ff @(posedge clk) begin
-        if(rst) begin
-        dequeue_i <= 0; 
-        decode_struct_in.inst <= 0;
-        decode_struct_in.pc <= 0;
-        decode_struct_in.order <= 0;
-        decode_struct_in.valid <= 0;
+
+    always_comb begin : prep_decode_in
+        dequeue_i = (!empty_o && !rst && !stall); 
+
+        if (rst) begin
+            decode_struct_in = '0;
         end else begin
-        if(!empty_o) begin
-            dequeue_i <= (!empty_o && !rst && !stall); 
-            decode_struct_in.inst <= data_o[31:0];
-            decode_struct_in.pc <= data_o[63:32];
-            decode_struct_in.order <= data_o[127:64];
-            decode_struct_in.valid <= 1'b1;
+            if (dequeue_i) begin
+                decode_struct_in.inst = data_o[31:0];
+                decode_struct_in.pc = data_o[63:32];
+                decode_struct_in.order = data_o[127:64];
+                decode_struct_in.valid = 1'b1;
+            end else begin
+                decode_struct_in.valid = 1'b0;
             end
         end
     end
@@ -344,20 +342,11 @@ import rv32i_types::*;
             dispatch_struct_in <= '0;
             next_execute <= '0;
             next_writeback <= '0;
-            next_commit <= '0;
         end
         else begin
             dispatch_struct_in <= decode_struct_out;
             next_execute <= dispatch_struct_out;
             next_writeback <= execute_output;
-
-            // Commit stage
-            next_commit.valid <= next_writeback.valid;
-            next_commit.pc <= next_writeback.pc;
-            next_commit.regf_we <= next_writeback.regf_we;
-            next_commit.rd_addr <= next_writeback.rd_addr;
-            next_commit.rd_rob_idx <= next_writeback.rd_rob_idx;
-            next_commit.rd_data <= next_writeback.rd_data;
         end
     end
 
@@ -368,25 +357,27 @@ import rv32i_types::*;
             cdbus = '0;
         end else if (decode_struct_out.valid == 1'b1) 
             rs_we = 1'b1;
-        else rs_we = 1'b0;
+        else 
+            rs_we = 1'b0;
+
         if(next_writeback.valid) begin
             cdbus.data = next_writeback.rd_data;
             cdbus.rd_addr = next_writeback.rd_addr;
             cdbus.rob_idx = next_writeback.rd_rob_idx;
             cdbus.valid = next_writeback.valid;
         end 
-        if (next_commit.valid) begin
-            cdbus.commit_data = next_commit.rd_data;
-            cdbus.commit_rd_addr = next_commit.rd_addr;
-            cdbus.commit_rob_idx = next_commit.rd_rob_idx;
-            cdbus.regf_we = next_commit.regf_we;
+        if (rob_entry_o.valid && rob_entry_o.status == done) begin
+            cdbus.commit_data = rob_entry_o.rd_data;
+            cdbus.commit_rd_addr = rob_entry_o.rd_addr;
+            cdbus.commit_rob_idx = rob_entry_o.rd_rob_idx;
+            cdbus.regf_we = 1'b1;
         end
     end
 
     always_comb begin : update_stall
         stall = 1'b0;
         if (empty_o || full_o) stall = 1'b1;
-        else if (!integer_alu_available) stall = 1'b1;
+        else if (!integer_alu_available) stall = 1'b1;  // might need diff logic for multiple execution units?
     end
     
 
@@ -403,7 +394,8 @@ module DW02_mult_inst( inst_A, inst_B, inst_TC, PRODUCT_inst );
   input [B_width-1 : 0] inst_B;
   input inst_TC;
   output [A_width+B_width-1 : 0] PRODUCT_inst;
-
+// inst_A = 30;
+// inst_B = 2;
   // Instance of DW02_mult
   DW02_mult #(A_width, B_width)
     U1 ( .A(inst_A), .B(inst_B), .TC(inst_TC), .PRODUCT(PRODUCT_inst) );

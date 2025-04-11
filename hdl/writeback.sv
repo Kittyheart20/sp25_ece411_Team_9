@@ -1,4 +1,4 @@
-// module writeback // I this this module is unneeded. We can do everything through the bus
+// module writeback // I this this module is unneeded. We can do everything through the
 // import rv32i_types::*;
 // (
 //     input  logic        clk,

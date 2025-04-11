@@ -52,7 +52,7 @@ import rv32i_types::*;
         
         end
         
-      //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data
+      //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data // we should check for commit in writeback?
         if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
             data[cdbus.rd_addr] <= cdbus.commit_data;
             ready[cdbus.rd_addr] <= 1'b1;

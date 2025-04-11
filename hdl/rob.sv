@@ -60,13 +60,16 @@ import rv32i_types::*;
                     rob_table[i].status <= done;
                     rob_table[i].rd_data <= cdbus.data;
                 end
+                if (rob_table[i].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
+                    rob_table[i].status <= empty;
+                end
             end
 
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
             // fill in type, rd_data, and br_pred if necessary
             // tail ++    
-            if (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i)) begin
+            if (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i) && (rob_table[tail].status == empty)) begin
                 rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
                 tail <= (tail == '1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
@@ -95,6 +98,7 @@ import rv32i_types::*;
                 2'b01: count <= count - 1'b1; 
                 default: count <= count;      
             endcase
+
         //end
         end
    end
