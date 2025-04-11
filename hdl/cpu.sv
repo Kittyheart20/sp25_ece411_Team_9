@@ -395,17 +395,18 @@ import rv32i_types::*;
         end
     end
 
+    logic failure;
+    assign failure = (!integer_alu_available) != (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none));
     always_comb begin : update_stall
         stall = 1'b0;
         if (empty_o || full_o) stall = 1'b1;
-        else if ( (!integer_alu_available) 
-                     || (!mul_alu_available  ) 
-        )  begin
-                stall = 1'b1;    
-            end
+        // else if ( (!integer_alu_available && dispatch_struct_in.op_type == alu) 
+        //              || (!mul_alu_available &&  dispatch_struct_in.op_type == mul) )  begin
+        //         stall = 1'b1;    
+        //     end
                 
-        // else if (!integer_alu_available )
-        //     stall = 1'b1;    
+        else if (!integer_alu_available )
+            stall = 1'b1;    
 
         end
     

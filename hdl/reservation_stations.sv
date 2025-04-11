@@ -78,6 +78,7 @@ import rv32i_types::*;
             stations[0].alu_m2_sel <= dispatch_struct_in.alu_m2_sel;
             //stations[open_station].pc_sel <= dispatch_struct_in.pc_sel;
             stations[0].aluop <= dispatch_struct_in.aluop;
+            
             // stations[0].rs1_paddr <= new_rs1_paddr;
             // stations[0].rs2_paddr <= new_rs2_paddr;
             // stations[0].rd_paddr <= new_rd_paddr;
@@ -128,7 +129,7 @@ import rv32i_types::*;
             stations[1].alu_m1_sel <= dispatch_struct_in.alu_m1_sel;
             stations[1].alu_m2_sel <= dispatch_struct_in.alu_m2_sel;
             //stations[1].pc_sel <= dispatch_struct_in.pc_sel;
-            stations[1].aluop <= dispatch_struct_in.aluop;
+            stations[1].multop <= dispatch_struct_in.multop;
             // stations[1].rs1_paddr <= new_rs1_paddr;
             // stations[1].rs2_paddr <= new_rs2_paddr;
             // stations[1].rd_paddr <= new_rd_paddr;

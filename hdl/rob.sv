@@ -37,11 +37,12 @@ import rv32i_types::*;
         //rob_entry_i = dispatch_struct_in;
         rob_entry_i.valid = dispatch_struct_in.valid;
         rob_entry_i.status = rob_wait;
-        //rob_entry_i.op_type = ; maybe we should add in op_type to id_dis_stage_reg_t from decode stage
+        rob_entry_i.op_type = dispatch_struct_in.op_type;// maybe we should add in op_type to id_dis_stage_reg_t from decode stage
         rob_entry_i.rd_addr = dispatch_struct_in.rd_addr;
         rob_entry_i.rd_rob_idx = tail; //dispatch_struct_in.rd_rob_idx;
         //rob_entry_i.rd_data = 'x;
     end
+    logic rob_update_mul; logic rob_update_alu;
    always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst) begin
             head <= '0;
