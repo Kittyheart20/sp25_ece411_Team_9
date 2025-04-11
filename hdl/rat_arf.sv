@@ -59,8 +59,9 @@ import rv32i_types::*;
             ready[cdbus.rd_addr] <= 1'b1;
         end 
         
-        if (dispatch_struct_in.valid) begin           // Creating a new entry   
+        if (dispatch_struct_in.valid && (rd_addr != 5'd0)) begin           // Creating a new entry   
             rob_idx[rd_addr] <= rd_rob_idx;
+            // 
             ready[rd_addr] <= 1'b0;
         end
 

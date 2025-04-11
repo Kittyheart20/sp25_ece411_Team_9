@@ -29,7 +29,7 @@ nop
 
 # this should take many cycles
 # if this writes back to the ROB after the following instructions, you get credit for CP2
-mul x3, x1, x2
+# mul x3, x1, x2
 
 # these instructions should  resolve before the multiply
 add x4, x5, x6
