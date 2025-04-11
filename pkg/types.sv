@@ -104,11 +104,12 @@ package rv32i_types;
         alu_m2_sel_t    alu_m2_sel;
         //pc_sel_t        pc_sel;
         alu_ops         aluop;
+        mult_ops        multop;
 
-        logic [4:0]         rs1_rob_idx;
-        logic [4:0]         rs2_rob_idx;
-        logic [4:0]         rd_rob_idx;
-        status_rs_t        status;
+        logic [4:0]     rs1_rob_idx;
+        logic [4:0]     rs2_rob_idx;
+        logic [4:0]     rd_rob_idx;
+        status_rs_t     status;
     } reservation_station_t;
 
     typedef struct packed {
@@ -126,14 +127,14 @@ package rv32i_types;
         logic   [31:0]  rd_data;    
     } to_writeback_t;
 
-        typedef struct packed {
+    typedef struct packed {
         logic           valid;
         logic   [31:0]  pc;
         logic           regf_we;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rd_rob_idx;
         logic   [31:0]  rd_data;    
-        } to_commit_t;
+    } to_commit_t;
 
 
     typedef struct packed {
@@ -228,10 +229,18 @@ package rv32i_types;
     // } mem_ops;
     
     typedef struct packed {
-        logic        valid;   
-        logic [31:0] data; 
-        logic [4:0]  rob_idx;
-        logic [4:0]  rd_addr;  
+        // writeback 
+        logic        alu_valid;  
+        logic [31:0] alu_data; 
+        logic [4:0]  alu_rob_idx;
+        logic [4:0]  alu_rd_addr;  
+
+        logic        mul_valid;  
+        logic [31:0] mul_data; 
+        logic [4:0]  mul_rob_idx;
+        logic [4:0]  mul_rd_addr;  
+
+        // commit
         logic        regf_we;   
         logic [31:0] commit_data; 
         logic [4:0]  commit_rob_idx;

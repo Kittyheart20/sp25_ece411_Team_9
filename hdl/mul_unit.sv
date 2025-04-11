@@ -40,7 +40,7 @@ import rv32i_types::*;
     input  logic            clk,
     input  logic            rst,
     input  reservation_station_t next_execute,
-    output logic            ready,
+    // output logic            ready,
     output to_writeback_t   execute_output
 );
 
@@ -56,11 +56,11 @@ import rv32i_types::*;
     DW02_mult_inst #(32, 32) multiply (
         .inst_A(a_mul), .inst_B(b_mul), .inst_TC(signed_mode), .PRODUCT_inst(product_mul)
     );
-    DW_div_inst  #(32, 32, 0, 1) divide_unsigned(
+    DW_div_inst  #(32, 0, 1) divide_unsigned(
         .a(a_div_u), .b(b_div_u), 
         .quotient(quotient_u), .remainder(remainder_u), 
         .divide_by_0(div_by_0_u));
-    DW_div_inst  #(32, 32, 1, 1) divide_signed (
+    DW_div_inst  #(32, 1, 1) divide_signed (
         .a(a_div_s), .b(b_div_s), 
         .quotient(quotient_s), .remainder(remainder_s), 
         .divide_by_0(div_by_0_s));
@@ -68,7 +68,7 @@ import rv32i_types::*;
     logic [7:0] counter;
     // reservation_station_t prev_execute;
     
-    assign ready = (counter == 8'd100);
+    // assign ready = (counter == 8'd100);
 
     always_ff @(posedge clk ) begin
         if( rst) begin

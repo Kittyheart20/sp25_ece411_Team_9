@@ -4,7 +4,7 @@ import rv32i_types::*;
     input  logic            clk,
     input  logic            rst,
     input  reservation_station_t next_execute,
-    output logic            ready,
+    // output logic            ready,
     output to_writeback_t   execute_output
 );
 
@@ -114,16 +114,16 @@ import rv32i_types::*;
         end
     end
 
-    always_ff @(posedge clk) begin
-        ready = 1'b1;
-        /*if (rst)
-            ready = 1'b1;
-        else */if (execute_output.valid) begin
-            ready = 1'b0;
-            if (aluout != '0)
-                ready = 1'b1;
+    // always_ff @(posedge clk) begin
+    //     ready = 1'b1;
+    //     /*if (rst)
+    //         ready = 1'b1;
+    //     else */if (execute_output.valid) begin
+    //         ready = 1'b0;
+    //         if (aluout != '0)
+    //             ready = 1'b1;
 
-        end
-    end
+    //     end
+    // end
 
 endmodule

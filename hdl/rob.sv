@@ -3,7 +3,7 @@ import rv32i_types::*;
 (
     input logic clk,
     input logic rst,
-    input   logic [4:0] rob_addr,
+    // input   logic [4:0] rob_addr,
     input id_dis_stage_reg_t dispatch_struct_in,
     //input   rob_entry_t rob_entry_i,
     output logic [4:0] current_rd_rob_idx,
@@ -56,9 +56,13 @@ import rv32i_types::*;
         else begin
             // Check if rd is being written back to & update it
             for (integer unsigned i = 0; i < DEPTH; i++) begin
-                if (cdbus.valid && (rob_table[i].rd_addr == cdbus.rd_addr) && (rob_table[i].rd_rob_idx == cdbus.rob_idx)) begin
+                if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx)) begin
                     rob_table[i].status <= done;
-                    rob_table[i].rd_data <= cdbus.data;
+                    rob_table[i].rd_data <= cdbus.alu_data;
+                end                
+                if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx)) begin
+                    rob_table[i].status <= done;
+                    rob_table[i].rd_data <= cdbus.mul_data;
                 end
                 if (rob_table[i].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
                     rob_table[i].status <= empty;

@@ -28,14 +28,15 @@ import rv32i_types::*;
     logic   [4:0]   rob_idx [32];
 
     // Stage Registers
+    localparam NUM_FUNC_UNIT = 2;
+    
     if_id_stage_reg_t  decode_struct_in;
     id_dis_stage_reg_t decode_struct_out;
     id_dis_stage_reg_t dispatch_struct_in;
-    reservation_station_t dispatch_struct_out [2]; 
-    reservation_station_t next_execute [2];
-    to_writeback_t   execute_output;
-    to_writeback_t   next_writeback; 
-    // to_commit_t      next_commit;
+    reservation_station_t dispatch_struct_out [NUM_FUNC_UNIT]; 
+    reservation_station_t next_execute [NUM_FUNC_UNIT];
+    to_writeback_t   execute_output [NUM_FUNC_UNIT];
+    to_writeback_t   next_writeback [NUM_FUNC_UNIT]; 
 
     logic [31:0] rs1_data, rs2_data;
     logic [4:0] current_rd_rob_idx;
@@ -201,13 +202,13 @@ import rv32i_types::*;
     rob rob_inst (
         .clk        (clk),
         .rst        (rst),
-        .rob_addr   (next_writeback.rd_rob_idx),
+      //  .rob_addr   (next_writeback[0].rd_rob_idx)
         .dispatch_struct_in(decode_struct_out),
         //.rob_entry_i  (rob_entry_i),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rob_entry_o  (rob_entry_o),
         .enqueue_i  (decode_struct_out.valid),
-        .update_i   (next_writeback.valid),     // 1 at writeback
+    //    .update_i   (next_writeback.valid),     // 1 at writeback
         .dequeue_i  (cdbus.regf_we), // from commit
         .cdbus      (cdbus),
         .head_addr  (rob_head_addr),
@@ -236,11 +237,20 @@ import rv32i_types::*;
         .next_execute_mult_div(dispatch_struct_out[1])
     );
 
+    logic mul_ready;
+    
     alu_unit alu_inst (
         .clk(clk),
         .rst(rst),
         .next_execute(next_execute[0]),
-        .execute_output(execute_output)
+        .execute_output(execute_output[0])
+    );
+
+    mul_unit mul_inst (
+        .clk(clk),
+        .rst(rst),
+        .next_execute(next_execute[1]),
+        .execute_output(execute_output[1])
     );
 
     logic bmem_flag;
@@ -343,7 +353,7 @@ import rv32i_types::*;
         if (rst) begin
             dispatch_struct_in <= '0;
             next_execute <= '{default: '0};
-            next_writeback <= '0;
+            next_writeback <= '{default: '0};
         end
         else begin
             dispatch_struct_in <= decode_struct_out;
@@ -362,13 +372,21 @@ import rv32i_types::*;
         else 
             rs_we = 1'b0;
 
-        if (next_writeback.valid) begin
-            cdbus.data = next_writeback.rd_data;
-            cdbus.rd_addr = next_writeback.rd_addr;
-            cdbus.rob_idx = next_writeback.rd_rob_idx;
-            cdbus.valid = next_writeback.valid;
+        // broadcast writeback
+        if (next_writeback[0].valid) begin 
+            cdbus.alu_data = next_writeback[0].rd_data;
+            cdbus.alu_rd_addr = next_writeback[0].rd_addr;
+            cdbus.alu_rob_idx = next_writeback[0].rd_rob_idx;
+            cdbus.alu_valid = next_writeback[0].valid;
         end 
+        if (next_writeback[1].valid) begin 
+            cdbus.mul_data = next_writeback[1].rd_data;
+            cdbus.mul_rd_addr = next_writeback[1].rd_addr;
+            cdbus.mul_rob_idx = next_writeback[1].rd_rob_idx;
+            cdbus.mul_valid = next_writeback[1].valid;
+        end
 
+        // commit
         if (rob_entry_o.valid && rob_entry_o.status == done) begin
             cdbus.commit_data = rob_entry_o.rd_data;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;
@@ -380,8 +398,16 @@ import rv32i_types::*;
     always_comb begin : update_stall
         stall = 1'b0;
         if (empty_o || full_o) stall = 1'b1;
-        else if (!integer_alu_available) stall = 1'b1;  // might need diff logic for multiple execution units?
-    end
+        else if ( (!integer_alu_available) 
+                     || (!mul_alu_available  ) 
+        )  begin
+                stall = 1'b1;    
+            end
+                
+        // else if (!integer_alu_available )
+        //     stall = 1'b1;    
+
+        end
     
 
 endmodule : cpu

@@ -64,6 +64,7 @@ import rv32i_types::*;
             stations[3].valid <= 1'b0;
             stations[4].status <= IDLE;
             stations[4].valid <= 1'b0;
+
         end
         else if (dispatch_struct_in.valid && dispatch_struct_in.op_type == alu) begin 
             stations[0].valid <= dispatch_struct_in.valid;
@@ -167,29 +168,34 @@ import rv32i_types::*;
             stations[1].status <= BUSY;
         end
 
-        if(cdbus.valid) begin
-            if(stations[0].rs1_ready == 0 && stations[0].rs1_addr == cdbus.rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
-                stations[0].rs1_data <= cdbus.data;  
+        if(cdbus.alu_valid) begin
+            if(stations[0].rs1_ready == 0 && stations[0].rs1_addr == cdbus.alu_rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
+                stations[0].rs1_data <= cdbus.alu_data;  
                 stations[0].rs1_ready <= 1'b1;  
-            end else if(stations[0].rs2_ready == 0 && stations[0].rs2_addr == cdbus.rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
-                stations[0].rs2_data <= cdbus.data; 
+            end else if(stations[0].rs2_ready == 0 && stations[0].rs2_addr == cdbus.alu_rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
+                stations[0].rs2_data <= cdbus.alu_data; 
                 stations[0].rs2_ready <= 1'b1; 
             end
 
-            if(stations[1].rs1_ready == 0 && stations[1].rs1_addr == cdbus.rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
-                stations[1].rs1_data <= cdbus.data;  
+            if(cdbus.alu_rob_idx == stations[0].rd_rob_idx) begin
+                stations[0].status <= COMPLETE;
+            end 
+        end
+
+        if (cdbus.mul_valid) begin
+            if(stations[1].rs1_ready == 0 && stations[1].rs1_addr == cdbus.mul_rd_addr) begin
+                stations[1].rs1_data <= cdbus.mul_data;  
                 stations[1].rs1_ready <= 1'b1;  
-            end else if(stations[1].rs2_ready == 0 && stations[1].rs2_addr == cdbus.rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
-                stations[1].rs2_data <= cdbus.data; 
+            end else if(stations[1].rs2_ready == 0 && stations[1].rs2_addr == cdbus.mul_rd_addr) begin
+                stations[1].rs2_data <= cdbus.mul_data; 
                 stations[1].rs2_ready <= 1'b1; 
             end
-
-            if(cdbus.rob_idx == stations[0].rd_rob_idx) begin
-                stations[0].status <= COMPLETE;
-            end else if(cdbus.rob_idx == stations[1].rd_rob_idx) begin
+            
+            if(stations[1].valid && cdbus.mul_rob_idx == stations[1].rd_rob_idx) begin
                 stations[1].status <= COMPLETE;
             end
         end
+
     end
 
     always_comb begin
