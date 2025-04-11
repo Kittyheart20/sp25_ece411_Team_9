@@ -183,6 +183,10 @@ package rv32i_types;
 
         alu_ops		        aluop;
         mult_ops            multop;
+
+        logic use_rs1;
+        logic use_rs2;
+
     } id_dis_stage_reg_t;
 
     typedef enum logic [2:0] {

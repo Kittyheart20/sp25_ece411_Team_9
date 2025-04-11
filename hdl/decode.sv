@@ -44,6 +44,9 @@ import rv32i_types::*;
             // decode_struct_out.rd_rob_idx = rd_rob_idx;
             // decode_struct_out.rs1_rob_idx = rs1_rob_idx;
             // decode_struct_out.rs2_rob_idx = rs2_rob_idx;
+            decode_struct_out.use_rs1 = 0;
+            decode_struct_out.use_rs2 = 0;
+
             
             unique case (opcode)
                 op_b_lui  : begin
@@ -59,6 +62,8 @@ import rv32i_types::*;
 					decode_struct_out.regf_we = 1'b1;          // Control Signals
 					decode_struct_out.alu_m1_sel = rs1_out;
 					decode_struct_out.alu_m2_sel = imm_out;
+                    decode_struct_out.use_rs1 = 1'b1;
+                    decode_struct_out.use_rs2 = 1'b1;
                     unique case (funct3)
 						arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
 						arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;
@@ -78,6 +83,8 @@ import rv32i_types::*;
 					decode_struct_out.regf_we = 1'b1;          // Control Signals
 					decode_struct_out.alu_m1_sel = rs1_out;
 					decode_struct_out.alu_m2_sel = rs2_out;
+                    decode_struct_out.use_rs1 = 1'b1;
+                    decode_struct_out.use_rs2 = 1'b1;
 
                     if (funct7 == mult) begin   // multiply extension
                         decode_struct_out.multop = funct3;
