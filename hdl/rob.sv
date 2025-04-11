@@ -65,11 +65,13 @@ import rv32i_types::*;
                     rob_table[i].status <= done;
                     rob_table[i].rd_data <= cdbus.mul_data;
                 end
-                if (rob_table[i].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
-                    rob_table[i].status <= empty;
-                end
+                // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
+                //     rob_table[head].status <= empty;
+                // end
             end
-
+            if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
+                rob_table[head].status <= empty;
+            end
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
             // fill in type, rd_data, and br_pred if necessary
