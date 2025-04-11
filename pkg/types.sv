@@ -170,6 +170,8 @@ package rv32i_types;
         alu_m2_sel_t        alu_m2_sel;
         //pc_sel_t            pc_sel;
         alu_ops		        aluop;
+        logic use_rs1;
+        logic use_rs2;
     } id_dis_stage_reg_t;
 
     typedef enum logic [2:0] {

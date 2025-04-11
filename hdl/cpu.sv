@@ -38,7 +38,7 @@ import rv32i_types::*;
     // to_commit_t      next_commit;
 
     logic [31:0] rs1_data, rs2_data;
-    logic current_rd_rob_idx;
+    logic [4:0] current_rd_rob_idx;
 
     assign pc_next = pc + 32'd4;
 
@@ -223,9 +223,9 @@ import rv32i_types::*;
         .dispatch_struct_in(dispatch_struct_in),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
-        .rs1_ready(ready[rs1_dis_idx]),
+        .rs1_ready(ready[rs1_dis_idx] || (!dispatch_struct_in.use_rs1)),
         .rs2_data_in(/*rsv_rs2_data_in*/data[rs2_dis_idx]),
-        .rs2_ready(ready[rs2_dis_idx]),
+        .rs2_ready(ready[rs2_dis_idx] || (!dispatch_struct_in.use_rs2)),
         .rs1_new(rs1_new),
         .rs2_new(rs2_new),
         .cdbus(cdbus),
@@ -360,12 +360,13 @@ import rv32i_types::*;
         else 
             rs_we = 1'b0;
 
-        if(next_writeback.valid) begin
+        if (next_writeback.valid) begin
             cdbus.data = next_writeback.rd_data;
             cdbus.rd_addr = next_writeback.rd_addr;
             cdbus.rob_idx = next_writeback.rd_rob_idx;
             cdbus.valid = next_writeback.valid;
         end 
+
         if (rob_entry_o.valid && rob_entry_o.status == done) begin
             cdbus.commit_data = rob_entry_o.rd_data;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;

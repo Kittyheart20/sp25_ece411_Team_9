@@ -130,7 +130,7 @@ import rv32i_types::*;
                 stations[1].rs2_ready <= 1'b1; 
             end
 
-            if(cdbus.rob_idx == stations[0].rd_rob_idx) begin
+            if( (cdbus.rob_idx == stations[0].rd_rob_idx) && stations[0].valid == 1) begin
                 stations[0].status <= COMPLETE;
                 stations[0].rs1_ready <= 0;
                 stations[0].rs2_ready <= 0;
@@ -174,7 +174,7 @@ import rv32i_types::*;
         // stations[1].valid = 1'b0;
         if(rst)
             next_execute = '0;
-        else if (stations[0].valid && stations[0].rs1_ready && stations[0].rs2_ready) begin
+        else if (stations[0].valid && stations[0].rs1_ready && stations[0].rs2_ready) begin // We may not need rs2
             next_execute = stations[0];
         end
         else next_execute = '0;

@@ -36,6 +36,7 @@ import rv32i_types::*;
     //assign regf_we = '0;//dispatch_struct_in.regf_we;
     assign rs1_addr = dispatch_struct_in.rs1_addr;
     assign rs2_addr = dispatch_struct_in.rs2_addr;
+    logic [4:0] rd_addr;
     assign rd_addr = dispatch_struct_in.rd_addr;
 
 
