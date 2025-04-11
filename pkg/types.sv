@@ -21,10 +21,9 @@ package rv32i_types;
     typedef enum logic [2:0] {
         none = 3'b000,
         alu  = 3'b001,
-        mul  = 3'b010,
-        div  = 3'b011,
-        br   = 3'b100,
-        mem  = 3'b101
+        mul  = 3'b010,  // div rem included
+        br   = 3'b011,
+        mem  = 3'b100
     } types_t;
 
     typedef enum logic [1:0] {
@@ -70,15 +69,26 @@ package rv32i_types;
 	    alu_op_none    = 4'b1010
     } alu_ops;
 
+    typedef enum logic [2:0] { 
+        mult_op_mul    = 3'b000,
+        mult_op_mulh  = 3'b001,
+        mult_op_mulsu  = 3'b010,
+        mult_op_mulu   = 3'b011,
+        mult_op_div    = 3'b100,
+        mult_op_divu   = 3'b101,
+        mult_op_rem    = 3'b110,
+        mult_op_remu   = 3'b111
+    } mult_ops;
+
     typedef struct packed {
         logic           valid;
         logic   [31:0]  pc;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rs1_addr;
         logic   [4:0]   rs2_addr;
-        logic   [4:0]   rd_paddr;
-        logic   [4:0]   rs1_paddr;
-        logic   [4:0]   rs2_paddr;
+        // logic   [4:0]   rd_paddr;
+        // logic   [4:0]   rs1_paddr;
+        // logic   [4:0]   rs2_paddr;
         
         // Register stuff
         logic   [31:0]  rs1_data;
@@ -107,9 +117,9 @@ package rv32i_types;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rs1_addr;
         logic   [4:0]   rs2_addr;
-        logic   [4:0]   rd_paddr;
-        logic   [4:0]   rs1_paddr;
-        logic   [4:0]   rs2_paddr;
+        // logic   [4:0]   rd_paddr;
+        // logic   [4:0]   rs1_paddr;
+        // logic   [4:0]   rs2_paddr;
 
         logic           regf_we;
         logic   [4:0]   rd_rob_idx;
@@ -169,9 +179,10 @@ package rv32i_types;
         alu_m1_sel_t        alu_m1_sel;
         alu_m2_sel_t        alu_m2_sel;
         //pc_sel_t            pc_sel;
+        types_t             op_type;
+
         alu_ops		        aluop;
-        logic use_rs1;
-        logic use_rs2;
+        mult_ops            multop;
     } id_dis_stage_reg_t;
 
     typedef enum logic [2:0] {
@@ -199,6 +210,7 @@ package rv32i_types;
 
     typedef enum logic [6:0] {
         base           = 7'b0000000,
+        mult           = 7'b0000001,
         variant        = 7'b0100000
     } funct7_t;
 

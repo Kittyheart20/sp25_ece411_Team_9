@@ -104,9 +104,9 @@ import rv32i_types::*;
             execute_output.rd_addr = next_execute.rd_addr;
             execute_output.rs1_addr = next_execute.rs1_addr;
             execute_output.rs2_addr = next_execute.rs2_addr;
-            execute_output.rd_paddr = next_execute.rd_paddr;
-            execute_output.rs1_paddr = next_execute.rs1_paddr;
-            execute_output.rs2_paddr = next_execute.rs2_paddr;
+            // execute_output.rd_paddr = next_execute.rd_paddr;
+            // execute_output.rs1_paddr = next_execute.rs1_paddr;
+            // execute_output.rs2_paddr = next_execute.rs2_paddr;
 
             execute_output.rd_rob_idx = next_execute.rd_rob_idx;
             execute_output.rd_data = aluout;
