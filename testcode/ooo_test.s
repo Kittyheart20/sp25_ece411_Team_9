@@ -10,7 +10,8 @@ _start:
 
 # initialize
 li x1, 10
-#add x1, x1, x1
+#nop
+add x1, x1, x1
 
 li x2, 20
 li x5, 50

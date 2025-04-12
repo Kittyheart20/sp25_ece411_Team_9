@@ -26,6 +26,7 @@ import rv32i_types::*;
     logic   [31:0]  data    [32];
     logic           ready   [32];
     logic   [4:0]   rob_idx [32];
+    logic           rs1_rdy, rs2_rdy;
 
     // Stage Registers
     localparam NUM_FUNC_UNIT = 2;
@@ -175,7 +176,9 @@ import rv32i_types::*;
         .rd_rob_idx (rob_tail_addr),
         .data(data),
         .ready(ready),
-        .rob_idx(rob_idx)
+        .rob_idx(rob_idx),
+        .rs1_rdy(rs1_rdy),
+        .rs2_rdy(rs2_rdy)
     );
 
     always_comb begin : fill_rob_entry
@@ -224,9 +227,9 @@ import rv32i_types::*;
         .dispatch_struct_in(dispatch_struct_in),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
-        .rs1_ready(ready[rs1_dis_idx] || (!dispatch_struct_in.use_rs1)),
+        .rs1_ready(/*ready[rs1_dis_idx]*/rs1_rdy || (!dispatch_struct_in.use_rs1)),
         .rs2_data_in(/*rsv_rs2_data_in*/data[rs2_dis_idx]),
-        .rs2_ready(ready[rs2_dis_idx] || (!dispatch_struct_in.use_rs2)),
+        .rs2_ready(/*ready[rs2_dis_idx]*/rs2_rdy || (!dispatch_struct_in.use_rs2)),
         .rs1_new(rs1_new),
         .rs2_new(rs2_new),
         .cdbus(cdbus),

@@ -53,6 +53,34 @@ import rv32i_types::*;
     //     end
     // end
     always_ff @(posedge clk) begin
+        if(cdbus.alu_valid) begin
+            if(stations[0].rs1_ready == 0 && stations[0].rs1_addr == cdbus.alu_rd_addr) begin //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
+                stations[0].rs1_data <= cdbus.alu_data;  
+                stations[0].rs1_ready <= 1'b1;  
+            end else if(stations[0].rs2_ready == 0 && stations[0].rs2_addr == cdbus.alu_rd_addr) begin //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
+                stations[0].rs2_data <= cdbus.alu_data; 
+                stations[0].rs2_ready <= 1'b1; 
+            end
+
+            if(cdbus.alu_rob_idx == stations[0].rd_rob_idx) begin
+                stations[0].status <= COMPLETE;                         // This complete will move on to the next instruction even if next instruction should be busy
+            end 
+        end
+
+        if (cdbus.mul_valid) begin
+            if(stations[1].rs1_ready == 0 && stations[1].rs1_addr == cdbus.mul_rd_addr) begin
+                stations[1].rs1_data <= cdbus.mul_data;  
+                stations[1].rs1_ready <= 1'b1;  
+            end else if(stations[1].rs2_ready == 0 && stations[1].rs2_addr == cdbus.mul_rd_addr) begin
+                stations[1].rs2_data <= cdbus.mul_data; 
+                stations[1].rs2_ready <= 1'b1; 
+            end
+            
+            if(stations[1].valid && cdbus.mul_rob_idx == stations[1].rd_rob_idx) begin
+                stations[1].status <= COMPLETE;
+            end
+        end
+
         if (rst) begin
             stations[0].status <= IDLE;
             stations[0].valid <= 1'b0;
@@ -169,17 +197,17 @@ import rv32i_types::*;
             stations[1].status <= BUSY;
         end
 
-        if(cdbus.alu_valid) begin
-            if(stations[0].rs1_ready == 0 && stations[0].rs1_addr == cdbus.alu_rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
+        /*if(cdbus.alu_valid) begin
+            if(stations[0].rs1_ready == 0 && stations[0].rs1_addr == cdbus.alu_rd_addr) begin //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
                 stations[0].rs1_data <= cdbus.alu_data;  
                 stations[0].rs1_ready <= 1'b1;  
-            end else if(stations[0].rs2_ready == 0 && stations[0].rs2_addr == cdbus.alu_rd_addr /*&& stations[0].rd_rob_idx == cdbus.rob_idx*/) begin
+            end else if(stations[0].rs2_ready == 0 && stations[0].rs2_addr == cdbus.alu_rd_addr) begin //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
                 stations[0].rs2_data <= cdbus.alu_data; 
                 stations[0].rs2_ready <= 1'b1; 
             end
 
             if(cdbus.alu_rob_idx == stations[0].rd_rob_idx) begin
-                stations[0].status <= COMPLETE;
+                stations[0].status <= COMPLETE;                         // This complete will move on to the next instruction even if next instruction should be busy
             end 
         end
 
@@ -195,7 +223,7 @@ import rv32i_types::*;
             if(stations[1].valid && cdbus.mul_rob_idx == stations[1].rd_rob_idx) begin
                 stations[1].status <= COMPLETE;
             end
-        end
+        end*/
 
     end
 
