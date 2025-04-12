@@ -83,6 +83,7 @@ package rv32i_types;
     typedef struct packed {
         logic           valid;
         logic   [31:0]  pc;
+        logic   [31:0]  inst;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rs1_addr;
         logic   [4:0]   rs2_addr;
@@ -115,6 +116,7 @@ package rv32i_types;
     typedef struct packed {
         logic           valid;
         logic   [31:0]  pc;
+        logic   [31:0]  inst;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rs1_addr;
         logic   [4:0]   rs2_addr;
@@ -127,14 +129,15 @@ package rv32i_types;
         logic   [31:0]  rd_data;    
     } to_writeback_t;
 
-    typedef struct packed {
+/*    typedef struct packed {
         logic           valid;
+        logic   [31:0]  inst;
         logic   [31:0]  pc;
         logic           regf_we;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rd_rob_idx;
         logic   [31:0]  rd_data;    
-    } to_commit_t;
+    } to_commit_t;*/
 
 
     typedef struct packed {
@@ -146,6 +149,15 @@ package rv32i_types;
         logic   [4:0]   rd_rob_idx;
         // logic           br_pred;
         // logic           br_result;
+        
+        // Monitoring Signals
+        // logic [63:0] order;
+        logic [31:0] pc;
+        logic [31:0] inst;
+        logic [4:0] rs1_addr;
+        logic [4:0] rs2_addr;
+        logic [31:0] rs1_data;
+        logic [31:0] rs2_data;
     } rob_entry_t;
 
     typedef struct packed {
@@ -245,14 +257,11 @@ package rv32i_types;
         logic [31:0] commit_data; 
         logic [4:0]  commit_rob_idx;
         logic [4:0]  commit_rd_addr;
-        
-        // Monitoring Signals
-        logic [63:0] order;
-        logic [31:0] instr;
-        logic [4:0] rs1_addr;
-        logic [4:0] rs2_addr;
-        logic [31:0] rs1_data;
-        logic [31:0] rs2_data;
+
+        // commit data
+        logic [4:0]  rs1_addr;
+        logic [4:0]  rs2_addr;
+        logic[31:0] inst;
         logic [31:0] pc;
     } cdb;
 

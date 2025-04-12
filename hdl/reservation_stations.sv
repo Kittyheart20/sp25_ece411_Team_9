@@ -97,6 +97,7 @@ import rv32i_types::*;
         else if (dispatch_struct_in.valid && dispatch_struct_in.op_type == alu) begin 
             stations[0].valid <= dispatch_struct_in.valid;
             stations[0].pc <= dispatch_struct_in.pc;
+            stations[0].inst <= dispatch_struct_in.inst;
             stations[0].rd_addr <= dispatch_struct_in.rd_addr;
             stations[0].rs1_addr <= dispatch_struct_in.rs1_addr;
             stations[0].rs2_addr <= dispatch_struct_in.rs2_addr;
@@ -149,6 +150,7 @@ import rv32i_types::*;
         end else if (dispatch_struct_in.valid && dispatch_struct_in.op_type == mul) begin 
             stations[1].valid <= dispatch_struct_in.valid;
             stations[1].pc <= dispatch_struct_in.pc;
+            stations[1].inst <= dispatch_struct_in.inst;
             stations[1].rd_addr <= dispatch_struct_in.rd_addr;
             stations[1].rs1_addr <= dispatch_struct_in.rs1_addr;
             stations[1].rs2_addr <= dispatch_struct_in.rs2_addr;

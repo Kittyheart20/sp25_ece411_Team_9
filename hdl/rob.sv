@@ -36,10 +36,17 @@ import rv32i_types::*;
     always_comb begin
         //rob_entry_i = dispatch_struct_in;
         rob_entry_i.valid = dispatch_struct_in.valid;
+        rob_entry_i.pc = dispatch_struct_in.pc;
+        rob_entry_i.inst = dispatch_struct_in.inst;
         rob_entry_i.status = rob_wait;
         rob_entry_i.op_type = dispatch_struct_in.op_type;// maybe we should add in op_type to id_dis_stage_reg_t from decode stage
         rob_entry_i.rd_addr = dispatch_struct_in.rd_addr;
         rob_entry_i.rd_rob_idx = tail; //dispatch_struct_in.rd_rob_idx;
+
+        
+        rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
+        rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
+
         //rob_entry_i.rd_data = 'x;
     end
     logic rob_update_mul; logic rob_update_alu;

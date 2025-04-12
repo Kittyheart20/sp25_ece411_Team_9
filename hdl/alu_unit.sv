@@ -93,6 +93,7 @@ import rv32i_types::*;
         if (next_execute.valid) begin
             execute_output.valid = next_execute.valid;
             execute_output.pc = next_execute.pc;
+            execute_output.inst = next_execute.inst;
             // if (br_en) begin
             //     ex_mem_reg_next.pc_next = pc_branch;
             // end
