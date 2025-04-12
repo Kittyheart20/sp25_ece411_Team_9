@@ -27,7 +27,14 @@ nop
 nop
 nop
 
-add x4, x5, x6
+mul x3, x1, x2 # c8 & rob 16
+
+# these instructions should  resolve before the multiply
+add x4, x5, x6 # 6E
+and x4, x15, x6
+sll x10, x4, x4
+xor x9, x8, x7
+xor x7, x8, x9
 sll x10, x11, x12
 and x13, x14, x15
 

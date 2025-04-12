@@ -63,7 +63,7 @@ import rv32i_types::*;
                 decode_struct_out.alu_m1_sel = rs1_out;
                 decode_struct_out.alu_m2_sel = imm_out;
                 decode_struct_out.use_rs1 = 1'b1;
-                decode_struct_out.use_rs2 = 1'b1;
+                decode_struct_out.use_rs2 = 1'b0;
                 unique case (funct3)
                     arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
                     arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;

@@ -79,7 +79,15 @@ import rv32i_types::*;
         end else begin
             // prev_execute <= next_execute;
             if (next_execute.valid && (counter == 0)) begin
-                execute_output.valid <= 1'b0;
+                execute_output.valid <= 1'b0;                
+                
+                execute_output.pc <= next_execute.pc;
+                execute_output.rd_addr <= next_execute.rd_addr;
+                execute_output.rs1_addr <= next_execute.rs1_addr;
+                execute_output.rs2_addr <= next_execute.rs2_addr;
+
+                execute_output.rd_rob_idx <= next_execute.rd_rob_idx;
+                execute_output.regf_we <= next_execute.regf_we;
 
                 unique case (next_execute.multop)
                     mult_op_mul:   begin 
@@ -149,17 +157,8 @@ import rv32i_types::*;
                     default:       signed_mode <= 1'b0; //
                 endcase
                 
-                execute_output.valid = next_execute.valid;
-                execute_output.pc = next_execute.pc;
-
-                execute_output.rd_addr = next_execute.rd_addr;
-                execute_output.rs1_addr = next_execute.rs1_addr;
-                execute_output.rs2_addr = next_execute.rs2_addr;
-
-                execute_output.rd_rob_idx = next_execute.rd_rob_idx;
-                execute_output.regf_we = next_execute.regf_we;
-
                 counter <= 8'd0;
+                execute_output.valid <= 1'b1;     
             end
         end
     end

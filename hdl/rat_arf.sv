@@ -22,7 +22,9 @@ import rv32i_types::*;
     output  logic   [31:0]  data    [32],
     //output  logic           rs1_renamed, rs2_renamed,
     output  logic           ready   [32],
-    output  logic   [4:0]   rob_idx [32]
+    output  logic   [4:0]   rob_idx [32],
+    output  logic           rs1_rdy
+    output  logic           rs2_rdy
 );
 
     logic   [31:0]            data    [32];
@@ -39,9 +41,11 @@ import rv32i_types::*;
     logic [4:0] rd_addr;
     assign rd_addr = dispatch_struct_in.rd_addr;
 
-
+    logic [31:0] prev_pc; 
+    
     always_ff @(posedge clk) begin      // handles rd
         if (rst) begin
+            prev_pc <= '0;
             for (integer i = 0; i < 32; i++) begin
                 data[i] <= '0;
                 //tags[i] <= 'x;
@@ -50,62 +54,32 @@ import rv32i_types::*;
                 ready[i] <= 1'b1;
                 // Have everything start empty
             end
-        
-        end
-        
-      //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data // we should check for commit in writeback?
-        if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
-            data[cdbus.commit_rd_addr] <= cdbus.commit_data;   // might have to change
-            ready[cdbus.alu_rd_addr] <= 1'b1;
-        end 
-
-
-        
-        if (dispatch_struct_in.valid && (rd_addr != 5'd0)) begin           // Creating a new entry   
-            rob_idx[rd_addr] <= rd_rob_idx;
-            // 
-            ready[rd_addr] <= 1'b0;
+        end else begin
+        //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data // we should check for commit in writeback?
+            if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
+                data[cdbus.commit_rd_addr] <= cdbus.commit_data;   // might have to change
+                ready[cdbus.commit_rd_addr] <= 1'b1;
+                prev_pc <= dispatch_struct_in.pc;
+            end else if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (dispatch_struct_in.pc != prev_pc)) begin           // Creating a new entry   
+               // if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (rd_addr != cdbus.commit_rd_addr)) begin
+                    ready[rd_addr] <= 1'b0; // will have an error for cp3 because we never mark the second r# register as unready
+            end
         end
 
-        // else if (free_entry) begin
-            // is this needed?
-        // end
+
+
+
+            
+            if (dispatch_struct_in.valid && (rd_addr != 5'd0)) begin           // Creating a new entry   
+                rob_idx[rd_addr] <= rd_rob_idx;
+                // ready[rd_addr] <= 1'b0;
+            end
+
+            // else if (free_entry) begin
+                // is this needed?
+            // end            
+        
+
     end
-
-    // always_ff @(posedge clk) begin      // handles rs1 & rs2
-    //     // rs1_data <= '0;
-    //     // rs2_data <= '0;
-
-    //     if (rst) begin
-    //         // rs1_data <= '0;
-    //         // rs2_data <= '0;
-
-    //         // rs1_renamed <= 1'b0;
-    //         // rs2_renamed <= 1'b0;
-    //         // rs1_rob_idx <= '0;
-    //         // rs2_rob_idx <= '0;
-    //     end
-    //     else begin                          // If the data is ready, grab it, if it's not ready we should have an ROB instruction we're waiting on. Export which instruction we're waiting on
-    //         rs1_ready <= ready[rs1_addr];
-    //         // rs1_rob_idx <= rob_idx[rs1_addr];
-    //         if ((rs1_addr != 5'd0) && rs1_ready)
-    //             rs1_data <= data[rs1_addr];
-    //         else
-    //             rs1_rob_idx <= rob_idx[rs1_addr];
-
-    //         rs2_ready <= ready[rs2_addr];
-    //         // rs2_rob_idx <= rob_idx[rs2_addr];
-    //         if ((rs2_addr != 5'd0) && rs2_ready)
-    //             rs2_data <= data[rs2_addr];
-    //         else 
-    //             rs2_rob_idx <= rob_idx[rs2_addr];
-
-    //         // rs1_renamed <= renamed[rs1_addr];
-    //         // rs2_renamed <= renamed[rs2_addr];
-    //     end
-    // end
-
-    // assign rs1_data = ((rs1_addr != 5'd0) && ~rst) ? data[rs1_addr] : '0;
-    // assign rs2_data = ((rs2_addr != 5'd0) && ~rst) ? data[rs2_addr] : '0;
 
 endmodule

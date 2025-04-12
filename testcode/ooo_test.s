@@ -10,6 +10,8 @@ _start:
 
 # initialize
 li x1, 10
+#add x1, x1, x1
+
 li x2, 20
 li x5, 50
 li x6, 60
@@ -36,6 +38,9 @@ add x4, x5, x6 # 6E
 xor x7, x8, x9
 sll x10, x11, x12
 and x13, x14, x15
+li x20, 6
+add x1, x1, x1
+
 
 halt:
     slti x0, x0, -256
