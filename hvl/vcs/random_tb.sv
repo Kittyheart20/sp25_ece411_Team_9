@@ -1,4 +1,4 @@
-/*//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Title                 : random_tb
 // Project               : ECE 411 mp_verif
 //-----------------------------------------------------------------------------
@@ -14,26 +14,37 @@
 module random_tb
 import rv32i_types::*;
 (
-    mem_itf_w_mask.mem itf
+    mem_itf_banked.mem itf
 );
 
-    initial itf.resp[0] = 1'b0;
+    //initial itf.resp[0] = 1'b0;
 
     `include "randinst.svh"
 
-    RandInst gen = new();
+    RandInst gen1 = new();
+    RandInst gen2 = new();
 
     // Do a bunch of LUIs to get useful register state.
     task init_register_state();
         for (int i = 0; i < 64; ++i) begin
-            @(posedge itf.clk iff |itf.rmask[0]);
+            @(posedge itf.clk);
             if (i % 2 == 0) begin
-                gen.randomize() with {
+                gen1.randomize() with {
+                    instr.j_type.opcode == op_b_lui;
+                    instr.j_type.rd == i[5:1];
+                };
+                gen2.randomize() with {
                     instr.j_type.opcode == op_b_lui;
                     instr.j_type.rd == i[5:1];
                 };
             end else begin
-                gen.randomize() with {
+                gen1.randomize() with {
+                    instr.i_type.opcode == op_b_imm;
+                    instr.i_type.rs1 == i[5:1];
+                    instr.i_type.funct3 == arith_f3_add;
+                    instr.i_type.rd == i[5:1];
+                };
+                gen2.randomize() with {
                     instr.i_type.opcode == op_b_imm;
                     instr.i_type.rs1 == i[5:1];
                     instr.i_type.funct3 == arith_f3_add;
@@ -42,9 +53,11 @@ import rv32i_types::*;
             end
 
             // Your code here: package these memory interactions into a task.
-            itf.rdata[0] <= gen.instr.word;
-            itf.resp[0] <= 1'b1;
-            @(posedge itf.clk) itf.resp[0] <= 1'b0;
+            itf.rdata <= {gen2.instr.word, gen1.instr.word};
+            itf.ready <= 1'b1;
+            itf.rvalid <= 1'b1;
+            // itf.resp[0] <= 1'b1;
+            // @(posedge itf.clk) itf.resp[0] <= 1'b0;
         end
     endtask : init_register_state
 
@@ -52,21 +65,25 @@ import rv32i_types::*;
     // writes and always reads out a random, valid instruction.
     task run_random_instrs();
         repeat (5000) begin
-            @(posedge itf.clk iff (|itf.rmask[0] || |itf.wmask[0]));
+             @(posedge itf.clk /*iff (|itf.rmask[0] || |itf.wmask[0])*/);
 
             // Always read out a valid instruction.
-            if (|itf.rmask[0]) begin
-                gen.randomize();
-                itf.rdata[0] <= gen.instr.word;
-            end
-
+            // if (|itf.rmask[0]) begin
+            //     gen.randomize();
+            //     itf.rdata[0] <= gen.instr.word;
+            // end
+            gen1.randomize();
+            gen2.randomize();
+            itf.rdata <= {gen2.instr.word, gen1.instr.word};
+            itf.ready <= 1'b1;
+            itf.rvalid <= 1'b1;
             // If it's a write, do nothing and just respond.
-            itf.resp[0] <= 1'b1;
-            @(posedge itf.clk) itf.resp[0] <= 1'b0;
+            // itf.resp[0] <= 1'b1;
+            // @(posedge itf.clk) itf.resp[0] <= 1'b0;
         end
     endtask : run_random_instrs
 
-    always @(posedge itf.clk iff !itf.rst) begin
+    /*always @(posedge itf.clk iff !itf.rst) begin 
         if ($isunknown(itf.rmask[0]) || $isunknown(itf.wmask[0])) begin
             $error("Memory Error: mask containes 1'bx");
             itf.error <= 1'b1;
@@ -82,12 +99,15 @@ import rv32i_types::*;
             end
             // Only check for 16-bit alignment since instructions are
             // allowed to be at 16-bit boundaries due to JALR.
-            if (itf.addr[0][0] != 1'b0) begin
-                $error("Memory Error: Address is not 16-bit aligned");
-                itf.error <= 1'b1;
-            end
+
         end
-    end
+    end*/
+    // always_ff @( posedge itf.clk iff !itf.rst ) begin
+    //     if (itf.addr[0] != 1'b0) begin
+    //         $error("Memory Error: Address is not 16-bit aligned");
+    //         itf.error <= 1'b1;
+    //     end        
+    // end
 
     // A single initial block ensures random stability.
     initial begin
@@ -107,4 +127,3 @@ import rv32i_types::*;
     end
 
 endmodule : random_tb
-*/

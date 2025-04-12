@@ -1,15 +1,16 @@
-/*// This class generates random valid RISC-V instructions to test your
+// This class generates random valid RISC-V instructions to test your
 // RISC-V cores.
 
 class RandInst;
+    import rv32i_types::*;
     // You will increment this number as you generate more random instruction
     // types. Once finished, NUM_TYPES should be 9, for each opcode type in
     // rv32i_opcode.
-    localparam NUM_TYPES = 2;
+    localparam NUM_TYPES = 3;
 
     // Note that the 'instr_t' type is from ../pkg/types.sv, there are TODOs
     // you must complete there to fully define 'instr_t'.
-//    rand instr_t instr;
+    rand instr_t instr;
     rand bit [NUM_TYPES-1:0] instr_type;
 
     // Make sure we have an even distribution of instruction types.
@@ -69,21 +70,21 @@ constraint solve_order_funct3_before_funct7_c {
         //         // TODO: Fill this out!
         // }
 
-    instr_type[1] -> {
-        instr.r_type.opcode == op_b_reg;
-        // Valid R-type arithmetic operations.
-        instr.r_type.funct3 inside { arith_f3_add, arith_f3_sll, arith_f3_slt,
-                                    arith_f3_sltu, arith_f3_xor, arith_f3_sr,
-                                    arith_f3_or,  arith_f3_and };
+        instr_type[1] -> {
+            instr.r_type.opcode == op_b_reg;
+            // Valid R-type arithmetic operations.
+            instr.r_type.funct3 inside { arith_f3_add, arith_f3_sll, arith_f3_slt,
+                                        arith_f3_sltu, arith_f3_xor, arith_f3_sr,
+                                        arith_f3_or,  arith_f3_and };
 
-        // For instructions that allow variant encoding:
-        // - When funct3 is ADD or SR, allow both base and variant.
-        if (instr.r_type.funct3 == arith_f3_add ||
-            instr.r_type.funct3 == arith_f3_sr)
-            instr.r_type.funct7 inside { base, variant };
-        else // For all others, only the base encoding is valid.
-            instr.r_type.funct7 == base;
-    }
+            // For instructions that allow variant encoding:
+            // - When funct3 is ADD or SR, allow both base and variant.
+            if (instr.r_type.funct3 == arith_f3_add ||
+                instr.r_type.funct3 == arith_f3_sr)
+                instr.r_type.funct7 inside { base, variant };
+            else // For all others, only the base encoding is valid.
+                instr.r_type.funct7 == base;
+        }
 
         // Store instructions -- these are easy to constrain!
 // instr_type[3] -> {
@@ -128,11 +129,11 @@ constraint solve_order_funct3_before_funct7_c {
 //                                           branch_f3_bltu, branch_f3_bgeu };
 //         }
 
-//         // Type 5: U-type LUI instruction.
-//         // U-type instructions have the same layout as the j_type struct.
-//         instr_type[5] -> {
-//             instr.j_type.opcode == op_b_lui;
-//         }
+        // Type 5: U-type LUI instruction.
+        // U-type instructions have the same layout as the j_type struct.
+        instr_type[2] -> {
+            instr.j_type.opcode == op_b_lui;
+        }
 
 //         // Type 6: U-type AUIPC instruction.
 //         instr_type[6] -> {
@@ -184,4 +185,3 @@ constraint solve_order_funct3_before_funct7_c {
     endfunction : verify_valid_instr
 
 endclass : RandInst
-*/

@@ -1,7 +1,9 @@
 module rand_top_tb;
-
     timeunit 1ps;
     timeprecision 1ps;
+
+import rv32i_types::*;
+
 
     int clock_half_period_ps;
     initial begin

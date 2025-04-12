@@ -3,26 +3,29 @@
         $value$plusargs("TIMEOUT_ECE411=%d", timeout);
     end
 
-    mem_itf_w_mask mem_itf(.*);
+    mem_itf_banked mem_itf(.*);
 
     // Pick one of the two options (only one of these should be uncommented at a time):
-    //simple_memory_32_w_mask simple_memory(.itf(mem_itf)); // For directed testing with PROG
+    // dram_w_burst_frfcfs_controller mem(.itf(mem_itf)); // For directed testing with PROG
     random_tb random_tb(.itf(mem_itf)); // For randomized testing
 
     mon_itf mon_itf(.*);
     monitor monitor(.itf(mon_itf));
 
     cpu dut(
-        .clk          (clk),
-        .rst          (rst),
-        .mem_addr     (mem_itf.addr [0]),
-        .mem_rmask    (mem_itf.rmask[0]),
-        .mem_wmask    (mem_itf.wmask[0]),
-        .mem_rdata    (mem_itf.rdata[0]),
-        .mem_wdata    (mem_itf.wdata[0]),
-        .mem_resp     (mem_itf.resp [0])
-    );
+        .clk            (clk),
+        .rst            (rst),
 
+
+        .bmem_addr  (mem_itf.addr  ),
+        .bmem_read  (mem_itf.read  ),
+        .bmem_write (mem_itf.write ),
+        .bmem_wdata (mem_itf.wdata ),
+        .bmem_ready (mem_itf.ready ),
+        .bmem_raddr (mem_itf.raddr ),
+        .bmem_rdata (mem_itf.rdata ),
+        .bmem_rvalid(mem_itf.rvalid)
+    );
     `include "rvfi_reference.svh"
 
     always @(posedge clk) begin
