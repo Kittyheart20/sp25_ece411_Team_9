@@ -227,9 +227,14 @@ import rv32i_types::*;
         .dispatch_struct_in(dispatch_struct_in),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
-        .rs1_ready(/*ready[rs1_dis_idx]*/rs1_rdy || (!dispatch_struct_in.use_rs1)),
+        .rs1_ready( (ready[dispatch_struct_in.rs1_addr] || rs1_rdy) || (!dispatch_struct_in.use_rs1)),
+          //  .rs2_ready(rs1_rdy || (!dispatch_struct_in.use_rs2)),
+
         .rs2_data_in(/*rsv_rs2_data_in*/data[rs2_dis_idx]),
-        .rs2_ready(/*ready[rs2_dis_idx]*/rs2_rdy || (!dispatch_struct_in.use_rs2)),
+      //  .rs2_ready(/*ready[rs2_dis_idx]*/rs2_rdy || (!dispatch_struct_in.use_rs2)),
+        .rs2_ready((ready[dispatch_struct_in.rs2_addr] || rs2_rdy) || (!dispatch_struct_in.use_rs2)),
+        //.rs2_ready( (rs2_rdy) || (!dispatch_struct_in.use_rs2)),
+
         .rs1_new(rs1_new),
         .rs2_new(rs2_new),
         .cdbus(cdbus),

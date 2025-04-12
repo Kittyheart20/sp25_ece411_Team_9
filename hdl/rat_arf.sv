@@ -57,8 +57,8 @@ import rv32i_types::*;
         end else begin
         //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data // we should check for commit in writeback?
             if (dispatch_struct_in.valid) begin
-                rs1_rdy = ready[dispatch_struct_in.rs1_addr];
-                rs2_rdy = ready[dispatch_struct_in.rs1_addr];
+                rs1_rdy <= ready[dispatch_struct_in.rs1_addr];
+                rs2_rdy <= ready[dispatch_struct_in.rs1_addr];
             end
             
             if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
@@ -70,7 +70,12 @@ import rv32i_types::*;
                     rs1_rdy = ready[dispatch_struct_in.rs1_addr];
                     rs2_rdy = ready[dispatch_struct_in.rs1_addr];
                 end
-            end else if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (dispatch_struct_in.pc != prev_pc)) begin           // Creating a new entry   
+            // end else if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (dispatch_struct_in.pc != prev_pc)) begin           // Creating a new entry   
+            //    // if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (rd_addr != cdbus.commit_rd_addr)) begin
+            //         ready[rd_addr] <= 1'b0; // will have an error for cp3 because we never mark the second r# register as unready
+            // end
+            end
+            if (dispatch_struct_in.valid && (rd_addr != 5'd0)) begin           // Creating a new entry   
                // if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (rd_addr != cdbus.commit_rd_addr)) begin
                     ready[rd_addr] <= 1'b0; // will have an error for cp3 because we never mark the second r# register as unready
             end
