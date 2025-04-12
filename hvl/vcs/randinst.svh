@@ -6,7 +6,7 @@ class RandInst;
     // You will increment this number as you generate more random instruction
     // types. Once finished, NUM_TYPES should be 9, for each opcode type in
     // rv32i_opcode.
-    localparam NUM_TYPES = 3;
+    localparam NUM_TYPES = 4;
 
     // Note that the 'instr_t' type is from ../pkg/types.sv, there are TODOs
     // you must complete there to fully define 'instr_t'.
@@ -28,13 +28,13 @@ class RandInst;
     constraint solve_order_funct3_c {
         solve funct3_rand before instr;
     }
-constraint funct7_assign_c {
-    instr.r_type.funct7 == funct7_rand;
-}
+    constraint funct7_assign_c {
+        instr.r_type.funct7 == funct7_rand;
+    }
 
-constraint solve_order_funct3_before_funct7_c {
-    solve funct3_rand before funct7_rand;
-}
+    constraint solve_order_funct3_before_funct7_c {
+        solve funct3_rand before funct7_rand;
+    }
 
     // Pick one of the instruction types.
     constraint instr_type_c {
@@ -86,6 +86,18 @@ constraint solve_order_funct3_before_funct7_c {
                 instr.r_type.funct7 == base;
         }
 
+        instr_type[2] -> {
+            instr.r_type.opcode == op_b_reg;
+            // Valid R-type arithmetic operations.
+            instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulsu, 
+                                        mult_op_mulu, mult_op_div, mult_op_divu, 
+                                        mult_op_rem, mult_op_remu };
+
+            // For instructions that allow variant encoding:
+            // - When funct3 is ADD or SR, allow both base and variant.
+            instr.r_type.funct7 inside { mult };
+        }
+
         // Store instructions -- these are easy to constrain!
 // instr_type[3] -> {
 //     instr.i_type.opcode == op_b_load;
@@ -131,7 +143,7 @@ constraint solve_order_funct3_before_funct7_c {
 
         // Type 5: U-type LUI instruction.
         // U-type instructions have the same layout as the j_type struct.
-        instr_type[2] -> {
+        instr_type[3] -> {
             instr.j_type.opcode == op_b_lui;
         }
 
