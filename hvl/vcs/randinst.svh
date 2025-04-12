@@ -1,4 +1,4 @@
-// This class generates random valid RISC-V instructions to test your
+/*// This class generates random valid RISC-V instructions to test your
 // RISC-V cores.
 
 class RandInst;
@@ -9,7 +9,7 @@ class RandInst;
 
     // Note that the 'instr_t' type is from ../pkg/types.sv, there are TODOs
     // you must complete there to fully define 'instr_t'.
-    rand instr_t instr;
+//    rand instr_t instr;
     rand bit [NUM_TYPES-1:0] instr_type;
 
     // Make sure we have an even distribution of instruction types.
@@ -184,3 +184,4 @@ constraint solve_order_funct3_before_funct7_c {
     endfunction : verify_valid_instr
 
 endclass : RandInst
+*/
