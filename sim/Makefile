@@ -42,6 +42,31 @@ run_vcs_top_tb: vcs/top_tb $(PROG)
 		+MEMLST_ECE411="$(PWD)/bin/memory_32.lst" \
 		+ELF_ECE411="$(PWD)/bin/spike_dpi.elf"
 
+vcs/rand_top_tb: $(VCS_SRCS) $(HDRS)
+	mkdir -p vcs
+	python3 check_sus.py
+	python3 ../bin/rvfi_reference.py 8 $(ECE411_NO_FLOAT)
+	cd vcs && vcs $(VCS_SRCS) $(VCS_FLAGS) -l compile.log -top rand_top_tb -o rand_top_tb
+	bash check_compile_error.sh
+
+.PHONY: rand_run_vcs_top_tb
+rand_run_vcs_top_tb: vcs/rand_top_tb $(PROG)
+	mkdir -p spike
+	python3 ../bin/generate_memory_file.py -32 $(PROG)
+	rm -f vcs/dump.fsdb
+	python3 $(PWD)/../bin/get_options.py clock
+	python3 $(PWD)/../bin/get_options.py bmem_x
+	cd vcs && ./rand_top_tb -l simulation.log -exitstatus -suppress=ASLR_DETECTED_INFO \
+		+TIMEOUT_ECE411=10000 \
+		+CLOCK_PERIOD_PS_ECE411=$(shell python3 $(PWD)/../bin/get_options.py clock) \
+		+BRAM_0_ON_X_ECE411=$(shell python3 $(PWD)/../bin/get_options.py bmem_x) \
+		+MEMLST_ECE411="$(PWD)/bin/memory_32.lst" \
+		+ELF_ECE411="$(PWD)/bin/spike_dpi.elf"
+
+.PHONY: rand_covrep
+rand_covrep: vcs/rand_top_tb.vdb
+	cd vcs && urg -dir rand_top_tb.vdb
+
 verilator/build/Vtop_tb: $(VER_SRCS) $(HDRS)
 	mkdir -p verilator/build
 	python3 check_sus.py

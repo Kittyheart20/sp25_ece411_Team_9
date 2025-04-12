@@ -244,7 +244,62 @@ package rv32i_types;
         logic        regf_we;   
         logic [31:0] commit_data; 
         logic [4:0]  commit_rob_idx;
-        logic [4:0]  commit_rd_addr; 
+        logic [4:0]  commit_rd_addr;
+        
+        // Monitoring Signals
+        logic [63:0] order;
+        logic [31:0] instr;
+        logic [4:0] rs1_addr;
+        logic [4:0] rs2_addr;
+        logic [31:0] rs1_data;
+        logic [31:0] rs2_data;
+        logic [31:0] pc;
     } cdb;
+
+    typedef union packed {
+        logic [31:0] word;
+
+        struct packed {
+            logic [11:0] i_imm;
+            logic [4:0]  rs1;
+            logic [2:0]  funct3;
+            logic [4:0]  rd;
+            rv32i_opcode opcode;
+        } i_type;
+
+        struct packed {
+            logic [6:0]  funct7;
+            logic [4:0]  rs2;
+            logic [4:0]  rs1;
+            logic [2:0]  funct3;
+            logic [4:0]  rd;
+            rv32i_opcode opcode;
+        } r_type;
+
+        struct packed {
+            logic [11:5] imm_s_top;
+            logic [4:0]  rs2;
+            logic [4:0]  rs1;
+            logic [2:0]  funct3;
+            logic [4:0]  imm_s_bot;
+            rv32i_opcode opcode;
+        } s_type;
+
+        struct packed {
+            logic [11:5] imm_b_top;
+            logic [4:0]  rs2;
+            logic [4:0]  rs1;
+            logic [2:0]  funct3;
+            logic [4:0]  imm_b_bot;
+            rv32i_opcode opcode;
+        } b_type;
+
+        struct packed {
+            logic [31:12] imm;
+            logic [4:0]   rd;
+            rv32i_opcode  opcode;
+        } j_type;
+
+    } instr_t;
 
 endpackage : rv32i_types

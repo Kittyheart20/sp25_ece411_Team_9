@@ -1,4 +1,4 @@
-module top_tb;
+module rand_top_tb;
 
     timeunit 1ps;
     timeprecision 1ps;
