@@ -381,20 +381,20 @@ import rv32i_types::*;
             cdbus.alu_rd_addr = next_writeback[0].rd_addr;
             cdbus.alu_rob_idx = next_writeback[0].rd_rob_idx;
             cdbus.alu_valid = next_writeback[0].valid;
-            cdbus.pc = next_writeback[0].pc;
-            cdbus.inst = next_writeback[0].inst;
-            cdbus.rs1_addr = next_writeback[0].rs1_addr;
-            cdbus.rs2_addr = next_writeback[0].rs2_addr;
+            //cdbus.pc = next_writeback[0].pc;
+            //cdbus.inst = next_writeback[0].inst;
+            //cdbus.rs1_addr = next_writeback[0].rs1_addr;
+            //cdbus.rs2_addr = next_writeback[0].rs2_addr;
         end 
         if (next_writeback[1].valid) begin 
             cdbus.mul_data = next_writeback[1].rd_data;
             cdbus.mul_rd_addr = next_writeback[1].rd_addr;
             cdbus.mul_rob_idx = next_writeback[1].rd_rob_idx;
             cdbus.mul_valid = next_writeback[1].valid;
-            cdbus.pc = next_writeback[1].pc;
-            cdbus.inst = next_writeback[1].inst;
-            cdbus.rs1_addr = next_writeback[1].rs1_addr;
-            cdbus.rs2_addr = next_writeback[1].rs2_addr;
+            //cdbus.pc = next_writeback[1].pc;
+            //cdbus.inst = next_writeback[1].inst;
+            //cdbus.rs1_addr = next_writeback[1].rs1_addr;
+            //cdbus.rs2_addr = next_writeback[1].rs2_addr;
         end
 
         // commit
@@ -403,6 +403,10 @@ import rv32i_types::*;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;
             cdbus.commit_rob_idx = rob_entry_o.rd_rob_idx;
             cdbus.regf_we = 1'b1;
+            cdbus.rs1_addr = rob_entry_o.rs1_addr;
+            cdbus.rs2_addr = rob_entry_o.rs2_addr;
+            cdbus.pc = rob_entry_o.pc;
+            cdbus.inst = rob_entry_o.inst;
         end
     end
 
@@ -449,25 +453,25 @@ import rv32i_types::*;
     logic   [31:0]  monitor_mem_rdata;
     logic   [31:0]  monitor_mem_wdata;
 
-    logic [4:0] commit_rs1_addr, commit_rs2_addr;
-    always_ff @( posedge clk ) begin
-        if (rst) begin
-            commit_rs1_addr <= '0;
-            commit_rs2_addr <= '0;   
-        end
-        if (cdbus.regf_we) begin
-            commit_rs1_addr <= monitor_rs1_addr;
-            commit_rs2_addr <= monitor_rs2_addr;            
-        end
-    end
+    // logic [4:0] commit_rs1_addr, commit_rs2_addr;
+    // always_ff @( posedge clk ) begin
+    //     if (rst) begin
+    //         commit_rs1_addr <= '0;
+    //         commit_rs2_addr <= '0;   
+    //     end
+    //     if (cdbus.regf_we) begin
+    //         commit_rs1_addr <= monitor_rs1_addr;
+    //         commit_rs2_addr <= monitor_rs2_addr;            
+    //     end
+    // end
 
     assign monitor_valid     = cdbus.regf_we;
     assign monitor_order     = m_order; 
     assign monitor_inst      = cdbus.inst;
     assign monitor_rs1_addr  = cdbus.rs1_addr;
     assign monitor_rs2_addr  = cdbus.rs2_addr;
-    assign monitor_rs1_rdata = data[commit_rs1_addr];
-    assign monitor_rs2_rdata = data[commit_rs2_addr];
+    assign monitor_rs1_rdata = data[cdbus.rs1_addr];
+    assign monitor_rs2_rdata = data[cdbus.rs2_addr];
     assign monitor_rd_addr   = cdbus.commit_rd_addr;
     assign monitor_rd_wdata  = cdbus.commit_data;
     assign monitor_pc_rdata  = cdbus.pc;
