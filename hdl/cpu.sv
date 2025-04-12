@@ -151,6 +151,7 @@ import rv32i_types::*;
     rob_entry_t rob_entry_i, rob_entry_o;
     logic       rob_enqueue_i, rob_update_i, rob_dequeue_i;
     logic [4:0] rob_head_addr, rob_tail_addr;
+    logic       rob_full_o;
 
 
     decode decode_stage (
