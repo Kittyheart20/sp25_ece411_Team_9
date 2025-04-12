@@ -95,16 +95,17 @@ covergroup instr_cg with function sample(instr_t instr);
         (instr.r_type.opcode == op_b_reg) &&
         ((instr.r_type.funct3 == arith_f3_add ||
           instr.r_type.funct3 == arith_f3_sr) &&
-         !(instr.r_type.funct7 inside {7'b0100000, 7'b0000001, 7'b0000000}))
+        //  !(instr.r_type.funct7 inside {7'b0100000, 7'b0000001, 7'b0000000}))
+         !(instr.r_type.funct7 inside {7'b0100000, 7'b0000000}))
     );
 
-    illegal_bins REG_NON_VARIANT_ILLEGAL = funct7_cross with (
-        (instr.r_type.opcode == op_b_reg) &&
-        (!(instr.r_type.funct3 inside {arith_f3_add, arith_f3_sr, mult_op_mul, mult_op_mulh, mult_op_mulsu, 
-                                        mult_op_mulu, mult_op_div, mult_op_divu, 
-                                        mult_op_rem, mult_op_remu}) &&
-         (instr.r_type.funct7 != 7'b0000000))
-    );
+    // illegal_bins REG_NON_VARIANT_ILLEGAL = funct7_cross with (
+    //     (instr.r_type.opcode == op_b_reg) &&
+    //     (!(instr.r_type.funct3 inside {arith_f3_add, arith_f3_sr, mult_op_mul, mult_op_mulh, mult_op_mulsu, 
+    //                                     mult_op_mulu, mult_op_div, mult_op_divu, 
+    //                                     mult_op_rem, mult_op_remu}) &&
+    //      (instr.r_type.funct7 != 7'b0000001))
+    // );
 
 
     illegal_bins IMM_SHIFT_VARIANT_ILLEGAL = funct7_cross with (

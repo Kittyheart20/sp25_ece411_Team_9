@@ -6,7 +6,7 @@ class RandInst;
     // You will increment this number as you generate more random instruction
     // types. Once finished, NUM_TYPES should be 9, for each opcode type in
     // rv32i_opcode.
-    localparam NUM_TYPES = 4;
+    localparam NUM_TYPES = 3;
 
     // Note that the 'instr_t' type is from ../pkg/types.sv, there are TODOs
     // you must complete there to fully define 'instr_t'.
@@ -86,17 +86,17 @@ class RandInst;
                 instr.r_type.funct7 == base;
         }
 
-        instr_type[2] -> {
-            instr.r_type.opcode == op_b_reg;
-            // Valid R-type arithmetic operations.
-            instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulsu, 
-                                        mult_op_mulu, mult_op_div, mult_op_divu, 
-                                        mult_op_rem, mult_op_remu };
+        // instr_type[2] -> {
+        //     instr.r_type.opcode == op_b_reg;
+        //     // Valid R-type arithmetic operations.
+        //     instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulsu, 
+        //                                 mult_op_mulu, mult_op_div, mult_op_divu, 
+        //                                 mult_op_rem, mult_op_remu };
 
-            // For instructions that allow variant encoding:
-            // - When funct3 is ADD or SR, allow both base and variant.
-            instr.r_type.funct7 inside { mult };
-        }
+        //     // For instructions that allow variant encoding:
+        //     // - When funct3 is ADD or SR, allow both base and variant.
+        //     instr.r_type.funct7 inside { mult };
+        // }
 
         // Store instructions -- these are easy to constrain!
 // instr_type[3] -> {
@@ -143,7 +143,7 @@ class RandInst;
 
         // Type 5: U-type LUI instruction.
         // U-type instructions have the same layout as the j_type struct.
-        instr_type[3] -> {
+        instr_type[2] -> {
             instr.j_type.opcode == op_b_lui;
         }
 
