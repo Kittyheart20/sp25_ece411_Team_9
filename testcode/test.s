@@ -180,6 +180,16 @@ _start:
     div x17, x16, x13     # Division with result from previous computation
     mul x18, x17, x14     # Multiply with results from previous computations
     rem x19, x18, x16     # Remainder with results from previous computations
+
+
+    # Other tests
+    add x16, x16, x16
+    div x17, x16, x13     # Division with result from previous computation
+    mul x17, x17, x17     # Multiply with results from previous computations
+    rem x19, x18, x17     # Remainder with results from previous computations
+    mul x15, x13, x14     # x15 = 2
+    add x13, x15, x13     # x13 = 3, depends on x15
+    sub x14, x13, x15     # x14 = 1, depends on both x13 and x15
     
 halt:
     slti x0, x0, -256

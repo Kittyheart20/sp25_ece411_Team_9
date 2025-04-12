@@ -81,22 +81,18 @@ class RandInst;
             // - When funct3 is ADD or SR, allow both base and variant.
             if (instr.r_type.funct3 == arith_f3_add ||
                 instr.r_type.funct3 == arith_f3_sr)
-                instr.r_type.funct7 inside { base, variant };
-            else // For all others, only the base encoding is valid.
-                instr.r_type.funct7 == base;
+                instr.r_type.funct7 inside { base, mult, variant };
+
+            // else if (instr.r_type.funct3 == mult_op_mul)
+            //     instr.r_type.funct7 == mult;
+            else // For all others, only the base encoding is valid. + mult ext
+                instr.r_type.funct7 inside {base, mult};
         }
 
-        // instr_type[2] -> {
-        //     instr.r_type.opcode == op_b_reg;
-        //     // Valid R-type arithmetic operations.
-        //     instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulsu, 
-        //                                 mult_op_mulu, mult_op_div, mult_op_divu, 
-        //                                 mult_op_rem, mult_op_remu };
-
-        //     // For instructions that allow variant encoding:
-        //     // - When funct3 is ADD or SR, allow both base and variant.
-        //     instr.r_type.funct7 inside { mult };
-        // }
+            // Valid R-type arithmetic operations.
+            // instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulsu, 
+            //                             mult_op_mulu, mult_op_div, mult_op_divu, 
+            //                             mult_op_rem, mult_op_remu };
 
         // Store instructions -- these are easy to constrain!
 // instr_type[3] -> {
