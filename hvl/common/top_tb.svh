@@ -5,7 +5,10 @@
     end
 
     mem_itf_banked mem_itf(.*);
-    dram_w_burst_frfcfs_controller mem(.itf(mem_itf));
+    // dram_w_burst_frfcfs_controller mem(.itf(mem_itf));
+    random_tb random_tb(.itf(mem_itf)); // For randomized testing
+
+
 
     mon_itf #(.CHANNELS(8)) mon_itf(.*);
     monitor #(.CHANNELS(8)) monitor(.itf(mon_itf));
