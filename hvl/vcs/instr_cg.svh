@@ -120,8 +120,8 @@ covergroup instr_cg with function sample(instr_t instr);
 
     // illegal_bins REG_NON_VARIANT_ILLEGAL = funct7_cross with (
     //     (instr.r_type.opcode == op_b_reg) &&
-    //     (!(instr.r_type.funct3 inside {arith_f3_add, arith_f3_sr, mult_op_mul, mult_op_mulh, mult_op_mulsu, 
-    //                                     mult_op_mulu, mult_op_div, mult_op_divu, 
+    //     (!(instr.r_type.funct3 inside {arith_f3_add, arith_f3_sr, mult_op_mul, mult_op_mulh, mult_op_mulhsu, 
+    //                                     mult_op_mulhu, mult_op_div, mult_op_divu, 
     //                                     mult_op_rem, mult_op_remu}) &&
     //      (instr.r_type.funct7 != 7'b0000001))
     // );

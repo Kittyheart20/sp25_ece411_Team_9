@@ -15,13 +15,10 @@ import rv32i_types::*;
     input   logic               bmem_rvalid
 );
 
-    logic welp;
-    assign welp =  (bmem_raddr == 32'd0); // prevents lint warning on unused variable bmem_raddr
-
-    logic [31:0] pc, pc_next;
-    logic [63:0] order;
-    logic        commit;
-    logic        stall;
+    logic   [31:0]  pc, pc_next;
+    logic   [63:0]  order;
+    logic           commit;
+    logic           stall;
 
     logic   [31:0]  data    [32];
     logic           ready   [32];
@@ -126,8 +123,6 @@ import rv32i_types::*;
     logic [255:0] curr_instr_data, last_instr_data;
     logic enable;
 
-
-
     register #(
         .A_LEN          (ALEN),
         .B_LEN          (BLEN)
@@ -218,8 +213,12 @@ import rv32i_types::*;
         .head_addr  (rob_head_addr),
         .tail_addr  (rob_tail_addr)
     );
+    
     logic   rs1_new, rs2_new;
+    logic   rsv_rs1_ready, rsv_rs2_ready;
 
+    assign rsv_rs1_ready = (ready[dispatch_struct_in.rs1_addr] || rs1_rdy) || (!dispatch_struct_in.use_rs1);
+    assign rsv_rs2_ready = (ready[dispatch_struct_in.rs2_addr] || rs2_rdy) || (!dispatch_struct_in.use_rs2);
 
     reservation_station rsv (
         .clk(clk),
@@ -228,16 +227,16 @@ import rv32i_types::*;
         .dispatch_struct_in(dispatch_struct_in),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
-        .rs1_ready( (ready[dispatch_struct_in.rs1_addr] || rs1_rdy) || (!dispatch_struct_in.use_rs1)),
+        .rs1_ready(rsv_rs1_ready),
           //  .rs2_ready(rs1_rdy || (!dispatch_struct_in.use_rs2)),
 
         .rs2_data_in(/*rsv_rs2_data_in*/data[rs2_dis_idx]),
       //  .rs2_ready(/*ready[rs2_dis_idx]*/rs2_rdy || (!dispatch_struct_in.use_rs2)),
-        .rs2_ready((ready[dispatch_struct_in.rs2_addr] || rs2_rdy) || (!dispatch_struct_in.use_rs2)),
+        .rs2_ready(rsv_rs2_ready),
         //.rs2_ready( (rs2_rdy) || (!dispatch_struct_in.use_rs2)),
 
-        .rs1_new(rs1_new),
-        .rs2_new(rs2_new),
+        // .rs1_new(rs1_new),
+        // .rs2_new(rs2_new),
         .cdbus(cdbus),
         .integer_alu_available(integer_alu_available),
         .mul_alu_available(mul_alu_available),
@@ -364,6 +363,13 @@ import rv32i_types::*;
             next_execute <= '{default: '0};
             next_writeback <= '{default: '0};
         end
+        // else if (!stall) begin
+        //     dispatch_struct_in <= decode_struct_out;
+        //     next_execute <= dispatch_struct_out;
+        // end
+        // else begin
+        //     next_writeback <= execute_output;
+        // end
         else begin
             dispatch_struct_in <= decode_struct_out;
             next_execute <= dispatch_struct_out;
@@ -423,8 +429,8 @@ import rv32i_types::*;
         if (empty_o || full_o) stall = 1'b1;
         else if ( (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none)) 
                      || (!mul_alu_available &&  (dispatch_struct_in.op_type == mul || dispatch_struct_in.op_type == none)) )  begin
-                stall = 1'b1;    
-            end
+            stall = 1'b1;    
+        end
                 
         // else if (!integer_alu_available )
         //     stall = 1'b1;    

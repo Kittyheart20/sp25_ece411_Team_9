@@ -72,6 +72,7 @@ import rv32i_types::*;
             //     gen.randomize();
             //     itf.rdata[0] <= gen.instr.word;
             // end
+
             gen1.randomize();
             gen2.randomize();
             itf.rdata <= {gen2.instr.word, gen1.instr.word};

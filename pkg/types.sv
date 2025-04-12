@@ -72,8 +72,8 @@ package rv32i_types;
     typedef enum logic [2:0] { 
         mult_op_mul    = 3'b000,
         mult_op_mulh  = 3'b001,
-        mult_op_mulsu  = 3'b010,
-        mult_op_mulu   = 3'b011,
+        mult_op_mulhsu  = 3'b010,
+        mult_op_mulhu   = 3'b011,
         mult_op_div    = 3'b100,
         mult_op_divu   = 3'b101,
         mult_op_rem    = 3'b110,

@@ -6,8 +6,8 @@
     mem_itf_banked mem_itf(.*);
 
     // Pick one of the two options (only one of these should be uncommented at a time):
-    // dram_w_burst_frfcfs_controller mem(.itf(mem_itf)); // For directed testing with PROG
-    random_tb random_tb(.itf(mem_itf)); // For randomized testing
+    dram_w_burst_frfcfs_controller mem(.itf(mem_itf)); // For directed testing with PROG
+    // random_tb random_tb(.itf(mem_itf)); // For randomized testing
 
     mon_itf mon_itf(.*);
     monitor monitor(.itf(mon_itf));

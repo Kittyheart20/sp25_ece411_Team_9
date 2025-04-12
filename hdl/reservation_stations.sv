@@ -10,9 +10,6 @@ import rv32i_types::*;
     // New Entry Input
     input  id_dis_stage_reg_t dispatch_struct_in,
     input  logic [4:0]  current_rd_rob_idx,
-    // input  [31:0]  new_rs1_paddr,
-    // input  [31:0]  new_rs2_paddr,
-    // input  [31:0]  new_rd_paddr,
 
     // Updating register values
     input logic [31:0]  rs1_data_in,
@@ -21,8 +18,8 @@ import rv32i_types::*;
     input logic [31:0]  rs2_data_in,
     input logic         rs2_ready,
     input logic [4:0]   rs2_paddr_data_in,
-    input logic         rs1_new,
-    input logic         rs2_new,
+    // input logic         rs1_new,
+    // input logic         rs2_new,
     input cdb cdbus,
     //output ready instructions
     output logic integer_alu_available,
@@ -37,10 +34,10 @@ import rv32i_types::*;
 );
 
     reservation_station_t rs_entry [DEPTH];
-    logic [ROB_IDX_WIDTH-1:0] rob_idx [DEPTH];
-    logic [31:0]                paddr [DEPTH];
-    logic [31:0] open_station;
-    logic [31:0] open_station_mult_div;
+    logic [ROB_IDX_WIDTH-1:0]   rob_idx [DEPTH];
+    // logic [31:0]                paddr [DEPTH];
+    // logic [31:0] open_station;
+    // logic [31:0] open_station_mult_div;
     logic debug;
     assign debug = cdbus.mul_valid && (stations[1].rs1_ready == 0 && stations[1].rs1_addr == cdbus.mul_rd_addr);
     reservation_station_t stations[5];
@@ -65,9 +62,17 @@ import rv32i_types::*;
                         stations[i].rs1_data <= cdbus.mul_data; 
                         stations[i].rs1_ready <= 1'b1;                         
                     end
+                    else if(cdbus.regf_we && stations[i].rs1_addr == cdbus.commit_rd_addr)begin
+                        stations[i].rs1_data <= cdbus.commit_data; 
+                        stations[i].rs1_ready <= 1'b1;                         
+                    end
+                    else if (cdbus.regf_we && stations[i].rs1_addr == cdbus.commit_rd_addr)begin
+                        stations[i].rs1_data <= cdbus.commit_data; 
+                        stations[i].rs1_ready <= 1'b1;                         
+                    end
                 end 
                 
-                if(stations[i].rs2_ready == 0 /*&& stations[i].rs2_addr == cdbus.alu_rd_addr */) begin //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
+                if(stations[i].rs2_ready == 0) begin/*&& stations[i].rs2_addr == cdbus.alu_rd_addr */ //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
                     //stations[0].rs2_data <= cdbus.alu_data; 
                     if(cdbus.alu_valid && stations[i].rs2_addr == cdbus.alu_rd_addr) begin
                         stations[i].rs2_data <= cdbus.alu_data; 
@@ -77,6 +82,14 @@ import rv32i_types::*;
                         stations[i].rs2_data <= cdbus.mul_data; 
                         stations[i].rs2_ready <= 1'b1;                         
                     end
+                    else if(cdbus.regf_we && stations[i].rs2_addr == cdbus.commit_rd_addr)begin
+                        stations[i].rs2_data <= cdbus.commit_data; 
+                        stations[i].rs2_ready <= 1'b1;                         
+                    end
+                    else if (cdbus.regf_we && stations[i].rs2_addr == cdbus.commit_rd_addr)begin
+                        stations[i].rs2_data <= cdbus.commit_data; 
+                        stations[i].rs2_ready <= 1'b1;   
+                    end 
                 end
 
                 if(cdbus.alu_rob_idx == stations[i].rd_rob_idx) begin
@@ -194,6 +207,7 @@ import rv32i_types::*;
 
             stations[1].rs1_ready <= 1'b0;
             stations[1].rs2_ready <= 1'b0;
+            
             if (rs1_ready) begin                        
                 stations[1].rs1_data <= rs1_data_in;
                 stations[1].rs1_ready <= 1'b1;
@@ -255,12 +269,13 @@ import rv32i_types::*;
 
     always_comb begin
         if((stations[0].status == IDLE) || (stations[0].status == COMPLETE)) begin
-            open_station = 0;
+            // open_station = 0;
             integer_alu_available = 1;
         end else begin
-            open_station = '0;
+            // open_station = '0;
             integer_alu_available = 0;
         end
+        
         if((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
             mul_alu_available = 1;
         end else begin

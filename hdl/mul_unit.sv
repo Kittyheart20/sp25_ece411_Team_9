@@ -69,16 +69,17 @@ import rv32i_types::*;
     // reservation_station_t prev_execute;
     
     // assign ready = (counter == 8'd100);
-
+    mult_ops mult_op_running;
     always_ff @(posedge clk ) begin
-        if( rst) begin
+        if (rst) begin
             counter <= 8'b0;
         // prev_execute <= '0;
             execute_output <= '0;
             execute_output.valid <= 1'b0;
+            mult_op_running <= '0;
         end else begin
             // prev_execute <= next_execute;
-            if (next_execute.valid && (counter == 0)) begin
+            if (next_execute.valid && (counter < 10)) begin
                 execute_output.valid <= 1'b0;                
                 
                 execute_output.pc <= next_execute.pc;
@@ -88,7 +89,7 @@ import rv32i_types::*;
 
                 execute_output.rd_rob_idx <= next_execute.rd_rob_idx;
                 execute_output.regf_we <= next_execute.regf_we;
-
+                mult_op_running <= next_execute.multop;
                 unique case (next_execute.multop)
                     mult_op_mul:   begin 
                         a_mul <= next_execute.rs1_data;   
@@ -100,12 +101,12 @@ import rv32i_types::*;
                         b_mul <= next_execute.rs2_data;
                         signed_mode <= 1'b1;
                     end
-                    mult_op_mulsu: begin  // need to convert 
+                    mult_op_mulhsu: begin  // need to convert 
                         a_mul <= next_execute.rs1_data;   
                         b_mul <= next_execute.rs2_data;
                         signed_mode <= 1'b1;
                     end
-                    mult_op_mulu:  begin
+                    mult_op_mulhu:  begin
                         signed_mode <= 1'b0;  
                         a_mul <= next_execute.rs1_data;   
                         b_mul <= next_execute.rs2_data;
@@ -135,20 +136,20 @@ import rv32i_types::*;
                 endcase
                 counter <= counter + 1;
             end
-            else if (counter != 0) begin
+            else if (counter != 0 ) begin
                 counter <= counter + 1;
             end
             
             if (counter == 8'd100) begin
                 // use result
-                unique case (next_execute.multop)
+                unique case (mult_op_running)
                     mult_op_mul: begin
                         execute_output.rd_data = product_mul[31:0]; 
                     end
                     mult_op_mulh:  execute_output.rd_data = product_mul[63:32]; 
 
-                    mult_op_mulsu:  execute_output.rd_data = product_mul[31:0]; 
-                    mult_op_mulu: execute_output.rd_data = product_mul[63:32]; 
+                    mult_op_mulhsu:  execute_output.rd_data = product_mul[63:32]; 
+                    mult_op_mulhu: execute_output.rd_data = product_mul[63:32]; 
 
                     mult_op_div: execute_output.rd_data = quotient_s;
                     mult_op_divu: execute_output.rd_data = quotient_u;

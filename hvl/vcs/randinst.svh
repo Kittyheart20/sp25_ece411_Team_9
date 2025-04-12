@@ -90,8 +90,8 @@ class RandInst;
         }
 
             // Valid R-type arithmetic operations.
-            // instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulsu, 
-            //                             mult_op_mulu, mult_op_div, mult_op_divu, 
+            // instr.r_type.funct3 inside { mult_op_mul, mult_op_mulh, mult_op_mulhsu, 
+            //                             mult_op_mulhu, mult_op_div, mult_op_divu, 
             //                             mult_op_rem, mult_op_remu };
 
         // Store instructions -- these are easy to constrain!
