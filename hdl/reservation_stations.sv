@@ -182,8 +182,8 @@ import rv32i_types::*;
                 stations[1].rs2_data <= rs2_data_in;
                 stations[1].rs2_ready <= 1'b1;
             end else if((cdbus.commit_rd_addr == dispatch_struct_in.rs2_addr) && cdbus.regf_we) begin /*&& (cdbus.commit_rob_idx == stations[0].rs1_rob_idx)*/ 
-                stations[1].rs1_data <= cdbus.commit_data; 
-                stations[1].rs1_ready <= 1'b1;                         
+                stations[1].rs2_data <= cdbus.commit_data; 
+                stations[1].rs2_ready <= 1'b1;                         
             end
 
             // This will only check if rs1 & rs2 are ready when instuction is first assigned to reservation station
@@ -205,7 +205,7 @@ import rv32i_types::*;
 
             stations[1].status <= BUSY;
         end
-        else if (cdbus.alu_valid || cdbus.mul_valid) begin
+        else if (cdbus.alu_valid || cdbus.mul_valid || cdbus.regf_we) begin
             for (integer i = 0; i < 2; i++) begin
                 if(stations[i].rs1_ready == 0) begin //&& stations[0].rd_rob_idx == cdbus.rob_idx) begin
                     if(cdbus.alu_valid && stations[i].rs1_addr == cdbus.alu_rd_addr)begin
@@ -214,10 +214,6 @@ import rv32i_types::*;
                     end
                     else if (cdbus.mul_valid && stations[i].rs1_addr == cdbus.mul_rd_addr)begin
                         stations[i].rs1_data <= cdbus.mul_data; 
-                        stations[i].rs1_ready <= 1'b1;                         
-                    end
-                    else if (cdbus.regf_we && stations[i].rs1_addr == cdbus.commit_rd_addr)begin
-                        stations[i].rs1_data <= cdbus.commit_data; 
                         stations[i].rs1_ready <= 1'b1;                         
                     end
                     else if (cdbus.regf_we && stations[i].rs1_addr == cdbus.commit_rd_addr)begin
@@ -240,10 +236,6 @@ import rv32i_types::*;
                         stations[i].rs2_data <= cdbus.commit_data; 
                         stations[i].rs2_ready <= 1'b1;                         
                     end
-                    else if (cdbus.regf_we && stations[i].rs2_addr == cdbus.commit_rd_addr)begin
-                        stations[i].rs2_data <= cdbus.commit_data; 
-                        stations[i].rs2_ready <= 1'b1;   
-                    end 
                 end
 
                 if (cdbus.alu_rob_idx == stations[i].rd_rob_idx  && cdbus.alu_valid  ) begin
@@ -311,7 +303,7 @@ import rv32i_types::*;
         if (stations[0].valid && stations[0].rs1_ready && stations[0].rs2_ready) begin
             next_execute_alu = stations[0];
         end
-        if (stations[1].valid && stations[1].rs1_ready && stations[0].rs2_ready) begin
+        if (stations[1].valid && stations[1].rs1_ready && stations[1].rs2_ready) begin
             next_execute_mult_div = stations[1];
         end
     end

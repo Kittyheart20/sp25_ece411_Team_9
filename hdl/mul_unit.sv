@@ -51,6 +51,8 @@ import rv32i_types::*;
     logic [31:0] remainder_u, remainder_s;
 
     logic signed_mode, div_by_0_u, div_by_0_s;
+    logic div_overflow_s;
+    assign div_overflow_s = (a_div_s == 32'h80000000) && (b_div_s == 32'hFFFFFFFF);
 
     logic [31:0] prev_pc;
 
@@ -148,7 +150,9 @@ import rv32i_types::*;
                     mult_op_div: begin
                         if (b_div_s == '0)
                             execute_output.rd_data <= 32'hFFFFFFFF;
-                         else execute_output.rd_data <= quotient_s;
+                        else if (div_overflow_s)
+                            execute_output.rd_data <= 32'h80000000;
+                        else execute_output.rd_data <= quotient_s;
                     end
                     mult_op_divu: begin 
                         if (b_div_u == '0)
@@ -158,6 +162,8 @@ import rv32i_types::*;
                     mult_op_rem: begin 
                         if (b_div_s == '0)
                             execute_output.rd_data <= a_div_s;
+                        else if (div_overflow_s)
+                            execute_output.rd_data <= 32'h0;
                         else execute_output.rd_data <= remainder_s; 
                     end
                     mult_op_remu:  begin 

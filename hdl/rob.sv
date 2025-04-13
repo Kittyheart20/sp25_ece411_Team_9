@@ -14,10 +14,6 @@ import rv32i_types::*;
     input   logic       dequeue_i,
     input   cdb         cdbus,
 
-    // input  logic [31:0] rs1_data,
-    // input  logic [31:0] rs2_data,
-    output logic        rs1_ready,
-    output logic        rs2_ready,
 
     output  logic [4:0] head_addr,
     output  logic [4:0] tail_addr,
@@ -50,8 +46,8 @@ import rv32i_types::*;
         
         rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
         rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
-        rob_entry_i.rs1_rob_idx = dispatch_struct_in.rs1_rob_idx;
-        rob_entry_i.rs2_rob_idx = dispatch_struct_in.rs2_rob_idx;
+        // rob_entry_i.rs1_rob_idx = dispatch_struct_in.rs1_rob_idx;
+        // rob_entry_i.rs2_rob_idx = dispatch_struct_in.rs2_rob_idx;
         //rob_entry_i.rd_data = 'x;
     end
     logic rob_update_mul; logic rob_update_alu;

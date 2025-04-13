@@ -187,6 +187,14 @@ _start:
     mul x18, x17, x14     # Multiply with results from previous computations
     rem x19, x18, x16     # Remainder with results from previous computations
 
+    # Initialize registers with test values
+    li x1, 10           # Small positive value
+    li x2, -15          # Negative value
+    li x3, 0x7FFFFFFF   # Most positive 32-bit value
+    li x4, 0x80000000   # Most negative 32-bit value
+    li x5, 0            # Zero (will be used as divisor)
+    li x6, 1            # For comparison
+
     # -------------------------------------------------------------------------
     # Test 1: DIV - Signed Division by Zero
     # Expected result: 0xFFFFFFFF (-1)
@@ -230,6 +238,69 @@ _start:
     li x5, -1           # Divisor = -1
     div x26, x4, x5     # 0x80000000 / -1 = 0x80000000 (overflow)
     rem x27, x4, x5     # 0x80000000 % -1 = 0
+
+
+    # Initialize registers with test values
+    li x1, 0x80000000   # Most negative 32-bit value (-2^31)
+    li x2, 0xFFFFFFFF   # -1 in two's complement
+    li x3, 0x00000001   # 1
+
+    # Test 1: DIV Overflow - Most negative value divided by -1
+    # Expected: 0x80000000 (same as dividend, due to overflow)
+    div x10, x1, x2     # (-2^31) / (-1) = 2^31, but that overflows 32-bit signed int
+
+    # Test 2: REM with DIV Overflow
+    # Expected: 0 (remainder is always 0 when dividing by -1)
+    rem x11, x1, x2     # (-2^31) % (-1) = 0
+
+    # Test 3: DIVU with large values (no overflow, but good boundary test)
+    # Expected: 0x80000000 (treated as unsigned division)
+    divu x12, x1, x3    # (2^31) / 1 = 2^31
+
+    # Test 4: REMU with large values
+    # Expected: 0 (no remainder when dividing by 1)
+    remu x13, x1, x3    # (2^31) % 1 = 0
+
+    # Initialize registers with test values
+    li x1, 0x80000000   # Most negative 32-bit value (-2^31)
+    li x2, 0xFFFFFFFF   # -1 in two's complement
+    li x3, 0x7FFFFFFF   # Maximum positive 32-bit value (2^31-1)
+    li x4, 0x00000002   # 2
+
+    # Test 1: MUL with overflow (low bits)
+    # Expected: 0x00000000 (low 32 bits of (-2^31) * (-1) = 2^31)
+    mul x14, x1, x2     # (-2^31) * (-1) = 2^31, but we only get lower 32 bits
+
+    # Test 2: MULH with overflow (high bits)
+    # Expected: 0x00000000 (high 32 bits of (-2^31) * (-1) = 0)
+    mulh x15, x1, x2    # High 32 bits of (-2^31) * (-1)
+
+    # Test 3: MULHU with large values
+    # Expected: 0x7FFFFFFF (high 32 bits of unsigned multiplication)
+    mulhu x16, x3, x4   # High 32 bits of (2^31-1) * 2 as unsigned
+
+    # Test 4: MULHSU with mixed signs
+    # Expected: Will depend on implementation, tests signed * unsigned
+    mulhsu x17, x1, x3  # High 32 bits of (-2^31) * (2^31-1) as signed * unsigned
+
+    # Initialize registers
+    li x1, 0x80000000   # Most negative 32-bit value (-2^31)
+    li x2, 0x00000001   # 1
+    li x3, 0xFFFFFFFF   # -1 in two's complement
+
+    # Test 1: DIV followed by MUL (tests overflow handling chain)
+    div x18, x1, x3     # Should return 0x80000000 (overflow)
+    mul x19, x18, x2    # Should return 0x80000000 (no overflow, just passing through)
+
+    # Test 2: MUL followed by DIV (tests another chain)
+    mul x20, x1, x3     # Should return 0x80000000 (lower bits)
+    div x21, x20, x3    # Should return 0x80000000 (overflow again)
+
+    # Test 3: Extreme value division chain
+    div x22, x1, x3     # 0x80000000 (overflow)
+    div x23, x22, x3    # 0x80000000 (overflow again)
+    div x24, x23, x2    # 0x80000000 (normal division, no overflow)
+
 
         # Initialize registers with known values
     li x1, 0x00000001
