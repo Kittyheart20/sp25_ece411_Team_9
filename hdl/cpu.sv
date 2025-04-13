@@ -24,6 +24,10 @@ import rv32i_types::*;
     logic           ready   [32];
     logic   [4:0]   rob_idx [32];
     logic           rs1_rdy, rs2_rdy;
+    logic res_station_stall;
+
+    logic mul_alu_available, integer_alu_available;
+    assign res_station_stall = ((decode_struct_out.op_type == mul) && !mul_alu_available) || ((decode_struct_out.op_type == alu) && !integer_alu_available);
 
     // Stage Registers
     localparam NUM_FUNC_UNIT = 2;
@@ -56,7 +60,7 @@ import rv32i_types::*;
     logic   [255:0] dfp_rdata;
     logic   [255:0] dfp_wdata;
     logic           dfp_resp;
-    logic           reached_loop; // debug value
+    // logic           reached_loop; // debug value
 
     assign ufp_wmask = '0;
     assign ufp_wdata = '0;
@@ -140,14 +144,12 @@ import rv32i_types::*;
     logic       rs1_renamed, rs2_renamed;
     logic       rs1_ready, rs2_ready;
     logic       regf_we, rs_we;
-    logic rsv_valid_out;
 
     logic [4:0] rob_addr;
     rob_entry_t rob_entry_i, rob_entry_o;
     logic       rob_enqueue_i, rob_update_i, rob_dequeue_i;
     logic [4:0] rob_head_addr, rob_tail_addr;
     logic       rob_full_o;
-
 
     decode decode_stage (
         .stall              (stall),
@@ -214,7 +216,7 @@ import rv32i_types::*;
         .tail_addr  (rob_tail_addr)
     );
     
-    logic   rs1_new, rs2_new;
+    // logic   rs1_new, rs2_new;
     logic   rsv_rs1_ready, rsv_rs2_ready;
 
     assign rsv_rs1_ready = (ready[dispatch_struct_in.rs1_addr] || rs1_rdy) || (!dispatch_struct_in.use_rs1);
@@ -262,8 +264,9 @@ import rv32i_types::*;
     );
 
     logic bmem_flag;
+    
     always_ff @(posedge clk) begin : fetch
-        reached_loop <= '0;
+        // reached_loop <= '0;
         if (rst) begin
             pc          <= 32'haaaaa000;
             order       <= '0;
@@ -280,7 +283,7 @@ import rv32i_types::*;
 
             if (pc[31:5] == last_instr_addr[31:5]) begin       // line buffer
                 ufp_rmask <= '0;
-                reached_loop <= '1;
+                // reached_loop <= '1;
                 data_i <= {order, pc, last_instr_data[32*pc[4:2] +: 32]};
                 if (!full_o && !stall) begin
                     enqueue_i <= 1'b1;
@@ -314,7 +317,7 @@ import rv32i_types::*;
                     end
                 end else if (dfp_read) begin
                     bmem_addr <= dfp_addr;
-                    if (bmem_flag == 0) begin
+                    if (bmem_flag == 1'b0) begin
                         bmem_read <= 1'b1;
                         bmem_flag <= 1'b1;
                     end else begin
@@ -340,13 +343,29 @@ import rv32i_types::*;
                 decode_struct_in.inst = data_o[31:0];
                 decode_struct_in.pc = data_o[63:32];
                 decode_struct_in.order = data_o[127:64];
-                decode_struct_in.valid = 1'b1;
+                decode_struct_in.valid = 1'b1 /*&& !stall*/;
             end else begin
                 decode_struct_in.valid = 1'b0;
             end
         end
-    end
+    end   
 
+    // assign dequeue_i = (!empty_o && !rst && !stall); 
+
+    // always_ff @(posedge clk) begin : prep_decode_in
+    //     if (rst) begin
+    //         decode_struct_in <= '0;
+    //     end else begin
+    //         if (dequeue_i) begin
+    //             decode_struct_in.inst <= data_o[31:0];
+    //             decode_struct_in.pc <= data_o[63:32];
+    //             decode_struct_in.order <= data_o[127:64];
+    //             decode_struct_in.valid <= 1'b1 /*&& !stall*/;
+    //         end else begin
+    //             decode_struct_in.valid <= 1'b0;
+    //         end
+    //     end
+    // end 
 
     always_comb begin : update_line_buffer
         enable = 1'b0;
@@ -363,15 +382,12 @@ import rv32i_types::*;
             next_execute <= '{default: '0};
             next_writeback <= '{default: '0};
         end
-        // else if (!stall) begin
-        //     dispatch_struct_in <= decode_struct_out;
-        //     next_execute <= dispatch_struct_out;
-        // end
-        // else begin
-        //     next_writeback <= execute_output;
-        // end
         else begin
+            //if (((decode_struct_out.op_type == mul) && mul_alu_available) || ((decode_struct_out.op_type == alu) && integer_alu_available))
+            // if (!stall)
             dispatch_struct_in <= decode_struct_out;
+            //if (!(((decode_struct_out.op_type == mul) && mul_alu_available) || ((decode_struct_out.op_type == alu) && integer_alu_available)))
+              //  dispatch_struct_in.valid <= 0;
             next_execute <= dispatch_struct_out;
             next_writeback <= execute_output;
         end
@@ -393,20 +409,12 @@ import rv32i_types::*;
             cdbus.alu_rd_addr = next_writeback[0].rd_addr;
             cdbus.alu_rob_idx = next_writeback[0].rd_rob_idx;
             cdbus.alu_valid = next_writeback[0].valid;
-            //cdbus.pc = next_writeback[0].pc;
-            //cdbus.inst = next_writeback[0].inst;
-            //cdbus.rs1_addr = next_writeback[0].rs1_addr;
-            //cdbus.rs2_addr = next_writeback[0].rs2_addr;
         end 
         if (next_writeback[1].valid) begin 
             cdbus.mul_data = next_writeback[1].rd_data;
             cdbus.mul_rd_addr = next_writeback[1].rd_addr;
             cdbus.mul_rob_idx = next_writeback[1].rd_rob_idx;
             cdbus.mul_valid = next_writeback[1].valid;
-            //cdbus.pc = next_writeback[1].pc;
-            //cdbus.inst = next_writeback[1].inst;
-            //cdbus.rs1_addr = next_writeback[1].rs1_addr;
-            //cdbus.rs2_addr = next_writeback[1].rs2_addr;
         end
 
         // commit
@@ -422,20 +430,29 @@ import rv32i_types::*;
         end
     end
 
-    logic failure;
-    assign failure = (!integer_alu_available) != (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none));
+    //logic failure;
+    //assign failure = (!integer_alu_available) != (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none));
+    logic stall_prev;
+
     always_comb begin : update_stall
         stall = 1'b0;
         if (empty_o || full_o) stall = 1'b1;
+        else if (stall_prev == 0) stall = 1;
         else if ( (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none)) 
                      || (!mul_alu_available &&  (dispatch_struct_in.op_type == mul || dispatch_struct_in.op_type == none)) )  begin
             stall = 1'b1;    
-        end
-                
-        // else if (!integer_alu_available )
-        //     stall = 1'b1;    
+        end  
 
+    end
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            stall_prev <= 0;
         end
+        else begin
+            stall_prev <= stall;
+        end
+    end
+
 
     logic[64:0] m_order;
     always_ff @(posedge clk) begin
@@ -464,18 +481,6 @@ import rv32i_types::*;
     logic   [3:0]   monitor_mem_wmask;
     logic   [31:0]  monitor_mem_rdata;
     logic   [31:0]  monitor_mem_wdata;
-
-    // logic [4:0] commit_rs1_addr, commit_rs2_addr;
-    // always_ff @( posedge clk ) begin
-    //     if (rst) begin
-    //         commit_rs1_addr <= '0;
-    //         commit_rs2_addr <= '0;   
-    //     end
-    //     if (cdbus.regf_we) begin
-    //         commit_rs1_addr <= monitor_rs1_addr;
-    //         commit_rs2_addr <= monitor_rs2_addr;            
-    //     end
-    // end
 
     assign monitor_valid     = cdbus.regf_we;
     assign monitor_order     = m_order; 

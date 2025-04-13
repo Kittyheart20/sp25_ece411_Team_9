@@ -40,7 +40,6 @@ import rv32i_types::*;
     input  logic            clk,
     input  logic            rst,
     input  reservation_station_t next_execute,
-    // output logic            ready,
     output to_writeback_t   execute_output
 );
 
@@ -52,6 +51,8 @@ import rv32i_types::*;
     logic [31:0] remainder_u, remainder_s;
 
     logic signed_mode, div_by_0_u, div_by_0_s;
+
+    logic [31:0] prev_pc;
 
     DW02_mult_inst #(32, 32) multiply (
         .inst_A(a_mul), .inst_B(b_mul), .inst_TC(signed_mode), .PRODUCT_inst(product_mul)
@@ -66,19 +67,18 @@ import rv32i_types::*;
         .divide_by_0(div_by_0_s));
 
     logic [7:0] counter;
-    // reservation_station_t prev_execute;
     
-    // assign ready = (counter == 8'd100);
     mult_ops mult_op_running;
     always_ff @(posedge clk ) begin
         if (rst) begin
             counter <= 8'b0;
-        // prev_execute <= '0;
             execute_output <= '0;
             execute_output.valid <= 1'b0;
             mult_op_running <= '0;
+            // debug
+            prev_pc <= '0;
         end else begin
-            // prev_execute <= next_execute;
+            prev_pc <= next_execute.pc;
             if (next_execute.valid && (counter < 10)) begin
                 execute_output.valid <= 1'b0;                
                 
@@ -136,16 +136,10 @@ import rv32i_types::*;
                 endcase
                 counter <= counter + 1;
             end
-            else if (counter != 0 ) begin
-                counter <= counter + 1;
-            end
-            
-            if (counter == 8'd100) begin
+            else if (counter == 8'd50) begin
                 // use result
                 unique case (mult_op_running)
-                    mult_op_mul: begin
-                        execute_output.rd_data = product_mul[31:0]; 
-                    end
+                    mult_op_mul: execute_output.rd_data = product_mul[31:0]; 
                     mult_op_mulh:  execute_output.rd_data = product_mul[63:32]; 
 
                     mult_op_mulhsu:  execute_output.rd_data = product_mul[63:32]; 
@@ -159,7 +153,10 @@ import rv32i_types::*;
                 endcase
                 
                 counter <= 8'd0;
-                execute_output.valid <= 1'b1;     
+                execute_output.valid <= 1'b1;    
+            end
+            else /* if (counter != 0) */ begin
+                counter <= counter + 1;
             end
         end
     end
