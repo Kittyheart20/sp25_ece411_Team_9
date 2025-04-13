@@ -187,5 +187,49 @@ _start:
 #    mul x18, x17, x14     # Multiply with results from previous computations
 #    rem x19, x18, x16     # Remainder with results from previous computations
 
+    # -------------------------------------------------------------------------
+    # Test 1: DIV - Signed Division by Zero
+    # Expected result: 0xFFFFFFFF (-1)
+    # -------------------------------------------------------------------------
+    div x10, x1, x5     # 10 / 0 = -1 (all 1's)
+    div x11, x2, x5     # -15 / 0 = -1 (all 1's)
+    div x12, x3, x5     # 0x7FFFFFFF / 0 = -1 (all 1's)
+    div x13, x4, x5     # 0x80000000 / 0 = -1 (all 1's)
+    
+    # -------------------------------------------------------------------------
+    # Test 2: DIVU - Unsigned Division by Zero
+    # Expected result: 0xFFFFFFFF (all 1's)
+    # -------------------------------------------------------------------------
+    divu x14, x1, x5    # 10 / 0 = 0xFFFFFFFF
+    divu x15, x2, x5    # 0xFFFFFFF1 / 0 = 0xFFFFFFFF (x2 is treated as unsigned)
+    divu x16, x3, x5    # 0x7FFFFFFF / 0 = 0xFFFFFFFF
+    divu x17, x4, x5    # 0x80000000 / 0 = 0xFFFFFFFF
+    
+    # -------------------------------------------------------------------------
+    # Test 3: REM - Signed Remainder by Zero
+    # Expected result: Dividend is returned unchanged
+    # -------------------------------------------------------------------------
+    rem x18, x1, x5     # 10 % 0 = 10
+    rem x19, x2, x5     # -15 % 0 = -15
+    rem x20, x3, x5     # 0x7FFFFFFF % 0 = 0x7FFFFFFF
+    rem x21, x4, x5     # 0x80000000 % 0 = 0x80000000
+    
+    # -------------------------------------------------------------------------
+    # Test 4: REMU - Unsigned Remainder by Zero
+    # Expected result: Dividend is returned unchanged
+    # -------------------------------------------------------------------------
+    remu x22, x1, x5    # 10 % 0 = 10
+    remu x23, x2, x5    # 0xFFFFFFF1 % 0 = 0xFFFFFFF1
+    remu x24, x3, x5    # 0x7FFFFFFF % 0 = 0x7FFFFFFF
+    remu x25, x4, x5    # 0x80000000 % 0 = 0x80000000
+    
+    # -------------------------------------------------------------------------
+    # Test 5: Special Case - Division Overflow
+    # DIV: Most negative value divided by -1 should return the same value
+    # -------------------------------------------------------------------------
+    li x5, -1           # Divisor = -1
+    div x26, x4, x5     # 0x80000000 / -1 = 0x80000000 (overflow)
+    rem x27, x4, x5     # 0x80000000 % -1 = 0
+
 halt:
     slti x0, x0, -256

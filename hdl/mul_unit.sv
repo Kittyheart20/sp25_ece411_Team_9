@@ -139,16 +139,32 @@ import rv32i_types::*;
             else if (counter == 8'd50) begin
                 // use result
                 unique case (mult_op_running)
-                    mult_op_mul: execute_output.rd_data = product_mul[31:0]; 
-                    mult_op_mulh:  execute_output.rd_data = product_mul[63:32]; 
+                    mult_op_mul: execute_output.rd_data <= product_mul[31:0]; 
+                    mult_op_mulh:  execute_output.rd_data <= product_mul[63:32]; 
 
-                    mult_op_mulhsu:  execute_output.rd_data = product_mul[63:32]; 
-                    mult_op_mulhu: execute_output.rd_data = product_mul[63:32]; 
+                    mult_op_mulhsu:  execute_output.rd_data <= product_mul[63:32]; 
+                    mult_op_mulhu: execute_output.rd_data <= product_mul[63:32]; 
 
-                    mult_op_div: execute_output.rd_data = quotient_s;
-                    mult_op_divu: execute_output.rd_data = quotient_u;
-                    mult_op_rem: execute_output.rd_data = remainder_s; 
-                    mult_op_remu:  execute_output.rd_data = remainder_u;
+                    mult_op_div: begin
+                        if (b_div_s == '0)
+                            execute_output.rd_data <= 32'hFFFFFFFF;
+                         else execute_output.rd_data <= quotient_s;
+                    end
+                    mult_op_divu: begin 
+                        if (b_div_u == '0)
+                            execute_output.rd_data <= 32'hFFFFFFFF;
+                        else execute_output.rd_data <= quotient_u;
+                    end
+                    mult_op_rem: begin 
+                        if (b_div_s == '0)
+                            execute_output.rd_data <= a_div_s;
+                        else execute_output.rd_data <= remainder_s; 
+                    end
+                    mult_op_remu:  begin 
+                        if (b_div_u == '0)
+                            execute_output.rd_data <= a_div_u;
+                        else execute_output.rd_data <= remainder_u; 
+                    end
                     default:       signed_mode <= 1'b0; //
                 endcase
                 
