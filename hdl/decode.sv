@@ -1,7 +1,7 @@
 module decode
 import rv32i_types::*;
 (
-    input  logic        stall,
+ //   input  logic        stall,
     input if_id_stage_reg_t     decode_struct_in, // Will only contain instr, pc, order & valid
     output id_dis_stage_reg_t   decode_struct_out
 );
@@ -30,22 +30,28 @@ import rv32i_types::*;
         // decode_struct_out = '0;
         // decode_struct_out.valid = 1'b0;
         // if (!stall) begin
-        decode_struct_out.valid = decode_struct_in.valid;
         decode_struct_out.inst = decode_struct_in.inst;
         decode_struct_out.pc = decode_struct_in.pc;
         decode_struct_out.order = decode_struct_in.order;
+        decode_struct_out.valid = decode_struct_in.valid;
         decode_struct_out.opcode = opcode;
         decode_struct_out.funct3 = funct3;
         decode_struct_out.funct7 = funct7;
+        decode_struct_out.rd_addr = rd_addr;
         decode_struct_out.rs1_addr = rs1_addr;
         decode_struct_out.rs2_addr = rs2_addr;
-        decode_struct_out.rd_addr = rd_addr;
+        decode_struct_out.rd_rob_idx = 'x;
+        decode_struct_out.rs1_rob_idx = 'x;
+        decode_struct_out.rs2_rob_idx = 'x;
+        decode_struct_out.imm = 'x;
+        decode_struct_out.regf_we = 1'b0;
+        decode_struct_out.alu_m1_sel = rs1_out;
+        decode_struct_out.alu_m2_sel = rs2_out;
         decode_struct_out.op_type = alu;
-        // decode_struct_out.rd_rob_idx = rd_rob_idx;
-        // decode_struct_out.rs1_rob_idx = rs1_rob_idx;
-        // decode_struct_out.rs2_rob_idx = rs2_rob_idx;
-        decode_struct_out.use_rs1 = 0;
-        decode_struct_out.use_rs2 = 0;
+        decode_struct_out.aluop = alu_op_add;
+        decode_struct_out.multop = mult_op_mul;
+        decode_struct_out.use_rs1 = 1'b0;
+        decode_struct_out.use_rs2 = 1'b0;
 
         
         unique case (opcode)
@@ -84,10 +90,10 @@ import rv32i_types::*;
                 decode_struct_out.alu_m1_sel = rs1_out;
                 decode_struct_out.alu_m2_sel = rs2_out;
                 decode_struct_out.use_rs1 = 1'b1;
-                decode_struct_out.use_rs2 = 1'b1;
+                decode_struct_out.use_rs2 = 1'b1;      
 
                 if (funct7 == mult) begin   // multiply extension
-                    decode_struct_out.multop = funct3;
+                    decode_struct_out.multop = mult_ops'(funct3);
                     decode_struct_out.op_type = mul;
                 end else begin  // integer alu
                     unique case (funct3)

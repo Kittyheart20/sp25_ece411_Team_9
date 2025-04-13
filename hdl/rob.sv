@@ -10,10 +10,9 @@ import rv32i_types::*;
     output  rob_entry_t rob_entry_o,
 
     input   logic       enqueue_i,  // Do we need this? We can just use dispatch_struct_in.valid
-    input   logic       update_i,
+  //  input   logic       update_i,
     input   logic       dequeue_i,
     input   cdb         cdbus,
-
 
     output  logic [4:0] head_addr,
     output  logic [4:0] tail_addr,
@@ -48,7 +47,9 @@ import rv32i_types::*;
         rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
         // rob_entry_i.rs1_rob_idx = dispatch_struct_in.rs1_rob_idx;
         // rob_entry_i.rs2_rob_idx = dispatch_struct_in.rs2_rob_idx;
-        //rob_entry_i.rd_data = 'x;
+        rob_entry_i.rd_data = '0;
+        rob_entry_i.rs1_data = '0;
+        rob_entry_i.rs2_data = '0;
     end
     logic rob_update_mul; logic rob_update_alu;
     logic insert; logic remove;
@@ -63,7 +64,7 @@ import rv32i_types::*;
             tail_addr <= 0;
             count <= '0;
             for (integer i = 0; i < DEPTH; i++) begin
-                rob_table[i].status = empty;
+                rob_table[i].status <= empty;
             end
         end
         //else if (dispatch_struct_in.valid) begin

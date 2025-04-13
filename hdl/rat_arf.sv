@@ -28,11 +28,11 @@ import rv32i_types::*;
     output  logic [4:0]     rs2_rob_idx
 );
 
-    logic   [31:0]            data    [32];
+    //logic   [31:0]            data    [32];
     //logic   [31:0]            tags    [32];     // I think the tags should be the same as the ROB idx
     //logic                     renamed [32];     
-    logic                     ready   [32];
-    logic [ROB_IDX_WIDTH-1:0] rob_idx [32];
+    //logic                     ready   [32];
+    //logic [ROB_IDX_WIDTH-1:0] rob_idx [32];
 
     //logic curr_regf_we;
     logic   [4:0]   rs1_addr, rs2_addr, rd_addr;
@@ -69,8 +69,8 @@ import rv32i_types::*;
                 prev_pc <= dispatch_struct_in.pc;
 
                 if (dispatch_struct_in.valid) begin
-                    rs1_rdy = ready[dispatch_struct_in.rs1_addr];
-                    rs2_rdy = ready[dispatch_struct_in.rs1_addr];
+                    rs1_rdy <= ready[dispatch_struct_in.rs1_addr];
+                    rs2_rdy <= ready[dispatch_struct_in.rs1_addr];
                 end
             // end else if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (dispatch_struct_in.pc != prev_pc)) begin           // Creating a new entry   
             //    // if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (rd_addr != cdbus.commit_rd_addr)) begin

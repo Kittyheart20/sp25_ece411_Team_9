@@ -80,7 +80,7 @@ import rv32i_types::*;
             counter <= 8'b0;
             execute_output <= '0;
             execute_output.valid <= 1'b0;
-            mult_op_running <= '0;
+            mult_op_running <= mult_ops'(0);
             // debug
             prev_pc <= '0;
         end else begin

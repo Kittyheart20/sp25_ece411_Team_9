@@ -14,6 +14,8 @@ import rv32i_types::*;
     input   logic   [63:0]      bmem_rdata,
     input   logic               bmem_rvalid
 );
+    logic lint;
+    assign lint = bmem_raddr[0] ? 1'b1 : 1'b0;
 
     logic   [31:0]  pc, pc_next;
     logic   [63:0]  order;
@@ -152,7 +154,7 @@ import rv32i_types::*;
     logic       rob_full_o;
 
     decode decode_stage (
-        .stall              (stall),
+        // .stall              (stall),
         .decode_struct_in   (decode_struct_in),
         .decode_struct_out  (decode_struct_out)
     );
@@ -185,7 +187,9 @@ import rv32i_types::*;
         rob_entry_i.valid = 1'b1;
         rob_entry_i.status = rob_wait;
         rob_entry_i.rd_addr = decode_struct_in.inst[11:7];
-        rob_entry_i.rd_data = 'x;
+        rob_entry_i.rd_data = '0;
+        rob_entry_i.rs1_data = '0;
+        rob_entry_i.rs2_data = '0;
 
         case (decode_struct_in.inst[6:0])
             op_b_lui, op_b_auipc, op_b_imm, op_b_reg:
@@ -228,7 +232,7 @@ import rv32i_types::*;
     reservation_station rsv (
         .clk(clk),
         .rst(rst),
-        .we(/*dispatch_struct_in.valid*/rs_we),
+       // .we(/*dispatch_struct_in.valid*/rs_we),
         .dispatch_struct_in(dispatch_struct_in),
         .current_rd_rob_idx(current_rd_rob_idx),
         .rs1_data_in(/*rsv_rs1_data_in*/data[rs1_dis_idx]),  //input
@@ -243,7 +247,7 @@ import rv32i_types::*;
         // .rs1_new(rs1_new),
         // .rs2_new(rs2_new),
         .cdbus(cdbus),
-        .ready(ready),
+       // .ready(ready),
 
         .rs1_rob_idx(rs1_rob_idx),
         .rs2_rob_idx(rs2_rob_idx),
@@ -257,8 +261,8 @@ import rv32i_types::*;
     logic mul_ready;
     
     alu_unit alu_inst (
-        .clk(clk),
-        .rst(rst),
+        //.clk(clk),
+        //.rst(rst),
         .next_execute(next_execute[0]),
         .execute_output(execute_output[0])
     );
@@ -352,6 +356,7 @@ import rv32i_types::*;
                 decode_struct_in.order = data_o[127:64];
                 decode_struct_in.valid = 1'b1 /*&& !stall*/;
             end else begin
+                decode_struct_in = '0;
                 decode_struct_in.valid = 1'b0;
             end
         end
@@ -376,6 +381,8 @@ import rv32i_types::*;
 
     always_comb begin : update_line_buffer
         enable = 1'b0;
+        curr_instr_addr = '0;
+        curr_instr_data = '0;
         if (ufp_resp) begin
             curr_instr_addr = pc;
             curr_instr_data = ufp_rcache_line;

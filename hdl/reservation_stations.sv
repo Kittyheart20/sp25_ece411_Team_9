@@ -6,7 +6,7 @@ import rv32i_types::*;
 )(
     input  logic        clk,
     input  logic        rst,
-    input  logic        we,         // write enable
+    //input  logic        we,         // write enable
     // New Entry Input
     input  id_dis_stage_reg_t dispatch_struct_in,
     input  logic [4:0]  current_rd_rob_idx,
@@ -14,11 +14,11 @@ import rv32i_types::*;
     // Updating register values
     input logic [31:0]  rs1_data_in,
     input logic         rs1_ready,
-    input logic [4:0]   rs1_paddr_data_in,
+    //input logic [4:0]   rs1_paddr_data_in,
     input logic [31:0]  rs2_data_in,
     input logic         rs2_ready,
-    input logic [4:0]   rs2_paddr_data_in,
-    input logic ready [32],
+   // input logic [4:0]   rs2_paddr_data_in,
+   // input logic ready [32],
     // input logic         rs1_new,
     // input logic         rs2_new,
     input cdb cdbus,
@@ -32,9 +32,9 @@ import rv32i_types::*;
     output logic load_store_alu_available,
     // output logic mul_div_alu_available
     output reservation_station_t next_execute_alu,
-    output reservation_station_t next_execute_mult_div,
+    output reservation_station_t next_execute_mult_div
 
-    output logic valid_out
+    //output logic valid_out
 );
 
     reservation_station_t rs_entry [DEPTH];
@@ -99,6 +99,7 @@ import rv32i_types::*;
             stations[0].alu_m1_sel <= dispatch_struct_in.alu_m1_sel;
             stations[0].alu_m2_sel <= dispatch_struct_in.alu_m2_sel;
             //stations[open_station].pc_sel <= dispatch_struct_in.pc_sel;
+            stations[0].multop <= dispatch_struct_in.multop;
             stations[0].aluop <= dispatch_struct_in.aluop;
             
             // stations[0].rs1_paddr <= new_rs1_paddr;
@@ -158,6 +159,8 @@ import rv32i_types::*;
             stations[1].regf_we <= dispatch_struct_in.regf_we;
             stations[1].alu_m1_sel <= dispatch_struct_in.alu_m1_sel;
             stations[1].alu_m2_sel <= dispatch_struct_in.alu_m2_sel;
+            stations[1].aluop <= dispatch_struct_in.aluop;
+
             //stations[1].pc_sel <= dispatch_struct_in.pc_sel;
             stations[1].multop <= dispatch_struct_in.multop;
             // stations[1].rs1_paddr <= new_rs1_paddr;

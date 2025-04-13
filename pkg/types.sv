@@ -100,7 +100,7 @@ package rv32i_types;
 
         // Control Signals
         logic           regf_we;
-        logic valid_out;
+       // logic valid_out;
         alu_m1_sel_t    alu_m1_sel;
         alu_m2_sel_t    alu_m2_sel;
         //pc_sel_t        pc_sel;
@@ -173,7 +173,7 @@ package rv32i_types;
     typedef struct packed {
         logic   [31:0]      inst;
         logic   [31:0]      pc;
-        logic   [31:0]      pc_next;
+        // logic   [31:0]      pc_next;
         logic   [63:0]      order;
     	logic         	    valid;
         logic   [6:0]       opcode;
@@ -181,9 +181,9 @@ package rv32i_types;
         logic   [6:0]       funct7;
 
         logic [4:0]         rd_addr;
-        logic [4:0]         rd_rob_idx;
         logic [4:0]         rs1_addr;
         logic [4:0]         rs2_addr;
+        logic [4:0]         rd_rob_idx;
         logic [4:0]         rs1_rob_idx;
         logic [4:0]         rs2_rob_idx;
         // logic [31:0]        rs1_data;
