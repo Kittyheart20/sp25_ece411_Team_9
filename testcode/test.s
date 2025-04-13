@@ -1,42 +1,387 @@
-ooo_test.s:
-.align 4
-.section .text
+# RV32I and RV32M Comprehensive Test
+# Tests all register-register, register-immediate, and M-extension instructions
+
 .globl _start
-    # This program will provide a simple test for
-    # demonstrating OOO-ness
-
-    # This test is NOT exhaustive
 _start:
+    # Initialize registers with distinct values
+    li x1, 0x00000001
+    li x2, 0x00000002
+    li x3, 0x00000003
+    li x4, 0xFFFFFFFF    # -1 in two's complement
+    li x5, 0x80000000    # Most negative number
+    li x6, 0x7FFFFFFF    # Most positive number
+    li x7, 0x0000000A    # 10
+    li x8, 0x00000000    # 0 for div-by-zero test
+    li x9, 0xAAAAAAAA    # Pattern for bitwise operations
+    li x10, 0x55555555   # Alternate pattern for bitwise operations
+    li x11, 0x00000100   # Small power of 2
+    li x12, 0x00010000   # Larger power of 2
+    li x13, 0x00000007   # Small prime
+    li x14, 0x00000008   # Power of 2     - ORDER E
+    
+    # -------------------------------------------------------------------------
+    # RV32I Register-Immediate Instructions
+    # -------------------------------------------------------------------------
+    
+    # ADDI
+    addi x15, x1, 10      # x15 = 1 + 10 = 11
+    addi x16, x4, -5      # x16 = -1 + (-5) = -6    - ORDER 10
+    
+    # SLTI
+    slti x17, x1, 2       # x17 = (1 < 2) ? 1 : 0 = 1
+    slti x18, x2, 1       # x18 = (2 < 1) ? 1 : 0 = 0
+    slti x19, x4, 0       # x19 = (-1 < 0) ? 1 : 0 = 1  - ORDER 13
+    
+    # SLTIU
+    sltiu x20, x1, 2      # x20 = (1 < 2) ? 1 : 0 = 1
+    sltiu x21, x4, 1      # x21 = (0xFFFFFFFF < 1) ? 1 : 0 = 0 (unsigned comparison)
+    
+    # XORI
+    xori x22, x9, 0xFF    # x22 = 0xAAAAAAAA ^ 0x000000FF = 0xAAAAA955
+    
+    # ORI
+    ori x23, x1, 0x100    # x23 = 0x00000001 | 0x00000100 = 0x00000101
+    
+    # ANDI
+    andi x24, x9, 0xFF    # x24 = 0xAAAAAAAA & 0x000000FF = 0x000000AA
+    
+    # SLLI
+    slli x25, x1, 4       # x25 = 1 << 4 = 16
+    slli x26, x9, 8       # x26 = 0xAAAAAAAA << 8 = 0xAAAAAA00
+    
+    # SRLI
+    srli x27, x11, 4      # Hex: 0x0045DDB3, x27 = 0x00000100 >> 4 = 0x00000010
+    srli x28, x9, 8       # Hex: 0x0084DE13, x28 = 0xAAAAAAAA >> 8 = 0x00AAAAAA
+    
+    # SRAI
+    srai x29, x11, 4      # Hex: 0x4045DE93, x29 = 0x00000100 >> 4 = 0x00000010
+    srai x30, x4, 4       # Hex: 0x40425F13, x30 = 0xFFFFFFFF >> 4 = 0xFFFFFFFF (sign extension)
+    srai x31, x5, 4       # Hex: 0x4042DF93, x31 = 0x80000000 >> 4 = 0xF8000000 (sign extension)
+    
+    # -------------------------------------------------------------------------
+    # RV32I Register-Register Instructions
+    # -------------------------------------------------------------------------
+    
+    # ADD
+    add x15, x1, x2       # Hex: 0x002087B3, x15 = 1 + 2 = 3
+    add x16, x4, x1       # Hex: 0x00120833,, x16 = -1 + 1 = 0
+    
+    # SUB
+    sub x17, x2, x1       # x17 = 2 - 1 = 1
+    sub x18, x1, x2       # x18 = 1 - 2 = -1
+    
+    # SLL
+    sll x19, x1, x2       # x19 = 1 << 2 = 4
+    
+    # SLT
+    slt x20, x1, x2       # x20 = (1 < 2) ? 1 : 0 = 1
+    slt x21, x2, x1       # x21 = (2 < 1) ? 1 : 0 = 0
+    slt x22, x4, x1       # x22 = (-1 < 1) ? 1 : 0 = 1
+    
+    # SLTU
+    sltu x23, x1, x2      # x23 = (1 < 2) ? 1 : 0 = 1
+    sltu x24, x4, x1      # x24 = (0xFFFFFFFF < 1) ? 1 : 0 = 0 (unsigned comparison)
+    
+    # XOR
+    xor x25, x9, x10      # x25 = 0xAAAAAAAA ^ 0x55555555 = 0xFFFFFFFF
+    
+    # SRL
+    srl x26, x11, x1      # x26 = 0x00000100 >> 1 = 0x00000080
+    
+    # SRA
+    sra x27, x11, x1      # x27 = 0x00000100 >> 1 = 0x00000080
+    sra x28, x4, x1       # x28 = 0xFFFFFFFF >> 1 = 0xFFFFFFFF (sign extension)
+    
+    # OR
+    or x29, x9, x10       # x29 = 0xAAAAAAAA | 0x55555555 = 0xFFFFFFFF
+    
+    # AND
+    and x30, x9, x10      # x30 = 0xAAAAAAAA & 0x55555555 = 0x00000000
+    
+    # -------------------------------------------------------------------------
+    # RV32M Multiply Instructions
+    # -------------------------------------------------------------------------
+    
+    # MUL (lower 32 bits of product)
+    mul x15, x7, x13      # x15 = 10 * 7 = 70
+    nop
+    nop
+    nop
+    mul x16, x4, x2       # x16 = -1 * 2 = -2
+    and x30, x9, x10      # x30 = 0xAAAAAAAA & 0x55555555 = 0x00000000
 
-# initialize
-li x1, 10
-li x2, 20
-li x5, 50
-li x6, 60
-li x8, 21
-li x9, 28
-li x11, 8
-li x12, 4
-li x14, 3
-li x15, 1
+    # MULH (upper 32 bits of signed * signed)
+    mulh x17, x5, x5      # x17 = upper((0x80000000 * 0x80000000)) = 0x40000000
+    mulh x0, x0, x0
+    mulh x18, x6, x6      # x18 = upper((0x7FFFFFFF * 0x7FFFFFFF)) = 0x3FFFFFFF
+    
+    # MULHSU (upper 32 bits of signed * unsigned)
+    mulhsu x19, x5, x6    # x19 = upper((signed)0x80000000 * (unsigned)0x7FFFFFFF)
+    mulhsu x20, x4, x7    # x20 = upper((signed)-1 * (unsigned)10) #instr 53
 
-nop
-nop
-nop
-nop
-nop
-nop
 
-mul x3, x1, x2 # c8 & rob 16
+    # MULHU (upper 32 bits of unsigned * unsigned)
+    mulhu x21, x6, x6     # x21 = upper((unsigned)0x7FFFFFFF * (unsigned)0x7FFFFFFF)
+    mulhu x22, x9, x10    # x22 = upper((unsigned)0xAAAAAAAA * (unsigned)0x55555555)
+    
+    # -------------------------------------------------------------------------
+    # RV32M Divide Instructions
+    # -------------------------------------------------------------------------
+    
+    # DIV (signed division)
+    div x23, x7, x13      # x23 = 10 / 7 = 1
+    div x24, x7, x4       # x24 = 10 / -1 = -10
+    div x25, x5, x1       # x25 = 0x80000000 / 1 = 0x80000000
+    div x26, x1, x8       # x26 = 1 / 0 = -1 (division by zero)
+    div x27, x5, x4       # x27 = 0x80000000 / -1 = 0x80000000 (overflow case)
+    
+    # DIVU (unsigned division)
+    divu x28, x7, x13     # x28 = 10 / 7 = 1
+    divu x29, x4, x2      # x29 = 0xFFFFFFFF / 2 = 0x7FFFFFFF
+    divu x30, x1, x8      # x30 = 1 / 0 = 0xFFFFFFFF (division by zero)
+    
+    # REM (signed remainder)
+    rem x15, x7, x13      # x15 = 10 % 7 = 3
+    rem x16, x7, x4       # x16 = 10 % -1 = 0
+    rem x17, x5, x1       # x17 = 0x80000000 % 1 = 0
+    rem x18, x1, x8       # x18 = 1 % 0 = 1 (division by zero)
+    rem x19, x5, x4       # x19 = 0x80000000 % -1 = 0 (overflow case)
+    
+    # REMU (unsigned remainder)
+    remu x20, x7, x13     # x20 = 10 % 7 = 3
+    remu x21, x4, x2      # x21 = 0xFFFFFFFF % 2 = 1
+    remu x22, x1, x8      # x22 = 1 % 0 = 1 (division by zero)
+    
+    # -------------------------------------------------------------------------
+    # Additional tests to exercise OoO execution
+    # -------------------------------------------------------------------------
+    
+    # Create dependencies that can be resolved out-of-order
+    addi x1, x0, 100
+    addi x2, x0, 200
+    addi x3, x0, 300
+    
+    # Independent operations that can execute in parallel
+    mul x4, x1, x2        # Can execute while the following instructions are being processed
+    add x5, x1, x3
+    xor x6, x2, x3
+    and x7, x1, x2
+    
+    # Create a dependency chain with intermediate results
+    addi x8, x0, 5
+    mul x9, x8, x8        # x9 = 25
+    add x10, x9, x9       # x10 = 50, depends on x9
+    div x11, x10, x8      # x11 = 10, depends on x10 and x8
+    rem x12, x11, x8      # x12 = 0, depends on x11 and x8
+    
+    # Create potential for memory forwarding
+    addi x13, x0, 1
+    addi x14, x0, 2
+    mul x15, x13, x14     # x15 = 2
+    add x13, x15, x13     # x13 = 3, depends on x15
+    sub x14, x13, x15     # x14 = 1, depends on both x13 and x15
+    
+    # Test for potential hazards
+    addi x16, x0, 10
+    div x17, x16, x13     # Division with result from previous computation
+    mul x18, x17, x14     # Multiply with results from previous computations
+    rem x19, x18, x16     # Remainder with results from previous computations
 
-# these instructions should  resolve before the multiply
-add x4, x5, x6 # 6E
-and x4, x15, x6
-sll x10, x4, x4
-xor x9, x8, x7
-xor x7, x8, x9
-sll x10, x11, x12
-and x13, x14, x15
+    # Initialize registers with test values
+    li x1, 10           # Small positive value
+    li x2, -15          # Negative value
+    li x3, 0x7FFFFFFF   # Most positive 32-bit value
+    li x4, 0x80000000   # Most negative 32-bit value
+    li x5, 0            # Zero (will be used as divisor)
+    li x6, 1            # For comparison
+
+    # -------------------------------------------------------------------------
+    # Test 1: DIV - Signed Division by Zero
+    # Expected result: 0xFFFFFFFF (-1)
+    # -------------------------------------------------------------------------
+    div x10, x1, x5     # 10 / 0 = -1 (all 1's)
+    div x11, x2, x5     # -15 / 0 = -1 (all 1's)
+    div x12, x3, x5     # 0x7FFFFFFF / 0 = -1 (all 1's)
+    div x13, x4, x5     # 0x80000000 / 0 = -1 (all 1's)
+    
+    # -------------------------------------------------------------------------
+    # Test 2: DIVU - Unsigned Division by Zero
+    # Expected result: 0xFFFFFFFF (all 1's)
+    # -------------------------------------------------------------------------
+    divu x14, x1, x5    # 10 / 0 = 0xFFFFFFFF
+    divu x15, x2, x5    # 0xFFFFFFF1 / 0 = 0xFFFFFFFF (x2 is treated as unsigned)
+    divu x16, x3, x5    # 0x7FFFFFFF / 0 = 0xFFFFFFFF
+    divu x17, x4, x5    # 0x80000000 / 0 = 0xFFFFFFFF
+    
+    # -------------------------------------------------------------------------
+    # Test 3: REM - Signed Remainder by Zero
+    # Expected result: Dividend is returned unchanged
+    # -------------------------------------------------------------------------
+    rem x18, x1, x5     # 10 % 0 = 10
+    rem x19, x2, x5     # -15 % 0 = -15
+    rem x20, x3, x5     # 0x7FFFFFFF % 0 = 0x7FFFFFFF
+    rem x21, x4, x5     # 0x80000000 % 0 = 0x80000000
+    
+    # -------------------------------------------------------------------------
+    # Test 4: REMU - Unsigned Remainder by Zero
+    # Expected result: Dividend is returned unchanged
+    # -------------------------------------------------------------------------
+    remu x22, x1, x5    # 10 % 0 = 10
+    remu x23, x2, x5    # 0xFFFFFFF1 % 0 = 0xFFFFFFF1
+    remu x24, x3, x5    # 0x7FFFFFFF % 0 = 0x7FFFFFFF
+    remu x25, x4, x5    # 0x80000000 % 0 = 0x80000000
+    
+    # -------------------------------------------------------------------------
+    # Test 5: Special Case - Division Overflow
+    # DIV: Most negative value divided by -1 should return the same value
+    # -------------------------------------------------------------------------
+    li x5, -1           # Divisor = -1
+    div x26, x4, x5     # 0x80000000 / -1 = 0x80000000 (overflow)
+    rem x27, x4, x5     # 0x80000000 % -1 = 0
+
+
+    # Initialize registers with test values
+    li x1, 0x80000000   # Most negative 32-bit value (-2^31)
+    li x2, 0xFFFFFFFF   # -1 in two's complement
+    li x3, 0x00000001   # 1
+
+    # Test 1: DIV Overflow - Most negative value divided by -1
+    # Expected: 0x80000000 (same as dividend, due to overflow)
+    div x10, x1, x2     # (-2^31) / (-1) = 2^31, but that overflows 32-bit signed int
+
+    # Test 2: REM with DIV Overflow
+    # Expected: 0 (remainder is always 0 when dividing by -1)
+    rem x11, x1, x2     # (-2^31) % (-1) = 0
+
+    # Test 3: DIVU with large values (no overflow, but good boundary test)
+    # Expected: 0x80000000 (treated as unsigned division)
+    divu x12, x1, x3    # (2^31) / 1 = 2^31
+
+    # Test 4: REMU with large values
+    # Expected: 0 (no remainder when dividing by 1)
+    remu x13, x1, x3    # (2^31) % 1 = 0
+
+    # Initialize registers with test values
+    li x1, 0x80000000   # Most negative 32-bit value (-2^31)
+    li x2, 0xFFFFFFFF   # -1 in two's complement
+    li x3, 0x7FFFFFFF   # Maximum positive 32-bit value (2^31-1)
+    li x4, 0x00000002   # 2
+
+    # Test 1: MUL with overflow (low bits)
+    # Expected: 0x00000000 (low 32 bits of (-2^31) * (-1) = 2^31)
+    mul x14, x1, x2     # (-2^31) * (-1) = 2^31, but we only get lower 32 bits
+
+    # Test 2: MULH with overflow (high bits)
+    # Expected: 0x00000000 (high 32 bits of (-2^31) * (-1) = 0)
+    mulh x15, x1, x2    # High 32 bits of (-2^31) * (-1)
+
+    # Test 3: MULHU with large values
+    # Expected: 0x7FFFFFFF (high 32 bits of unsigned multiplication)
+    mulhu x16, x3, x4   # High 32 bits of (2^31-1) * 2 as unsigned
+
+    # Test 4: MULHSU with mixed signs
+    # Expected: Will depend on implementation, tests signed * unsigned
+    mulhsu x17, x1, x3  # High 32 bits of (-2^31) * (2^31-1) as signed * unsigned
+
+    # Initialize registers
+    li x1, 0x80000000   # Most negative 32-bit value (-2^31)
+    li x2, 0x00000001   # 1
+    li x3, 0xFFFFFFFF   # -1 in two's complement
+
+    # Test 1: DIV followed by MUL (tests overflow handling chain)
+    div x18, x1, x3     # Should return 0x80000000 (overflow)
+    mul x19, x18, x2    # Should return 0x80000000 (no overflow, just passing through)
+
+    # Test 2: MUL followed by DIV (tests another chain)
+    mul x20, x1, x3     # Should return 0x80000000 (lower bits)
+    div x21, x20, x3    # Should return 0x80000000 (overflow again)
+
+    # Test 3: Extreme value division chain
+    div x22, x1, x3     # 0x80000000 (overflow)
+    div x23, x22, x3    # 0x80000000 (overflow again)
+    div x24, x23, x2    # 0x80000000 (normal division, no overflow)
+
+
+        # Initialize registers with known values
+    li x1, 0x00000001
+    li x2, 0x00000002
+    li x3, 0x00000003
+    li x4, 0x00000004
+    li x5, 0x00000005
+    li x6, 0x00000006
+    li x7, 0x00000007
+    li x8, 0x00000008
+
+    # -------------------------------------------------------------------------
+    # Test 1: RAW (Read-After-Write) Hazards
+    # -------------------------------------------------------------------------
+    
+    # RAW with immediate dependency (distance=1)
+    add x10, x1, x2      # x10 = 1 + 2 = 3
+    sub x11, x10, x3     # RAW: x11 = x10 - 3 = 0
+    
+    # RAW with longer dependency chain (distance=2)
+    add x12, x4, x5      # x12 = 4 + 5 = 9
+    xor x13, x6, x7      # Independent operation
+    or  x14, x12, x8     # RAW: x14 = x12 | 8 = 9 | 8 = 9
+    
+    # RAW with multiple consumers
+    mul x15, x1, x2      # x15 = 1 * 2 = 2 (long latency operation)
+    add x16, x15, x3     # RAW: x16 = x15 + 3 = 5
+    sub x17, x15, x4     # RAW: x17 = x15 - 4 = -2
+    
+    # -------------------------------------------------------------------------
+    # Test 2: WAR (Write-After-Read) Hazards
+    # -------------------------------------------------------------------------
+    
+    # WAR hazard (distance=1)
+    add x20, x1, x2      # x20 = 1 + 2 = 3
+    add x1, x3, x4       # WAR: x1 = 3 + 4 = 7 (x1 read by previous instruction)
+    
+    # WAR with operations between (distance=2)
+    or  x21, x5, x6      # x21 = 5 | 6 = 7
+    xor x22, x7, x8      # Independent operation
+    add x5, x1, x3       # WAR: x5 = 7 + 3 = 10 (x5 read by first instruction)
+    
+    # WAR with long-latency operation
+    div x23, x2, x3      # x23 = 2 / 3 = 0 (long latency, reads x2 and x3)
+    add x2, x4, x5       # WAR: x2 = 4 + 10 = 14 (x2 read by previous instruction)
+    add x3, x6, x7       # WAR: x3 = 6 + 7 = 13 (x3 read by previous instruction)
+    
+    # -------------------------------------------------------------------------
+    # Test 3: WAW (Write-After-Write) Hazards
+    # -------------------------------------------------------------------------
+    
+    # WAW hazard (distance=1)
+    add x25, x1, x2      # x25 = 7 + 14 = 21
+    sub x25, x3, x4      # WAW: x25 = 13 - 4 = 9 (overwrites previous x25)
+    
+    # WAW with operations between (distance=2)
+    add x26, x5, x6      # x26 = 10 + 6 = 16
+    xor x27, x7, x8      # Independent operation
+    mul x26, x1, x2      # WAW: x26 = 7 * 14 = 98 (overwrites previous x26)
+    
+    # WAW with different latency operations
+    div x28, x2, x3      # x28 = 14 / 13 = 1 (long latency)
+    add x28, x1, x5      # WAW: x28 = 7 + 10 = 17 (shorter latency, should complete first)
+    
+    # -------------------------------------------------------------------------
+    # Test 4: Complex Mixed Hazards
+    # -------------------------------------------------------------------------
+    
+    # Complex RAW + WAW chain
+    add x29, x1, x2      # x29 = 7 + 14 = 21
+    mul x30, x29, x3     # RAW: x30 = 21 * 13 = 273
+    add x29, x30, x4     # RAW + WAW: x29 = 273 + 4 = 277
+    
+    # Complex RAW + WAR chain
+    add x31, x5, x6      # x31 = 10 + 6 = 16
+    mul x5, x31, x7      # RAW + WAR: x5 = 16 * 7 = 112
+    add x31, x5, x8      # RAW + WAW: x31 = 112 + 8 = 120
+
+    mul x1, x1, x1
+    mul x1, x1, x1
+    mul x1, x1, x1
 
 halt:
     slti x0, x0, -256

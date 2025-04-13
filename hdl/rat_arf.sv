@@ -13,7 +13,6 @@ import rv32i_types::*;
     // Writeback
     input cdb               cdbus,
     //input logic   [31:0]    rd_data,
-    input logic   [4:0]     rd_wb_addr,
     input logic [ROB_IDX_WIDTH-1:0] rd_rob_idx,
     //input logic             regf_we,
     //input   logic           free_entry,
@@ -24,21 +23,22 @@ import rv32i_types::*;
     output  logic           ready   [32],
     output  logic   [4:0]   rob_idx [32],
     output  logic           rs1_rdy,
-    output  logic           rs2_rdy
+    output  logic [4:0]     rs1_rob_idx,
+    output  logic           rs2_rdy,
+    output  logic [4:0]     rs2_rob_idx
 );
 
-    logic   [31:0]            data    [32];
+    //logic   [31:0]            data    [32];
     //logic   [31:0]            tags    [32];     // I think the tags should be the same as the ROB idx
     //logic                     renamed [32];     
-    logic                     ready   [32];
-    logic [ROB_IDX_WIDTH-1:0] rob_idx [32];
+    //logic                     ready   [32];
+    //logic [ROB_IDX_WIDTH-1:0] rob_idx [32];
 
     //logic curr_regf_we;
-    logic   [4:0]   rs1_addr, rs2_addr, rd_wb_addr;
+    logic   [4:0]   rs1_addr, rs2_addr, rd_addr;
     //assign regf_we = '0;//dispatch_struct_in.regf_we;
     assign rs1_addr = dispatch_struct_in.rs1_addr;
     assign rs2_addr = dispatch_struct_in.rs2_addr;
-    logic [4:0] rd_addr;
     assign rd_addr = dispatch_struct_in.rd_addr;
 
     logic [31:0] prev_pc; 
@@ -58,7 +58,9 @@ import rv32i_types::*;
         //  if (cdbus.valid && (cdbus.rd_addr != 5'd0) && (rob_idx[cdbus.rd_addr] == rd_rob_idx)) begin       // Filling in rd data // we should check for commit in writeback?
             if (dispatch_struct_in.valid) begin
                 rs1_rdy <= ready[dispatch_struct_in.rs1_addr];
-                rs2_rdy <= ready[dispatch_struct_in.rs1_addr];
+                rs2_rdy <= ready[dispatch_struct_in.rs2_addr];
+                rs1_rob_idx <= rob_idx[dispatch_struct_in.rs1_addr];
+                rs2_rob_idx <= rob_idx[dispatch_struct_in.rs2_addr];
             end
             
             if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
@@ -67,8 +69,8 @@ import rv32i_types::*;
                 prev_pc <= dispatch_struct_in.pc;
 
                 if (dispatch_struct_in.valid) begin
-                    rs1_rdy = ready[dispatch_struct_in.rs1_addr];
-                    rs2_rdy = ready[dispatch_struct_in.rs1_addr];
+                    rs1_rdy <= ready[dispatch_struct_in.rs1_addr];
+                    rs2_rdy <= ready[dispatch_struct_in.rs1_addr];
                 end
             // end else if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (dispatch_struct_in.pc != prev_pc)) begin           // Creating a new entry   
             //    // if (dispatch_struct_in.valid && (rd_addr != 5'd0) && (rd_addr != cdbus.commit_rd_addr)) begin

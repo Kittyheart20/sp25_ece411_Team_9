@@ -40,21 +40,28 @@ import rv32i_types::*;
     input  logic            clk,
     input  logic            rst,
     input  reservation_station_t next_execute,
-    // output logic            ready,
     output to_writeback_t   execute_output
 );
 
     logic [31:0] a_mul, b_mul;
     logic [63:0] product_mul;
+    logic [65:0] product_mul_su;
 
     logic [31:0] a_div_u, b_div_u, a_div_s, b_div_s;
     logic [31:0] quotient_u, quotient_s;
     logic [31:0] remainder_u, remainder_s;
 
     logic signed_mode, div_by_0_u, div_by_0_s;
+    logic div_overflow_s;
+    assign div_overflow_s = (a_div_s == 32'h80000000) && (b_div_s == 32'hFFFFFFFF);
+
+    logic [31:0] prev_pc;
 
     DW02_mult_inst #(32, 32) multiply (
         .inst_A(a_mul), .inst_B(b_mul), .inst_TC(signed_mode), .PRODUCT_inst(product_mul)
+    );
+    DW02_mult_inst #(33, 33) multiply_su ( 
+        .inst_A({a_mul[31], a_mul}), .inst_B({1'b0, b_mul}), .inst_TC(1'b1), .PRODUCT_inst(product_mul_su) 
     );
     DW_div_inst  #(32, 0, 1) divide_unsigned(
         .a(a_div_u), .b(b_div_u), 
@@ -66,19 +73,19 @@ import rv32i_types::*;
         .divide_by_0(div_by_0_s));
 
     logic [7:0] counter;
-    // reservation_station_t prev_execute;
     
-    // assign ready = (counter == 8'd100);
-
+    mult_ops mult_op_running;
     always_ff @(posedge clk ) begin
-        if( rst) begin
+        if (rst) begin
             counter <= 8'b0;
-        // prev_execute <= '0;
             execute_output <= '0;
             execute_output.valid <= 1'b0;
+            mult_op_running <= mult_ops'(0);
+            // debug
+            prev_pc <= '0;
         end else begin
-            // prev_execute <= next_execute;
-            if (next_execute.valid && (counter == 0)) begin
+            prev_pc <= next_execute.pc;
+            if (next_execute.valid && (counter < 10)) begin
                 execute_output.valid <= 1'b0;                
                 
                 execute_output.pc <= next_execute.pc;
@@ -88,7 +95,7 @@ import rv32i_types::*;
 
                 execute_output.rd_rob_idx <= next_execute.rd_rob_idx;
                 execute_output.regf_we <= next_execute.regf_we;
-
+                mult_op_running <= next_execute.multop;
                 unique case (next_execute.multop)
                     mult_op_mul:   begin 
                         a_mul <= next_execute.rs1_data;   
@@ -100,12 +107,12 @@ import rv32i_types::*;
                         b_mul <= next_execute.rs2_data;
                         signed_mode <= 1'b1;
                     end
-                    mult_op_mulsu: begin  // need to convert 
+                    mult_op_mulhsu: begin  // need to convert 
                         a_mul <= next_execute.rs1_data;   
                         b_mul <= next_execute.rs2_data;
-                        signed_mode <= 1'b1;
+                        // signed_mode <= 1'b1;
                     end
-                    mult_op_mulu:  begin
+                    mult_op_mulhu:  begin
                         signed_mode <= 1'b0;  
                         a_mul <= next_execute.rs1_data;   
                         b_mul <= next_execute.rs2_data;
@@ -135,30 +142,47 @@ import rv32i_types::*;
                 endcase
                 counter <= counter + 1;
             end
-            else if (counter != 0) begin
-                counter <= counter + 1;
-            end
-            
-            if (counter == 8'd100) begin
+            else if (counter == 8'd50) begin
                 // use result
-                unique case (next_execute.multop)
-                    mult_op_mul: begin
-                        execute_output.rd_data = product_mul[31:0]; 
+                unique case (mult_op_running)
+                    mult_op_mul: execute_output.rd_data <= product_mul[31:0]; 
+                    mult_op_mulh:  execute_output.rd_data <= product_mul[63:32]; 
+
+                    mult_op_mulhsu:  execute_output.rd_data <= product_mul_su[63:32]; 
+                    mult_op_mulhu: execute_output.rd_data <= product_mul[63:32]; 
+
+                    mult_op_div: begin
+                        if (b_div_s == '0)
+                            execute_output.rd_data <= 32'hFFFFFFFF;
+                        else if (div_overflow_s)
+                            execute_output.rd_data <= 32'h80000000;
+                        else execute_output.rd_data <= quotient_s;
                     end
-                    mult_op_mulh:  execute_output.rd_data = product_mul[63:32]; 
-
-                    mult_op_mulsu:  execute_output.rd_data = product_mul[31:0]; 
-                    mult_op_mulu: execute_output.rd_data = product_mul[63:32]; 
-
-                    mult_op_div: execute_output.rd_data = quotient_s;
-                    mult_op_divu: execute_output.rd_data = quotient_u;
-                    mult_op_rem: execute_output.rd_data = remainder_s; 
-                    mult_op_remu:  execute_output.rd_data = remainder_u;
+                    mult_op_divu: begin 
+                        if (b_div_u == '0)
+                            execute_output.rd_data <= 32'hFFFFFFFF;
+                        else execute_output.rd_data <= quotient_u;
+                    end
+                    mult_op_rem: begin 
+                        if (b_div_s == '0)
+                            execute_output.rd_data <= a_div_s;
+                        else if (div_overflow_s)
+                            execute_output.rd_data <= 32'h0;
+                        else execute_output.rd_data <= remainder_s; 
+                    end
+                    mult_op_remu:  begin 
+                        if (b_div_u == '0)
+                            execute_output.rd_data <= a_div_u;
+                        else execute_output.rd_data <= remainder_u; 
+                    end
                     default:       signed_mode <= 1'b0; //
                 endcase
                 
                 counter <= 8'd0;
-                execute_output.valid <= 1'b1;     
+                execute_output.valid <= 1'b1;    
+            end
+            else /* if (counter != 0) */ begin
+                counter <= counter + 1;
             end
         end
     end

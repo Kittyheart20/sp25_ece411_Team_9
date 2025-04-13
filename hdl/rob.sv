@@ -10,16 +10,15 @@ import rv32i_types::*;
     output  rob_entry_t rob_entry_o,
 
     input   logic       enqueue_i,  // Do we need this? We can just use dispatch_struct_in.valid
-    input   logic       update_i,
+  //  input   logic       update_i,
     input   logic       dequeue_i,
     input   cdb         cdbus,
 
     output  logic [4:0] head_addr,
     output  logic [4:0] tail_addr,
-    output logic full_o // if full we need to stall
+    output  logic       full_o // if full we need to stall
 );
     localparam DEPTH = 32;
-
 
     rob_entry_t rob_table [DEPTH];
     rob_entry_t rob_entry_i;
@@ -28,7 +27,7 @@ import rv32i_types::*;
     logic [31:0] count; 
     logic        empty_o;//, full_o;
     
-    assign empty_o = (count == '0);
+    assign empty_o = (count == 32'd0);
     assign full_o = (count == DEPTH);
     assign rob_entry_o = rob_table[head];
     assign current_rd_rob_idx = tail_addr;
@@ -46,18 +45,26 @@ import rv32i_types::*;
         
         rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
         rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
-
-        //rob_entry_i.rd_data = 'x;
+        // rob_entry_i.rs1_rob_idx = dispatch_struct_in.rs1_rob_idx;
+        // rob_entry_i.rs2_rob_idx = dispatch_struct_in.rs2_rob_idx;
+        rob_entry_i.rd_data = '0;
+        rob_entry_i.rs1_data = '0;
+        rob_entry_i.rs2_data = '0;
     end
     logic rob_update_mul; logic rob_update_alu;
-   always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
+    logic insert; logic remove;
+
+    assign insert = (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i));
+    assign remove = dequeue_i && !empty_o;
+
+    always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst) begin
             head <= '0;
             tail <= '0;
             tail_addr <= 0;
             count <= '0;
             for (integer i = 0; i < DEPTH; i++) begin
-                rob_table[i].status = empty;
+                rob_table[i].status <= empty;
             end
         end
         //else if (dispatch_struct_in.valid) begin
@@ -76,6 +83,7 @@ import rv32i_types::*;
                 //     rob_table[head].status <= empty;
                 // end
             end
+            
             if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
                 rob_table[head].status <= empty;
             end
@@ -83,10 +91,11 @@ import rv32i_types::*;
             // set v=1, status = wait
             // fill in type, rd_data, and br_pred if necessary
             // tail ++    
-            if (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i) && (rob_table[tail].status == empty)) begin
+            
+            if (insert) begin
                 rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
-                tail <= (tail == '1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
+                tail <= (tail == /*'1'*/DEPTH-1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
             end
             
             // Writeback: update == 1'b1
@@ -100,14 +109,13 @@ import rv32i_types::*;
             // output head rd_data to update regfile
             // v=0, head ++
             // if branch mispredicted: flush all inst after it
-
-            if (dequeue_i && !empty_o) begin
+            if (remove) begin
                 rob_table[head].valid <= '0;
                 head <= (head == DEPTH-1) ? '0 : head + 1'b1;
             end
             
             
-            case ({enqueue_i && (!full_o || dequeue_i), dequeue_i && !empty_o})
+            case ({insert, remove})
                 2'b10: count <= count + 1'b1; 
                 2'b01: count <= count - 1'b1; 
                 default: count <= count;      
@@ -118,6 +126,6 @@ import rv32i_types::*;
    end
 
     assign head_addr = head;
-    //assign tail_addr = tail;
+    // assign tail_addr = tail;
 
 endmodule
