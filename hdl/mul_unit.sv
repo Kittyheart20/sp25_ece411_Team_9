@@ -45,6 +45,7 @@ import rv32i_types::*;
 
     logic [31:0] a_mul, b_mul;
     logic [63:0] product_mul;
+    logic [65:0] product_mul_su;
 
     logic [31:0] a_div_u, b_div_u, a_div_s, b_div_s;
     logic [31:0] quotient_u, quotient_s;
@@ -58,6 +59,9 @@ import rv32i_types::*;
 
     DW02_mult_inst #(32, 32) multiply (
         .inst_A(a_mul), .inst_B(b_mul), .inst_TC(signed_mode), .PRODUCT_inst(product_mul)
+    );
+    DW02_mult_inst #(33, 33) multiply_su ( 
+        .inst_A({a_mul[31], a_mul}), .inst_B({1'b0, b_mul}), .inst_TC(1'b1), .PRODUCT_inst(product_mul_su) 
     );
     DW_div_inst  #(32, 0, 1) divide_unsigned(
         .a(a_div_u), .b(b_div_u), 
@@ -106,7 +110,7 @@ import rv32i_types::*;
                     mult_op_mulhsu: begin  // need to convert 
                         a_mul <= next_execute.rs1_data;   
                         b_mul <= next_execute.rs2_data;
-                        signed_mode <= 1'b1;
+                        // signed_mode <= 1'b1;
                     end
                     mult_op_mulhu:  begin
                         signed_mode <= 1'b0;  
@@ -144,7 +148,7 @@ import rv32i_types::*;
                     mult_op_mul: execute_output.rd_data <= product_mul[31:0]; 
                     mult_op_mulh:  execute_output.rd_data <= product_mul[63:32]; 
 
-                    mult_op_mulhsu:  execute_output.rd_data <= product_mul[63:32]; 
+                    mult_op_mulhsu:  execute_output.rd_data <= product_mul_su[63:32]; 
                     mult_op_mulhu: execute_output.rd_data <= product_mul[63:32]; 
 
                     mult_op_div: begin
