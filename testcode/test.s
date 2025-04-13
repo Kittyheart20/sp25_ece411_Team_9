@@ -157,35 +157,35 @@ _start:
     # -------------------------------------------------------------------------
     
     # Create dependencies that can be resolved out-of-order
-  #  addi x1, x0, 100
-  #  addi x2, x0, 200
-  #  addi x3, x0, 300
+    addi x1, x0, 100
+    addi x2, x0, 200
+    addi x3, x0, 300
     
     # Independent operations that can execute in parallel
-  #  mul x4, x1, x2        # Can execute while the following instructions are being processed
- #   add x5, x1, x3
- #   xor x6, x2, x3
- #   and x7, x1, x2
+    mul x4, x1, x2        # Can execute while the following instructions are being processed
+    add x5, x1, x3
+    xor x6, x2, x3
+    and x7, x1, x2
     
     # Create a dependency chain with intermediate results
- #   addi x8, x0, 5
- #   mul x9, x8, x8        # x9 = 25
- #   add x10, x9, x9       # x10 = 50, depends on x9
- #   div x11, x10, x8      # x11 = 10, depends on x10 and x8
- #   rem x12, x11, x8      # x12 = 0, depends on x11 and x8
+    addi x8, x0, 5
+    mul x9, x8, x8        # x9 = 25
+    add x10, x9, x9       # x10 = 50, depends on x9
+    div x11, x10, x8      # x11 = 10, depends on x10 and x8
+    rem x12, x11, x8      # x12 = 0, depends on x11 and x8
     
     # Create potential for memory forwarding
-#    addi x13, x0, 1
-#    addi x14, x0, 2
-#    mul x15, x13, x14     # x15 = 2
-#    add x13, x15, x13     # x13 = 3, depends on x15
-#    sub x14, x13, x15     # x14 = 1, depends on both x13 and x15
+    addi x13, x0, 1
+    addi x14, x0, 2
+    mul x15, x13, x14     # x15 = 2
+    add x13, x15, x13     # x13 = 3, depends on x15
+    sub x14, x13, x15     # x14 = 1, depends on both x13 and x15
     
     # Test for potential hazards
-#   addi x16, x0, 10
-#    div x17, x16, x13     # Division with result from previous computation
-#    mul x18, x17, x14     # Multiply with results from previous computations
-#    rem x19, x18, x16     # Remainder with results from previous computations
+    addi x16, x0, 10
+    div x17, x16, x13     # Division with result from previous computation
+    mul x18, x17, x14     # Multiply with results from previous computations
+    rem x19, x18, x16     # Remainder with results from previous computations
 
     # -------------------------------------------------------------------------
     # Test 1: DIV - Signed Division by Zero
@@ -230,6 +230,87 @@ _start:
     li x5, -1           # Divisor = -1
     div x26, x4, x5     # 0x80000000 / -1 = 0x80000000 (overflow)
     rem x27, x4, x5     # 0x80000000 % -1 = 0
+
+        # Initialize registers with known values
+    li x1, 0x00000001
+    li x2, 0x00000002
+    li x3, 0x00000003
+    li x4, 0x00000004
+    li x5, 0x00000005
+    li x6, 0x00000006
+    li x7, 0x00000007
+    li x8, 0x00000008
+
+    # -------------------------------------------------------------------------
+    # Test 1: RAW (Read-After-Write) Hazards
+    # -------------------------------------------------------------------------
+    
+    # RAW with immediate dependency (distance=1)
+    add x10, x1, x2      # x10 = 1 + 2 = 3
+    sub x11, x10, x3     # RAW: x11 = x10 - 3 = 0
+    
+    # RAW with longer dependency chain (distance=2)
+    add x12, x4, x5      # x12 = 4 + 5 = 9
+    xor x13, x6, x7      # Independent operation
+    or  x14, x12, x8     # RAW: x14 = x12 | 8 = 9 | 8 = 9
+    
+    # RAW with multiple consumers
+    mul x15, x1, x2      # x15 = 1 * 2 = 2 (long latency operation)
+    add x16, x15, x3     # RAW: x16 = x15 + 3 = 5
+    sub x17, x15, x4     # RAW: x17 = x15 - 4 = -2
+    
+    # -------------------------------------------------------------------------
+    # Test 2: WAR (Write-After-Read) Hazards
+    # -------------------------------------------------------------------------
+    
+    # WAR hazard (distance=1)
+    add x20, x1, x2      # x20 = 1 + 2 = 3
+    add x1, x3, x4       # WAR: x1 = 3 + 4 = 7 (x1 read by previous instruction)
+    
+    # WAR with operations between (distance=2)
+    or  x21, x5, x6      # x21 = 5 | 6 = 7
+    xor x22, x7, x8      # Independent operation
+    add x5, x1, x3       # WAR: x5 = 7 + 3 = 10 (x5 read by first instruction)
+    
+    # WAR with long-latency operation
+    div x23, x2, x3      # x23 = 2 / 3 = 0 (long latency, reads x2 and x3)
+    add x2, x4, x5       # WAR: x2 = 4 + 10 = 14 (x2 read by previous instruction)
+    add x3, x6, x7       # WAR: x3 = 6 + 7 = 13 (x3 read by previous instruction)
+    
+    # -------------------------------------------------------------------------
+    # Test 3: WAW (Write-After-Write) Hazards
+    # -------------------------------------------------------------------------
+    
+    # WAW hazard (distance=1)
+    add x25, x1, x2      # x25 = 7 + 14 = 21
+    sub x25, x3, x4      # WAW: x25 = 13 - 4 = 9 (overwrites previous x25)
+    
+    # WAW with operations between (distance=2)
+    add x26, x5, x6      # x26 = 10 + 6 = 16
+    xor x27, x7, x8      # Independent operation
+    mul x26, x1, x2      # WAW: x26 = 7 * 14 = 98 (overwrites previous x26)
+    
+    # WAW with different latency operations
+    div x28, x2, x3      # x28 = 14 / 13 = 1 (long latency)
+    add x28, x1, x5      # WAW: x28 = 7 + 10 = 17 (shorter latency, should complete first)
+    
+    # -------------------------------------------------------------------------
+    # Test 4: Complex Mixed Hazards
+    # -------------------------------------------------------------------------
+    
+    # Complex RAW + WAW chain
+    add x29, x1, x2      # x29 = 7 + 14 = 21
+    mul x30, x29, x3     # RAW: x30 = 21 * 13 = 273
+    add x29, x30, x4     # RAW + WAW: x29 = 273 + 4 = 277
+    
+    # Complex RAW + WAR chain
+    add x31, x5, x6      # x31 = 10 + 6 = 16
+    mul x5, x31, x7      # RAW + WAR: x5 = 16 * 7 = 112
+    add x31, x5, x8      # RAW + WAW: x31 = 112 + 8 = 120
+
+    mul x1, x1, x1
+    mul x1, x1, x1
+    mul x1, x1, x1
 
 halt:
     slti x0, x0, -256

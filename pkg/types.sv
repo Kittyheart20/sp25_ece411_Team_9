@@ -147,6 +147,8 @@ package rv32i_types;
         logic   [4:0]   rd_addr;
         logic   [31:0]  rd_data;
         logic   [4:0]   rd_rob_idx;
+        logic   [4:0]   rs1_rob_idx;
+        logic   [4:0]   rs2_rob_idx;
         // logic           br_pred;
         // logic           br_result;
         

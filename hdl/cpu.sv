@@ -172,6 +172,8 @@ import rv32i_types::*;
         // RAT
         //.new_entry  (rob_enqueue_i),
         .rd_rob_idx (rob_tail_addr),
+        .rs1_rob_idx(rs1_rob_idx),
+        .rs2_rob_idx(rs2_rob_idx),
         .data(data),
         .ready(ready),
         .rob_idx(rob_idx),
@@ -212,6 +214,7 @@ import rv32i_types::*;
     //    .update_i   (next_writeback.valid),     // 1 at writeback
         .dequeue_i  (cdbus.regf_we), // from commit
         .cdbus      (cdbus),
+
         .head_addr  (rob_head_addr),
         .tail_addr  (rob_tail_addr)
     );
@@ -240,6 +243,10 @@ import rv32i_types::*;
         // .rs1_new(rs1_new),
         // .rs2_new(rs2_new),
         .cdbus(cdbus),
+        .ready(ready),
+
+        .rs1_rob_idx(rs1_rob_idx),
+        .rs2_rob_idx(rs2_rob_idx),
         .integer_alu_available(integer_alu_available),
         .mul_alu_available(mul_alu_available),
         .load_store_alu_available(load_store_alu_available),
