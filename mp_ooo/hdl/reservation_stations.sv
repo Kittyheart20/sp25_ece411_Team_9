@@ -88,6 +88,8 @@ import rv32i_types::*;
     
     always_comb begin
             debug_array = '0;
+            new_rs_entry = '0;
+
             new_rs_entry.valid = dispatch_struct_in.valid;
             new_rs_entry.pc = dispatch_struct_in.pc;
             new_rs_entry.inst = dispatch_struct_in.inst;

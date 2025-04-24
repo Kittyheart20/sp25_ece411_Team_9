@@ -401,6 +401,9 @@ import rv32i_types::*;
 
     always_comb begin : update_line_buffer
         enable = 1'b0;
+        curr_instr_addr = pc;
+        curr_instr_data = '0;
+
         if (ufp_resp) begin
             curr_instr_addr = pc;
             curr_instr_data = ufp_rcache_line;
@@ -414,7 +417,7 @@ import rv32i_types::*;
 
     always_ff @(posedge clk) begin : update_dispatch_str
         if (rst || cdbus.flush) begin
-            dispatch_struct_in <= '0;
+            dispatch_struct_in <= '{default: '0};
             next_execute <= '{default: '0};
             next_writeback <= '{default: '0};
         end

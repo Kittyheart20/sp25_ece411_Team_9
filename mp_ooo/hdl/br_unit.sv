@@ -19,6 +19,7 @@ module br_unit // and jumps
         b = '0;
         br_en = '0;
         rd_new = '0;
+        pc_new = next_execute.pc;
 
     if (next_execute.valid && !rst) begin
             unique case(next_execute.opcode)
