@@ -18,7 +18,7 @@ module mem_unit
     );
         logic [31:0] next_addr;
         assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
-        assign mem_stall = 1'b0;
+        assign mem_stall = (dmem_addr != '0) && (dmem_addr == next_addr);
 
         logic is_load, is_store;
         assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
