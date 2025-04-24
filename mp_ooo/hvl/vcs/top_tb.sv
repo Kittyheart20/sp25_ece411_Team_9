@@ -323,7 +323,7 @@ import rv32i_types::*;
     id_dis_stage_reg_t   id_out_old;
 
     decode dut_decode (
-        .stall(stall),
+        // .stall(stall),
         .decode_struct_in(id_in),
         .decode_struct_out(id_out)
     );

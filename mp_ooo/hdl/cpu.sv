@@ -19,6 +19,8 @@ import rv32i_types::*;
     logic   [63:0]  order;
     logic           commit;
     logic           stall;
+    logic   [31:0]  lint_annyoing;
+    assign lint_annyoing = bmem_raddr;
 
     rat_arf_entry_t rat_arf_table [32];
     // logic   [31:0]  data    [32];
@@ -154,7 +156,7 @@ import rv32i_types::*;
     logic       rob_full_o;
 
     decode decode_stage (
-        .stall              (stall),
+        // .stall              (stall),
         .decode_struct_in   (decode_struct_in),
         .decode_struct_out  (decode_struct_out)
     );
@@ -252,8 +254,8 @@ import rv32i_types::*;
     logic mul_ready;
     
     alu_unit alu_inst (
-        .clk(clk),
-        .rst(rst),
+        // .clk(clk),
+        // .rst(rst),
         .next_execute(next_execute[0]),
         .execute_output(execute_output[0])
     );
@@ -266,7 +268,7 @@ import rv32i_types::*;
     );
 
     br_unit br_inst (
-        .clk(clk),
+        // .clk(clk),
         .rst(rst),
         .next_execute(next_execute[2]),
         .execute_output(execute_output[2])
@@ -333,7 +335,7 @@ import rv32i_types::*;
                         order <= order + 'd1;
                         commit <= 1'b1;
                     end
-                end else if (pc[31:5] == last_instr_addr[31:5] && !ufp_rmask) begin       // line buffer
+                end else if ((pc[31:5] == last_instr_addr[31:5]) && ~ufp_rmask) begin       // line buffer
                     ufp_rmask <= '0;
                     // reached_loop <= '1;
                     data_i <= {order, pc, last_instr_data[32*pc[4:2] +: 32]};
@@ -384,6 +386,10 @@ import rv32i_types::*;
 
     always_comb begin : prep_decode_in
         dequeue_i = (!empty_o && !rst && !stall); 
+        // decode_struct_in.inst = '0;          // times out
+        // decode_struct_in.pc = '0;
+        // decode_struct_in.order = '0;
+        // decode_struct_in.valid = '0;
 
         if (rst || cdbus.flush) begin
             decode_struct_in = '0;
@@ -521,7 +527,7 @@ import rv32i_types::*;
 
     always_ff @(negedge clk)  begin : update_stall
         stall <= 1'b0;
-        if (empty_o || full_o /*|| stall_till_new_resp*/) stall = 1'b1;
+        if (empty_o || full_o /*|| stall_till_new_resp*/) stall <= 1'b1;
         else if (stall_prev == 0) stall <= 1'b1;
         else if ( (!integer_alu_available && (decode_struct_out.op_type == alu || decode_struct_out.op_type == none)) 
                      || (!mul_alu_available &&  (decode_struct_out.op_type == mul || decode_struct_out.op_type == none))  

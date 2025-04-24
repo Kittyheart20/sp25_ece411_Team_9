@@ -13,7 +13,7 @@ import rv32i_types::*;
     // Updating register values
     input logic [31:0]  rs1_data_in,
     input logic         rs1_ready,
-    input logic [4:0]   rs1_paddr_data_in,
+    // input logic [4:0]   rs1_paddr_data_in,
     input logic [31:0]  rs2_data_in,
     input logic         rs2_ready,
     

@@ -1,8 +1,8 @@
 module alu_unit 
 import rv32i_types::*;
 (
-    input  logic            clk,
-    input  logic            rst,
+    // input  logic            clk,
+    // input  logic            rst,
     input  reservation_station_t next_execute,
     // output logic            ready,
     output to_writeback_t   execute_output
