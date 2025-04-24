@@ -135,9 +135,9 @@ import rv32i_types::*;
             end else if (rob_table[head].status == donex2) begin
                 rob_table[head].status <= empty;
                 rob_table[head].valid <= '0;
-                head <= (head == 5'((DEPTH-1))) ? '0 : head + 1'b1;
+                head <= (head == 5'(unsigned'(DEPTH-1))) ? '0 : head + 1'b1;
             end else if (rob_table[head].status == empty) begin
-                head <= (head == 5'((DEPTH-1))) ? '0 : head + 1'b1;
+                head <= (head == 5'(unsigned'(DEPTH-1))) ? '0 : head + 1'b1;
             end
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
@@ -147,7 +147,7 @@ import rv32i_types::*;
             if (insert) begin
                 rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
-                tail <= (tail == /*'1'*/5'((DEPTH-1))) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
+                tail <= (tail == /*'1'*/5'(unsigned'(DEPTH-1))) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
             end
             
             // Commmit: dequeue == 1'b1

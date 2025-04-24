@@ -20,6 +20,8 @@ import rv32i_types::*;
     logic           commit;
     logic           stall;
     logic   [31:0]  lint_annyoing;
+    cdb cdbus;
+
     assign lint_annyoing = bmem_raddr;
 
     rat_arf_entry_t rat_arf_table [32];
@@ -30,13 +32,13 @@ import rv32i_types::*;
     logic res_station_stall;
 
     logic mul_alu_available, integer_alu_available, br_alu_available;
+    id_dis_stage_reg_t decode_struct_out;
     assign res_station_stall = ((decode_struct_out.op_type == mul) && !mul_alu_available) || ((decode_struct_out.op_type == alu) && !integer_alu_available) || ((decode_struct_out.op_type == br) && !br_alu_available);
 
     // Stage Registers
     localparam NUM_FUNC_UNIT = 3;
     
     if_id_stage_reg_t  decode_struct_in;
-    id_dis_stage_reg_t decode_struct_out;
     id_dis_stage_reg_t dispatch_struct_in;
     reservation_station_t dispatch_struct_out [NUM_FUNC_UNIT]; // This is both dispatch and issue
     reservation_station_t next_execute [NUM_FUNC_UNIT];
@@ -164,7 +166,6 @@ import rv32i_types::*;
     logic [4:0] rs1_dis_idx, rs2_dis_idx;
     assign rs1_dis_idx = dispatch_struct_in.rs1_addr;
     assign rs2_dis_idx = dispatch_struct_in.rs2_addr;
-    cdb cdbus;
     
     rat_arf regfile (
         .clk        (clk),
@@ -348,16 +349,17 @@ import rv32i_types::*;
                 end else if (ufp_rmask == 4'd0) begin                        // cache
                     ufp_addr <= pc;
                     ufp_rmask <= '1;                   
-                end else if (ufp_resp) begin
-                    data_i <= {order, pc, ufp_rdata/*[32*pc[4:2] +: 32]*/}; 
-                    if (!full_o) begin
-                        ufp_rmask <= '0;
-                        enqueue_i <= 1'b1;
-                        pc <= pc_next;
-                        order <= order + 'd1;
-                        commit <= 1'b1;
-                    end
-                end
+                end 
+                // else if (ufp_resp) begin
+                //     data_i <= {order, pc, ufp_rdata/*[32*pc[4:2] +: 32]*/}; 
+                //     if (!full_o) begin
+                //         ufp_rmask <= '0;
+                //         enqueue_i <= 1'b1;
+                //         pc <= pc_next;
+                //         order <= order + 'd1;
+                //         commit <= 1'b1;
+                //     end
+                // end
 
                 if (dfp_write) begin
                     bmem_addr <= dfp_addr;

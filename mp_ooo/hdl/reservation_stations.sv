@@ -40,11 +40,12 @@ import rv32i_types::*;
 
     //reservation_station_t rs_entry [DEPTH];
     reservation_station_t new_rs_entry;
+    reservation_station_t stations[5];
+
     logic [ROB_IDX_WIDTH-1:0]   rob_idx [DEPTH];
     logic debug;
     assign debug = cdbus.mul_valid && (stations[1].rs1_ready == 0 && stations[1].rs1_addr == cdbus.mul_rd_addr);
-    reservation_station_t stations[5];
-    logic[31:0] debug_1, debug_2;
+   // logic[31:0] debug_1, debug_2;
 
     logic cdb_update;
     assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.regf_we);
@@ -165,22 +166,21 @@ import rv32i_types::*;
                 end
             end
 
-            debug_1 = 9999;
-            debug_2 = 9999;
-            for (integer i = 0 ; i < 32; i++) begin
-            //  if ((rob_table[i].rd_valid) && (rob_table[i].valid)) begin
-                    if ((!rs1_ready) && (rob_table[i].rd_addr == new_rs_entry.rs1_addr) && rob_table[i].valid && rob_table[i].rd_valid) begin
-                        debug_array[i] = 1'd1;
-                        debug_1 = i;
-                    end
-                    // else if (cdbus.alu_valid && (new_rs_entry.rs1_addr == cdbus.alu_rd_addr)) begin
-                    // end
+            // debug_1 = 9999;
+            // debug_2 = 9999;
+            // for (integer i = 0 ; i < 32; i++) begin
+            // //  if ((rob_table[i].rd_valid) && (rob_table[i].valid)) begin
+            //         if ((!rs1_ready) && (rob_table[i].rd_addr == new_rs_entry.rs1_addr) && rob_table[i].valid && rob_table[i].rd_valid) begin
+            //             debug_array[i] = 1'd1;
+            //             debug_1 = i;
+            //         end
 
-                    if ((!rs2_ready) && (rob_table[i].rd_addr == new_rs_entry.rs2_addr) && rob_table[i].valid && rob_table[i].rd_valid) begin
-                        debug_2 = i;
-                    end
-            //   end
-            end
+
+            //         if ((!rs2_ready) && (rob_table[i].rd_addr == new_rs_entry.rs2_addr) && rob_table[i].valid && rob_table[i].rd_valid) begin
+            //             debug_2 = i;
+            //         end
+            // //   end
+            // end
 
    //     end
     end
