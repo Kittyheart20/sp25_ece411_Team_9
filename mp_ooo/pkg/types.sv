@@ -106,6 +106,8 @@ package rv32i_types;
         mem_op_w     = 3'b101
     } mem_ops;
 
+
+
     typedef struct packed {
         logic   [31:0]      inst;
         logic   [31:0]      pc;
@@ -141,7 +143,14 @@ package rv32i_types;
         branch_f3_t         brop;
         mem_ops             memop;
         logic [3:0]         mem_rmask;
-        logic [3:0]         mem_wmask;
+        logic [3:0]         mem_wmask;        
+        
+        logic [31:0] mem_addr;
+        logic [3:0]  mem_rmask;
+        logic [3:0]  mem_wmask;
+        logic [31:0] mem_rdata;
+        logic [31:0] mem_wdata;
+
         types_t             op_type;
 
         logic use_rs1;
@@ -213,7 +222,22 @@ package rv32i_types;
 
         logic br_en;
         logic [31:0] pc_new;
+
+        logic [31:0] mem_addr;
+        logic [3:0]  mem_rmask;
+        logic [3:0]  mem_wmask;
+        logic [31:0] mem_rdata;
+        logic [31:0] mem_wdata;
     } rob_entry_t;
+
+    typedef struct packed {
+        logic [31:0] pc;
+        logic [31:0] mem_addr;
+        logic [3:0]  mem_rmask;
+        logic [3:0]  mem_wmask;
+        logic [31:0] mem_rdata;
+        logic [31:0] mem_wdata;
+    } mem_commit_t;
 
     typedef struct packed {
         logic   [31:0]  data;
@@ -260,15 +284,6 @@ package rv32i_types;
     } funct7_t;
     
     typedef struct packed {
-        logic [31:0] pc;
-        logic [31:0] mem_addr;
-        logic [3:0]  mem_rmask;
-        logic [3:0]  mem_wmask;
-        logic [31:0] mem_rdata;
-        logic [31:0] mem_wdata;
-    } mem_commit_t;
-    
-    typedef struct packed {
         // writeback 
         logic        alu_valid;  
         logic [31:0] alu_data; 
@@ -306,6 +321,9 @@ package rv32i_types;
         logic [31:0] pc;
         logic [31:0] pc_new;
         logic flush;
+        logic [31:0] mem_addr;
+        logic [31:0] mem_rdata;
+        logic [31:0] mem_wdata;
     } cdb;
 
     typedef union packed {

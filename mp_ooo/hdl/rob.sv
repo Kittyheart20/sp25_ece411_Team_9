@@ -12,6 +12,7 @@ import rv32i_types::*;
     input   logic       dequeue_i,
     input   cdb         cdbus,
 
+
     // output  logic [4:0] head_addr,
     output  logic [4:0] tail_addr,
     output  logic       full_o, // if full we need to stall
@@ -52,6 +53,9 @@ import rv32i_types::*;
         rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
         rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
         rob_entry_i.regf_we = dispatch_struct_in.regf_we;
+
+        rob_entry_i.mem_rmask = dispatch_struct_in.mem_rmask;
+        rob_entry_i.mem_wmask = dispatch_struct_in.mem_wmask;
         
         // if (dispatch_struct_in.valid) 
         //     current_rd_rob_idx = tail;
@@ -95,6 +99,15 @@ import rv32i_types::*;
                         rob_table[i].status <= done;
                         rob_table[i].rd_data <= cdbus.mul_data;
                         rob_table[i].rd_valid <= 1'b1;
+                    end                
+                    if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx)) begin
+                        rob_table[i].status <= done;
+                        rob_table[i].rd_data <= cdbus.mem_data;
+                        rob_table[i].rd_valid <= 1'b1;
+
+                        rob_table[i].mem_addr <= cdbus.mem_addr;
+                        rob_table[i].mem_rdata <= cdbus.mem_rdata;
+                        rob_table[i].mem_rdata <= cdbus.mem_wdata;
                     end
                     if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx)) begin
                         debug <= '1;

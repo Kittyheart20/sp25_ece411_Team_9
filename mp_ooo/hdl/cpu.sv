@@ -230,7 +230,7 @@ import rv32i_types::*;
     // logic [4:0] rob_head_addr, rob_tail_addr;
     logic       rob_full_o;
 
-    mem_commit_t mem_commit_data_i, mem_commit_data_o;
+    mem_commit_t mem_commit_data; //, mem_commit_data_o;
 
     decode decode_stage (
         .stall              (stall),
@@ -365,24 +365,24 @@ import rv32i_types::*;
         .dmem_resp(dmem_resp),
         .next_execute(next_execute[3]),
         .execute_output(execute_output[3]),
-        .mem_commit_data(mem_commit_data_i)
+        .mem_commit_data(mem_commit_data)
     );
 
     logic commit_data_full, commit_data_empty;
     logic mem_used;
     
-    assign mem_used = !(commit_data_empty) && (cdbus.pc == mem_commit_data_o.pc);
+    // assign mem_used = !(commit_data_empty) && (cdbus.pc == mem_commit_data_o.pc);
 
-    queue #(136, 4) commit_data_queue (
-        .clk(clk),
-        .rst(rst),
-        .data_i(mem_commit_data_i),
-        .enqueue_i(execute_output[3].valid),
-        .full_o(commit_data_full),
-        .data_o(mem_commit_data_o),
-        .dequeue_i(mem_used),
-        .empty_o(commit_data_empty)
-    );
+    // queue #(136, 4) commit_data_queue (
+    //     .clk(clk),
+    //     .rst(rst),
+    //     .data_i(mem_commit_data_i),
+    //     .enqueue_i(execute_output[3].valid),
+    //     .full_o(commit_data_full),
+    //     .data_o(mem_commit_data_o),
+    //     .dequeue_i(mem_used),
+    //     .empty_o(commit_data_empty)
+    // );
     
     always_comb begin
         if (!mem_stall) begin
@@ -635,6 +635,9 @@ import rv32i_types::*;
             cdbus.mem_rd_addr = next_writeback[3].rd_addr;
             cdbus.mem_rob_idx = next_writeback[3].rd_rob_idx;
             cdbus.mem_valid = next_writeback[3].valid;
+            cdbus.mem_addr = mem_commit_data.mem_addr;
+            cdbus.mem_rdata = mem_commit_data.mem_rdata;
+            cdbus.mem_wdata = mem_commit_data.mem_wdata;
         end
         // commit
         if (rob_entry_o.valid && rob_entry_o.status == done) begin
@@ -749,11 +752,11 @@ import rv32i_types::*;
     end
 
     //assign monitor_pc_wdata  = cdbus.pc + 4;
-    assign monitor_mem_addr  = mem_used ? mem_commit_data_o.mem_addr : '0;
-    assign monitor_mem_rmask = mem_used ? mem_commit_data_o.mem_rmask : '0;
-    assign monitor_mem_wmask = mem_used ? mem_commit_data_o.mem_wmask : '0;
-    assign monitor_mem_rdata = mem_used ? mem_commit_data_o.mem_rdata : '0;
-    assign monitor_mem_wdata = mem_used ? mem_commit_data_o.mem_wdata : '0;
+    assign monitor_mem_addr  = rob_entry_o.mem_addr;
+    assign monitor_mem_rmask = rob_entry_o.mem_rmask;
+    assign monitor_mem_wmask = rob_entry_o.mem_wmask;
+    assign monitor_mem_rdata = rob_entry_o.mem_rdata;
+    assign monitor_mem_wdata = rob_entry_o.mem_wdata;
 
 
 endmodule : cpu
