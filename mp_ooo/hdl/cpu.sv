@@ -79,9 +79,16 @@ import rv32i_types::*;
     logic   [3:0]   dmem_rmask;
     logic   [3:0]   dmem_wmask;
     logic   [31:0]  dmem_rdata;
-    logic   [255:0] dmem_rcache_line;
     logic   [31:0]  dmem_wdata;
     logic           dmem_resp;
+    
+    logic   [31:0]  ufp_addr_mem;
+    logic   [3:0]   ufp_rmask_mem;
+    logic   [3:0]   ufp_wmask_mem;
+    logic   [31:0]  ufp_rdata_mem;
+    logic   [255:0] ufp_rcache_line_mem;
+    logic   [31:0]  ufp_wdata_mem;
+    logic           ufp_resp_mem;
 
     logic   [31:0]  dfp_addr_mem;
     logic           dfp_read_mem;
@@ -129,13 +136,20 @@ import rv32i_types::*;
         .clk        (clk),
         .rst        (rst),
         
-        .ufp_addr   (dmem_addr),
-        .ufp_rmask  (dmem_rmask),
-        .ufp_wmask  (dmem_wmask),
-        .ufp_rdata  (dmem_rdata),
-        .ufp_rcache_line (dmem_rcache_line),
-        .ufp_wdata  (dmem_wdata),
-        .ufp_resp   (dmem_resp),
+        // .ufp_addr   (dmem_addr),
+        // .ufp_rmask  (dmem_rmask),
+        // .ufp_wmask  (dmem_wmask),
+        // .ufp_rdata  (dmem_rdata),
+        // .ufp_rcache_line (dmem_rcache_line),
+        // .ufp_wdata  (dmem_wdata),
+        // .ufp_resp   (dmem_resp),
+        .ufp_addr   (ufp_addr_mem),
+        .ufp_rmask  (ufp_rmask_mem),
+        .ufp_wmask  (ufp_wmask_mem),
+        .ufp_rdata  (ufp_rdata_mem),
+        .ufp_rcache_line (ufp_rcache_line_mem),
+        .ufp_wdata  (ufp_wdata_mem),
+        .ufp_resp   (ufp_resp_mem),
 
         .dfp_addr   (dfp_addr_mem),
         .dfp_read   (dfp_read_mem),
@@ -389,6 +403,11 @@ import rv32i_types::*;
     end
 
     logic bmem_flag, debug_r1, flush_stalling;
+
+    logic inst_use_linebuffer, mem_use_linebuffer;
+    assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
+    assign mem_use_linebuffer = (dmem_addr != '0) && (dmem_addr[31:5] == last_dmem_addr[31:5]);
+
     always_ff @(posedge clk) begin : fetch
         if (rst) begin
             pc          <= 32'haaaaa000;
@@ -419,13 +438,11 @@ import rv32i_types::*;
 
                 if (dfp_resp) begin 
                     bmem_flag <= 2'd0;
-                end
+                end        
             end 
             else if (ufp_resp && (flush_stalling == '1)) begin
                 debug_r1 <= 0;
-                // debug_1 <= '1;
                 flush_stalling <= '0;
-                // pc <= pc_next;
                 data_i <= {order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
                 ufp_addr <= pc;
                 ufp_rmask <= '1;   
@@ -444,12 +461,7 @@ import rv32i_types::*;
                     data_i <= {order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
                     ufp_rmask <= '1; 
                     ufp_addr <= pc_next; 
-                    // bmem_read <= 1'b0;
-
                end
-               // enqueue_i <= 1'b1;
-                //curr_instr_data <= '0;
-               // instr_enable <= 1'b1;
             end 
             else begin
                 if (ufp_resp/* && !flush_stalling*/) begin
@@ -510,6 +522,25 @@ import rv32i_types::*;
         end
     end
 
+    always_comb begin : data_cache_ufp
+        ufp_addr_mem = dmem_addr;
+        ufp_rmask_mem = dmem_rmask;
+        ufp_wmask_mem = dmem_wmask;
+        ufp_wdata_mem = dmem_wdata;
+
+        dmem_rdata = ufp_rdata_mem;
+        dmem_resp = ufp_resp_mem;
+        
+        if (mem_use_linebuffer) begin
+            ufp_addr_mem = '0;
+            ufp_rmask_mem = '0;
+            ufp_wmask_mem = '0;
+            ufp_wdata_mem = '0;
+            
+            dmem_rdata = last_dmem_data[32*dmem_addr[4:2] +: 32];
+            dmem_resp = 1'b1;
+        end
+    end
 
     always_comb begin : prep_decode_in
         dequeue_i = (!empty_o && !rst && !stall); 
@@ -540,9 +571,9 @@ import rv32i_types::*;
             curr_instr_addr = pc;
             curr_instr_data = '0;
             instr_enable = 1'b1;            
-        end else if (dmem_resp && mem_stall) begin
+        end else if (ufp_resp_mem && mem_stall) begin
             curr_dmem_addr = dmem_addr;
-            curr_dmem_data = dmem_rcache_line;
+            curr_dmem_data = ufp_rcache_line_mem;
             dmem_enable = 1'b1;            
         end
     end
@@ -663,7 +694,7 @@ import rv32i_types::*;
         else if (stall_prev == 0) stall = 1'b1;
         else if ( (!integer_alu_available && (decode_struct_out.op_type == alu || decode_struct_out.op_type == none)) 
                     || (!mul_alu_available &&  (decode_struct_out.op_type == mul || decode_struct_out.op_type == none))  
-                    || (!mem_available && (decode_struct_out.op_type == mem))
+                    || (!mem_available && (decode_struct_out.op_type == mem  || decode_struct_out.op_type == none))
                     || (!br_alu_available &&  (decode_struct_out.op_type == br || decode_struct_out.op_type == none)) )  begin
             stall = 1'b1;    
         end  

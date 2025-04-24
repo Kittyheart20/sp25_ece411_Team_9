@@ -18,7 +18,7 @@ module mem_unit
     );
         logic [31:0] next_addr;
         assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
-        assign mem_stall = (dmem_addr != '0) && (dmem_addr == next_addr);
+        assign mem_stall = (dmem_addr != '0) && (dmem_addr == next_addr) && !(dmem_resp);
 
         logic is_load, is_store;
         assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
@@ -41,14 +41,14 @@ module mem_unit
                         dmem_wdata <= next_execute.rs2_data;
                     end
                 end 
-                else if (mem_stall) begin
-                    if (is_load) begin
-                        dmem_rmask <= '0;
-                    end else if (is_store) begin
-                        dmem_wmask <= '0;
-                        dmem_wdata <= '0;
-                    end
-                end
+                // else if (mem_stall) begin
+                //     if (is_load) begin
+                //         dmem_rmask <= '0;
+                //     end else if (is_store) begin
+                //         dmem_wmask <= '0;
+                //         dmem_wdata <= '0;
+                //     end
+                // end
             end
         end
 
