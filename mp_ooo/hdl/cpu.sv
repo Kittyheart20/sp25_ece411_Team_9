@@ -516,14 +516,14 @@ import rv32i_types::*;
         end
     end
 
-    always_comb begin : update_stall
-        stall = 1'b0;
+    always_ff @(negedge clk)  begin : update_stall
+        stall <= 1'b0;
         if (empty_o || full_o /*|| stall_till_new_resp*/) stall = 1'b1;
-        else if (stall_prev == 0) stall = 1'b1;
+        else if (stall_prev == 0) stall <= 1'b1;
         else if ( (!integer_alu_available && (decode_struct_out.op_type == alu || decode_struct_out.op_type == none)) 
                      || (!mul_alu_available &&  (decode_struct_out.op_type == mul || decode_struct_out.op_type == none))  
                      || (!br_alu_available &&  (decode_struct_out.op_type == br || decode_struct_out.op_type == none)) )  begin
-            stall = 1'b1;    
+            stall <= 1'b1;    
         end  
 
     end
