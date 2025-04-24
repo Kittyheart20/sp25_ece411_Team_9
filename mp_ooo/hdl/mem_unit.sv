@@ -32,10 +32,11 @@ module mem_unit
                 dmem_wdata <= '0;
             end else begin
                 if (!(mem_stall) && next_execute.valid) begin
+                    // dmem_addr <= {next_addr[31:4], 4'd0};
                     dmem_addr <= next_addr;
 
                     if (is_load) begin
-                        dmem_rmask <= next_execute.mem_rmask;
+                        dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
                     end else if (is_store) begin
                         dmem_wmask <= next_execute.mem_wmask;
                         dmem_wdata <= next_execute.rs2_data;

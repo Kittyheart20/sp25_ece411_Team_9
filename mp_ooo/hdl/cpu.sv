@@ -248,8 +248,8 @@ import rv32i_types::*;
         .rst        (rst),
         .dispatch_struct_in (dispatch_struct_in),    // this should output correct data by the t1me rsv receives new dispatch_struct_in
         .cdbus(cdbus),
-        //.regf_we(execute_output.regf_we),
-        //.new_entry  (rob_enqueue_i),
+        //.regf_we(dmem_rdata),
+        //.new_entry  (rob_enqueue_i)ufp_rdata_mem
         .rd_rob_idx (current_rd_rob_idx),
         .rs1_rob_idx(rs1_rob_idx),
         .rs2_rob_idx(rs2_rob_idx),
@@ -529,6 +529,18 @@ import rv32i_types::*;
         ufp_wdata_mem = dmem_wdata;
 
         dmem_rdata = ufp_rdata_mem;
+        // if (dmem_rmask[3]) 
+        //     dmem_rdata[31:24] = ufp_rdata_mem[31:24];
+        
+        // if (dmem_rmask[2]) 
+        //     dmem_rdata[23:16] = ufp_rdata_mem[23:16];
+
+        // if (dmem_rmask[1]) 
+        //     dmem_rdata[15:8] = ufp_rdata_mem[15:8];
+
+        // if (dmem_rmask[0]) 
+        //     dmem_rdata[7:0] = ufp_rdata_mem[7:0];
+
         dmem_resp = ufp_resp_mem;
         
         if (mem_use_linebuffer) begin
@@ -636,6 +648,8 @@ import rv32i_types::*;
             cdbus.mem_rob_idx = next_writeback[3].rd_rob_idx;
             cdbus.mem_valid = next_writeback[3].valid;
             cdbus.mem_addr = next_writeback[3].mem_addr;
+            cdbus.mem_rmask = next_writeback[3].mem_rmask;
+            cdbus.mem_wmask = next_writeback[3].mem_wmask;
             cdbus.mem_rdata = next_writeback[3].mem_rdata;
             cdbus.mem_wdata = next_writeback[3].mem_wdata;
         end

@@ -53,9 +53,6 @@ import rv32i_types::*;
         rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
         rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
         rob_entry_i.regf_we = dispatch_struct_in.regf_we;
-
-        rob_entry_i.mem_rmask = dispatch_struct_in.mem_rmask;
-        rob_entry_i.mem_wmask = dispatch_struct_in.mem_wmask;
         
         // if (dispatch_struct_in.valid) 
         //     current_rd_rob_idx = tail;
@@ -106,6 +103,8 @@ import rv32i_types::*;
                         rob_table[i].rd_valid <= 1'b1;
 
                         rob_table[i].mem_addr <= cdbus.mem_addr;
+                        rob_table[i].mem_rmask <= cdbus.mem_rmask;
+                        rob_table[i].mem_wmask <= cdbus.mem_wmask;
                         rob_table[i].mem_rdata <= cdbus.mem_rdata;
                         rob_table[i].mem_wdata <= cdbus.mem_wdata;
                     end
