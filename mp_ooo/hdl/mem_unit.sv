@@ -1,39 +1,109 @@
-// module mem_unit
-//     import rv32i_types::*;
-//     (
-//         input  logic            clk,
-//         input  logic            rst,
-//         output logic            mem_stall,
-//         input  logic [31:0]     dmem_rdata,
-//         output logic [31:0]     dmem_wdata,
-//         input  logic            dmem_resp,
-//         input  reservation_station_t next_execute,
-//         output to_writeback_t   execute_output
-//     );
+module mem_unit
+    import rv32i_types::*;
+    (
+        input  logic            clk,
+        input  logic            rst,
+        output logic            mem_stall,
 
+        output logic   [31:0]   dmem_addr,
+        output logic   [3:0]    dmem_rmask,
+        output logic   [3:0]    dmem_wmask,
+        input  logic   [31:0]   dmem_rdata,
+        output logic   [31:0]   dmem_wdata,
+        input  logic            dmem_resp,
 
-        // logic [31:0] rd_v;
-    
-        // logic [1:0]  byte_offset;
-        // assign byte_offset = ex_mem_reg.mem_addr[1:0];
-        // logic mem_op_in_progress;
-    
-        // assign stall = (ex_mem_reg.valid && (ex_mem_reg.load || |ex_mem_reg.mem_wmask) && !dmem_resp) || 
-        //            (mem_op_in_progress && !dmem_resp);
-    
-        // always_ff @(posedge clk) begin
-        //     if (rst) begin
-        //         mem_op_in_progress <= 1'b0;
-        //     end 
-        //     else begin
-        //         if (ex_mem_reg.valid && (ex_mem_reg.load || |ex_mem_reg.mem_wmask) && !dmem_resp) begin
-        //             // Start tracking a new memory operation
-        //             mem_op_in_progress <= 1'b1;
-        //         end else if (dmem_resp) begin
-        //             // Memory response received, operation complete
-        //             mem_op_in_progress <= 1'b0;
-        //         end
-        //     end
-        // end
+        input  reservation_station_t next_execute,
+        output to_writeback_t   execute_output,
+        output mem_commit_t     mem_commit_data
+    );
+        logic [31:0] next_addr;
+        assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
+        assign mem_stall = 1'b0;
 
-// endmodule
+        logic is_load, is_store;
+        assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
+        assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
+
+        always_ff @(posedge clk) begin
+            if (rst) begin
+                dmem_addr <= '0;
+                dmem_rmask <= '0;
+                dmem_wmask <= '0;
+                dmem_wdata <= '0;
+            end else begin
+                if (!(mem_stall) && next_execute.valid) begin
+                    dmem_addr <= next_addr;
+
+                    if (is_load) begin
+                        dmem_rmask <= next_execute.mem_rmask;
+                    end else if (is_store) begin
+                        dmem_wmask <= next_execute.mem_wmask;
+                        dmem_wdata <= next_execute.rs2_data;
+                    end
+                end 
+                else if (mem_stall) begin
+                    if (is_load) begin
+                        dmem_rmask <= '0;
+                    end else if (is_store) begin
+                        dmem_wmask <= '0;
+                        dmem_wdata <= '0;
+                    end
+                end
+            end
+        end
+
+        always_comb begin
+            execute_output = '0;
+            execute_output.pc = next_execute.pc;
+            execute_output.inst = next_execute.inst;
+            execute_output.rd_addr = next_execute.rd_addr;
+            execute_output.rs1_addr = next_execute.rs1_addr;
+            execute_output.rs2_addr = next_execute.rs2_addr;
+            execute_output.rd_rob_idx = next_execute.rd_rob_idx;
+
+            if (is_load && dmem_resp) begin
+                execute_output.valid = 1'b1;
+                execute_output.regf_we = 1'b1;
+
+                if (next_execute.mem_rmask[3]) 
+                    execute_output.rd_data[31:24] = dmem_rdata[31:24];
+                
+                if (next_execute.mem_rmask[2]) 
+                    execute_output.rd_data[23:16] = dmem_rdata[23:16];
+
+                if (next_execute.mem_rmask[1]) 
+                    execute_output.rd_data[15:8] = dmem_rdata[15:8];
+
+                if (next_execute.mem_rmask[0]) 
+                    execute_output.rd_data[7:0] = dmem_rdata[7:0];
+                
+                if (next_execute.memop == mem_op_b)
+                    execute_output.rd_data[31:8] = {24{dmem_rdata[7]}};
+                else if (next_execute.memop == mem_op_h)
+                    execute_output.rd_data[31:16] = {16{dmem_rdata[15]}};
+            end 
+            
+            else if (is_store) begin
+                execute_output.valid = 1'b1;
+            end
+        end
+
+        always_comb begin 
+            mem_commit_data = '0;
+
+            if (is_load && dmem_resp) begin
+                mem_commit_data.pc = next_execute.pc;
+                mem_commit_data.mem_addr = dmem_addr;
+                mem_commit_data.mem_rmask = dmem_rmask;
+                mem_commit_data.mem_wmask = dmem_wmask;
+                mem_commit_data.mem_rdata = execute_output.rd_data;
+            end else if (is_store) begin
+                mem_commit_data.pc = next_execute.pc;
+                mem_commit_data.mem_addr = dmem_addr;
+                mem_commit_data.mem_rmask = dmem_rmask;
+                mem_commit_data.mem_wmask = dmem_wmask;
+                mem_commit_data.mem_wdata = next_execute.rs2_data;
+            end
+        end
+
+endmodule

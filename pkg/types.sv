@@ -19,11 +19,11 @@ package rv32i_types;
     } status_t;
 
     typedef enum logic [2:0] {
-        none = 3'b000,
-        alu  = 3'b001,
-        mul  = 3'b010,  // div rem included
-        br   = 3'b011,
-        mem  = 3'b100
+        alu   = 3'b000,
+        mul   = 3'b001,  // div rem included
+        br    = 3'b010,
+        mem   = 3'b011,
+        none  = 3'b100
     } types_t;
 
     typedef enum logic [1:0] {
@@ -80,6 +80,15 @@ package rv32i_types;
         mult_op_remu   = 3'b111
     } mult_ops;
 
+    typedef enum logic [2:0] { // memory operation w/h/b
+        mem_op_none  = 3'b000,
+        mem_op_b     = 3'b001,
+        mem_op_bu    = 3'b010,
+        mem_op_h     = 3'b011,
+        mem_op_hu    = 3'b100,
+        mem_op_w     = 3'b101
+    } mem_ops;
+    
     typedef struct packed {
         logic           valid;
         logic   [31:0]  pc;
@@ -198,6 +207,9 @@ package rv32i_types;
 
         alu_ops		        aluop;
         mult_ops            multop;
+        mem_ops             memop;
+        logic [3:0]         mem_rmask;
+        logic [3:0]         mem_wmask;
 
         logic use_rs1;
         logic use_rs2;
@@ -233,15 +245,6 @@ package rv32i_types;
         variant        = 7'b0100000
     } funct7_t;
 
-    // typedef enum logic [2:0] { // memory operation w/h/b
-    //     mem_op_none  = 3'b000,
-    //     mem_op_b     = 3'b001,
-    //     mem_op_bu    = 3'b010,
-    //     mem_op_h     = 3'b011,
-    //     mem_op_hu    = 3'b100,
-    //     mem_op_w     = 3'b101
-    // } mem_ops;
-    
     typedef struct packed {
         // writeback 
         logic        alu_valid;  

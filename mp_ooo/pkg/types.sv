@@ -20,11 +20,11 @@ package rv32i_types;
     } status_t;
 
     typedef enum logic [2:0] {
-        none = 3'b000,
-        alu  = 3'b001,
-        mul  = 3'b010,  // div rem included
-        br   = 3'b011,
-        mem  = 3'b100
+        alu   = 3'b000,
+        mul   = 3'b001,  // div rem included
+        br    = 3'b010,
+        mem   = 3'b011,
+        none  = 3'b100
     } types_t;
 
     typedef enum logic [1:0] {
@@ -130,8 +130,6 @@ package rv32i_types;
         logic [4:0]         rs2_addr;
         logic [4:0]         rs1_rob_idx;
         logic [4:0]         rs2_rob_idx;
-        // logic [31:0]        rs1_data;
-        // logic [31:0]        rs2_data;
         logic [31:0]        imm;
 
 	    logic               regf_we;
@@ -141,9 +139,9 @@ package rv32i_types;
         mult_ops            multop;
         // pc_sel_t            pc_sel;
         branch_f3_t         brop;
-        // mem_ops             memop;
-        // logic [3:0]         mem_rmask;
-        // logic [3:0]         mem_wmask;
+        mem_ops             memop;
+        logic [3:0]         mem_rmask;
+        logic [3:0]         mem_wmask;
         types_t             op_type;
 
         logic use_rs1;
@@ -169,21 +167,23 @@ package rv32i_types;
 
         // Control Signals
         logic           regf_we;
-        logic valid_out;
+        logic           valid_out;
         alu_m1_sel_t    alu_m1_sel;
         alu_m2_sel_t    alu_m2_sel;
+        
+        types_t         op_type;
         alu_ops         aluop;
         mult_ops        multop;
         // pc_sel_t            pc_sel;
-        branch_f3_t         brop;
-        // mem_ops             memop;
-        // logic [3:0]         mem_rmask;
-        // logic [3:0]         mem_wmask;
+        branch_f3_t     brop;
+        mem_ops         memop;
+        logic [3:0]     mem_rmask;
+        logic [3:0]     mem_wmask;
 
         logic [4:0]     rs1_rob_idx;
         logic [4:0]     rs2_rob_idx;
         logic [4:0]     rd_rob_idx;
-        logic [31:0]     pc_new;
+        logic [31:0]    pc_new;
 
         status_rs_t     status;
     } reservation_station_t;
@@ -260,6 +260,15 @@ package rv32i_types;
     } funct7_t;
     
     typedef struct packed {
+        logic [31:0] pc;
+        logic [31:0] mem_addr;
+        logic [3:0]  mem_rmask;
+        logic [3:0]  mem_wmask;
+        logic [31:0] mem_rdata;
+        logic [31:0] mem_wdata;
+    } mem_commit_t;
+    
+    typedef struct packed {
         // writeback 
         logic        alu_valid;  
         logic [31:0] alu_data; 
@@ -272,11 +281,15 @@ package rv32i_types;
         logic [4:0]  mul_rd_addr;  
 
         logic        br_valid;      
-        logic br_en;   
+        logic        br_en;   
         logic [31:0] br_data; 
         logic [4:0]  br_rob_idx;
         logic [4:0]  br_rd_addr; 
-        // logic        mem_valid; 
+
+        logic        mem_valid; 
+        logic [31:0] mem_data; 
+        logic [4:0]  mem_rob_idx;
+        logic [4:0]  mem_rd_addr;  
 
         // commit
         logic        regf_we;   
@@ -289,7 +302,7 @@ package rv32i_types;
         logic [4:0]  rs2_addr;
         logic [31:0] rs1_data;
         logic [31:0] rs2_data;
-        logic[31:0] inst;
+        logic [31:0] inst;
         logic [31:0] pc;
         logic [31:0] pc_new;
         logic flush;

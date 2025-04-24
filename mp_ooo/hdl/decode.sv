@@ -40,13 +40,19 @@ import rv32i_types::*;
         decode_struct_out.rs1_addr = rs1_addr;
         decode_struct_out.rs2_addr = rs2_addr;
         decode_struct_out.rd_addr = rd_addr;
-        decode_struct_out.op_type = alu;
-        decode_struct_out.use_rs1 = 0;
-        decode_struct_out.use_rs2 = 0;
+        decode_struct_out.op_type = none;
+        decode_struct_out.aluop = 'x;
+        decode_struct_out.multop = 'x;
+        decode_struct_out.memop = 'x;
+        decode_struct_out.use_rs1 = 1'b0;
+        decode_struct_out.use_rs2 = 1'b0;
+        decode_struct_out.mem_wmask = 4'd0;
+        decode_struct_out.mem_rmask = 4'd0;
 
         
         unique case (opcode)
             op_b_lui  : begin
+                decode_struct_out.op_type = alu;
                 decode_struct_out.imm = u_imm;
                 decode_struct_out.regf_we = 1'b1;          // Control Signals
                 decode_struct_out.alu_m1_sel = no_out;
@@ -54,7 +60,7 @@ import rv32i_types::*;
                 decode_struct_out.aluop = alu_op_add;
             end
             op_b_imm  : begin
-                // decode_struct_out.rs1_data = rs1_data;  
+                decode_struct_out.op_type = alu;
                 decode_struct_out.imm = i_imm;
                 decode_struct_out.regf_we = 1'b1;          // Control Signals
                 decode_struct_out.alu_m1_sel = rs1_out;
@@ -75,8 +81,7 @@ import rv32i_types::*;
                 endcase
             end
             op_b_reg  : begin
-                // decode_struct_out.rs1_data = rs1_data;  
-                // decode_struct_out.rs2_data = rs2_data;  
+                decode_struct_out.op_type = alu;
                 decode_struct_out.regf_we = 1'b1;          // Control Signals
                 decode_struct_out.alu_m1_sel = rs1_out;
                 decode_struct_out.alu_m2_sel = rs2_out;
@@ -160,73 +165,69 @@ import rv32i_types::*;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.use_rs2 = 1'b1;
             end
-            // op_b_load : begin
-            //     decode_struct_out.imm = i_imm;
-            //     decode_struct_out.rs1_addr = rs1_addr;
-            //     decode_struct_out.rs1_data = rs1_data;
-			//	   decode_struct_out.alu_m1_sel = rs1_out;
-			//	   decode_struct_out.alu_m2_sel = imm_out;
-            //     decode_struct_out.rd_addr = rd_addr;
-            //     decode_struct_out.regf_we = 1'b1;        // We can also use this to differentiate loads from stores in the mem unit
-            //     decode_struct_out.op_type = mem;
-			//	   decode_struct_out.mem_wmask = 4'b0000;
+            op_b_load : begin
+                decode_struct_out.use_rs1 = 1'b1;
+                decode_struct_out.rs2_addr = 5'd0;
+                decode_struct_out.imm = i_imm;
+				decode_struct_out.alu_m1_sel = rs1_out;
+				decode_struct_out.alu_m2_sel = imm_out;
+                decode_struct_out.regf_we = 1'b1;        // We can also use this to differentiate loads from stores in the mem unit
+                decode_struct_out.op_type = mem;
 
-            // unique case (funct3)
-            //     load_f3_lb: begin
-            //         decode_struct_out.mem_rmask = 4'b0001;
-            //         decode_struct_out.memop = mem_op_b;
-            //     end
-            //     load_f3_lbu: begin
-            //         decode_struct_out.mem_rmask = 4'b0001;
-            //         decode_struct_out.memop = mem_op_bu;
-            //     end
-            //     load_f3_lh: begin
-            //         decode_struct_out.mem_rmask = 4'b0011;
-            //         decode_struct_out.memop = mem_op_h;
-            //     end
-            //     load_f3_lhu: begin
-            //         decode_struct_out.mem_rmask = 4'b0011;
-            //         decode_struct_out.memop = mem_op_hu;
-            //     end
-            //     load_f3_lw:  begin
-            //         decode_struct_out.mem_rmask = 4'b1111;
-            //         decode_struct_out.memop = mem_op_w;
-            //     end 
-            //     default:  begin
-            //         decode_struct_out.memop = mem_op_none;
-            //     end
-            // endcase
+                unique case (funct3)
+                    load_f3_lb: begin
+                        decode_struct_out.mem_rmask = 4'b0001;
+                        decode_struct_out.memop = mem_op_b;
+                    end
+                    load_f3_lbu: begin
+                        decode_struct_out.mem_rmask = 4'b0001;
+                        decode_struct_out.memop = mem_op_bu;
+                    end
+                    load_f3_lh: begin
+                        decode_struct_out.mem_rmask = 4'b0011;
+                        decode_struct_out.memop = mem_op_h;
+                    end
+                    load_f3_lhu: begin
+                        decode_struct_out.mem_rmask = 4'b0011;
+                        decode_struct_out.memop = mem_op_hu;
+                    end
+                    load_f3_lw:  begin
+                        decode_struct_out.mem_rmask = 4'b1111;
+                        decode_struct_out.memop = mem_op_w;
+                    end 
+                    default:  begin
+                        decode_struct_out.memop = mem_op_none;
+                    end
+                endcase
 
-            // end
-            // op_b_store: begin 
-            //     decode_struct_out.imm = s_imm;
-            //     decode_struct_out.rs1_addr = rs1_addr;
-            //     decode_struct_out.rs1_data = rs1_data;  
-            //     decode_struct_out.rs2_addr = rs2_addr;
-            //     decode_struct_out.rs2_data = rs2_data; 
-            //     decode_struct_out.alu_m1_sel_t = rs1_out;
-			//	   decode_struct_out.alu_m2_sel = imm_out;
-            //     decode_struct_out.mem_rmask = 4'b0000; 
-            //     decode_struct_out.op_type = mem;
+            end
+            op_b_store: begin 
+                decode_struct_out.use_rs1 = 1'b1;
+                decode_struct_out.use_rs2 = 1'b1;
+                decode_struct_out.imm = s_imm;
+                decode_struct_out.rd_addr = 5'd0;
+                decode_struct_out.alu_m1_sel = rs1_out;
+                decode_struct_out.alu_m2_sel = imm_out;
+                decode_struct_out.op_type = mem;
 
-            // unique case (funct3)
-            //     store_f3_sb: begin
-            //         id_ex_reg_next.mem_wmask = 4'b0001;
-            //         id_ex_reg_next.memop = mem_op_b;
-            //     end
-            //     store_f3_sh: begin
-            //         id_ex_reg_next.mem_wmask = 4'b0011;
-            //         id_ex_reg_next.memop = mem_op_h;
-            //     end
-            //     store_f3_sw: begin
-            //         id_ex_reg_next.mem_wmask = 4'b1111;
-            //         id_ex_reg_next.memop = mem_op_w;
-            //     end
-            //     default:  begin
-            //     id_ex_reg_next.memop = mem_op_none;
-            //     end
-            // endcase
-            // end
+                unique case (funct3)
+                    store_f3_sb: begin
+                        decode_struct_out.mem_wmask = 4'b0001;
+                        decode_struct_out.memop = mem_op_b;
+                    end
+                    store_f3_sh: begin
+                        decode_struct_out.mem_wmask = 4'b0011;
+                        decode_struct_out.memop = mem_op_h;
+                    end
+                    store_f3_sw: begin
+                        decode_struct_out.mem_wmask = 4'b1111;
+                        decode_struct_out.memop = mem_op_w;
+                    end
+                    default:  begin
+                        decode_struct_out.memop = mem_op_none;
+                    end
+                endcase
+            end
             default   : ;
         endcase
         // end
