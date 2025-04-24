@@ -584,7 +584,9 @@ import rv32i_types::*;
         end
     end
 
-    always_ff @(negedge clk)  begin : update_stall
+logic neg_clk;
+assign neg_clk = ~clk;
+    always_ff @(posedge neg_clk)  begin : update_stall
         stall <= 1'b0;
         if (empty_o || full_o /*|| stall_till_new_resp*/) stall <= 1'b1;
         else if (stall_prev == 0) stall <= 1'b1;
