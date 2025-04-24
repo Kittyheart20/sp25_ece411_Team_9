@@ -107,7 +107,7 @@ import rv32i_types::*;
 
                         rob_table[i].mem_addr <= cdbus.mem_addr;
                         rob_table[i].mem_rdata <= cdbus.mem_rdata;
-                        rob_table[i].mem_rdata <= cdbus.mem_wdata;
+                        rob_table[i].mem_wdata <= cdbus.mem_wdata;
                     end
                     if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx)) begin
                         debug <= '1;

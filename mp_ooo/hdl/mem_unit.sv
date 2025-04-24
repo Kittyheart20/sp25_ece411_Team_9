@@ -13,8 +13,8 @@ module mem_unit
         input  logic            dmem_resp,
 
         input  reservation_station_t next_execute,
-        output to_writeback_t   execute_output,
-        output mem_commit_t     mem_commit_data
+        output to_writeback_t   execute_output
+        // output mem_commit_t     mem_commit_data
     );
         logic [31:0] next_addr;
         assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
@@ -86,24 +86,38 @@ module mem_unit
             else if (is_store) begin
                 execute_output.valid = 1'b1;
             end
-        end
-
-        always_comb begin 
-            mem_commit_data = '0;
 
             if (is_load && dmem_resp) begin
-                mem_commit_data.pc = next_execute.pc;
-                mem_commit_data.mem_addr = dmem_addr;
-                mem_commit_data.mem_rmask = dmem_rmask;
-                mem_commit_data.mem_wmask = dmem_wmask;
-                mem_commit_data.mem_rdata = execute_output.rd_data;
+                execute_output.pc = next_execute.pc;
+                execute_output.mem_addr = dmem_addr;
+                execute_output.mem_rmask = dmem_rmask;
+                execute_output.mem_wmask = dmem_wmask;
+                execute_output.mem_rdata = execute_output.rd_data;
             end else if (is_store) begin
-                mem_commit_data.pc = next_execute.pc;
-                mem_commit_data.mem_addr = dmem_addr;
-                mem_commit_data.mem_rmask = dmem_rmask;
-                mem_commit_data.mem_wmask = dmem_wmask;
-                mem_commit_data.mem_wdata = next_execute.rs2_data;
+                execute_output.pc = next_execute.pc;
+                execute_output.mem_addr = dmem_addr;
+                execute_output.mem_rmask = dmem_rmask;
+                execute_output.mem_wmask = dmem_wmask;
+                execute_output.mem_wdata = next_execute.rs2_data;
             end
         end
+
+        // always_comb begin 
+        //     mem_commit_data = '0;
+
+        //     if (is_load && dmem_resp) begin
+        //         mem_commit_data.pc = next_execute.pc;
+        //         mem_commit_data.mem_addr = dmem_addr;
+        //         mem_commit_data.mem_rmask = dmem_rmask;
+        //         mem_commit_data.mem_wmask = dmem_wmask;
+        //         mem_commit_data.mem_rdata = execute_output.rd_data;
+        //     end else if (is_store) begin
+        //         mem_commit_data.pc = next_execute.pc;
+        //         mem_commit_data.mem_addr = dmem_addr;
+        //         mem_commit_data.mem_rmask = dmem_rmask;
+        //         mem_commit_data.mem_wmask = dmem_wmask;
+        //         mem_commit_data.mem_wdata = next_execute.rs2_data;
+        //     end
+        // end
 
 endmodule

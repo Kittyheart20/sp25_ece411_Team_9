@@ -364,8 +364,8 @@ import rv32i_types::*;
         .dmem_wdata(dmem_wdata),
         .dmem_resp(dmem_resp),
         .next_execute(next_execute[3]),
-        .execute_output(execute_output[3]),
-        .mem_commit_data(mem_commit_data)
+        .execute_output(execute_output[3])
+        // .mem_commit_data(mem_commit_data)
     );
 
     logic commit_data_full, commit_data_empty;
@@ -635,9 +635,9 @@ import rv32i_types::*;
             cdbus.mem_rd_addr = next_writeback[3].rd_addr;
             cdbus.mem_rob_idx = next_writeback[3].rd_rob_idx;
             cdbus.mem_valid = next_writeback[3].valid;
-            cdbus.mem_addr = mem_commit_data.mem_addr;
-            cdbus.mem_rdata = mem_commit_data.mem_rdata;
-            cdbus.mem_wdata = mem_commit_data.mem_wdata;
+            cdbus.mem_addr = next_writeback[3].mem_addr;
+            cdbus.mem_rdata = next_writeback[3].mem_rdata;
+            cdbus.mem_wdata = next_writeback[3].mem_wdata;
         end
         // commit
         if (rob_entry_o.valid && rob_entry_o.status == done) begin
