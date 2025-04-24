@@ -451,13 +451,13 @@ import rv32i_types::*;
     //assign failure = (!integer_alu_available) != (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none));
     logic stall_prev;
 
-    always_ff @(negedge clk) begin : update_stall
-        stall <= 1'b0;
-        if (empty_o || full_o) stall <= 1'b1;
+    always_comb begin : update_stall
+        stall = 1'b0;
+        if (empty_o || full_o) stall = 1'b1;
         else if (stall_prev == 0) stall = 1;
         else if ( (!integer_alu_available && (dispatch_struct_in.op_type == alu || dispatch_struct_in.op_type == none)) 
                      || (!mul_alu_available &&  (dispatch_struct_in.op_type == mul || dispatch_struct_in.op_type == none)) )  begin
-            stall <= 1'b1;    
+            stall = 1'b1;    
         end  
 
     end
