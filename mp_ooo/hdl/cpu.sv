@@ -528,18 +528,19 @@ import rv32i_types::*;
         ufp_wmask_mem = dmem_wmask;
         ufp_wdata_mem = dmem_wdata;
 
-        dmem_rdata = ufp_rdata_mem;
-        // if (dmem_rmask[3]) 
-        //     dmem_rdata[31:24] = ufp_rdata_mem[31:24];
+        // dmem_rdata = ufp_rdata_mem >> 4*dmem_addr[1:0];
+        dmem_rdata = '0;
+        if (dmem_rmask[3]) 
+            dmem_rdata[31:24] = ufp_rdata_mem[31:24];
         
-        // if (dmem_rmask[2]) 
-        //     dmem_rdata[23:16] = ufp_rdata_mem[23:16];
+        if (dmem_rmask[2]) 
+            dmem_rdata[23:16] = ufp_rdata_mem[23:16];
 
-        // if (dmem_rmask[1]) 
-        //     dmem_rdata[15:8] = ufp_rdata_mem[15:8];
+        if (dmem_rmask[1]) 
+            dmem_rdata[15:8] = ufp_rdata_mem[15:8];
 
-        // if (dmem_rmask[0]) 
-        //     dmem_rdata[7:0] = ufp_rdata_mem[7:0];
+        if (dmem_rmask[0]) 
+            dmem_rdata[7:0] = ufp_rdata_mem[7:0];
 
         dmem_resp = ufp_resp_mem;
         

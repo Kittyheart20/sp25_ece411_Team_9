@@ -32,8 +32,8 @@ module mem_unit
                 dmem_wdata <= '0;
             end else begin
                 if (!(mem_stall) && next_execute.valid) begin
-                    // dmem_addr <= {next_addr[31:4], 4'd0};
-                    dmem_addr <= next_addr;
+                    dmem_addr <= {next_addr[31:2], 2'd0};
+                    // dmem_addr <= next_addr;
 
                     if (is_load) begin
                         dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
@@ -66,22 +66,14 @@ module mem_unit
                 execute_output.valid = 1'b1;
                 execute_output.regf_we = 1'b1;
 
-                if (next_execute.mem_rmask[3]) 
-                    execute_output.rd_data[31:24] = dmem_rdata[31:24];
-                
-                if (next_execute.mem_rmask[2]) 
-                    execute_output.rd_data[23:16] = dmem_rdata[23:16];
-
-                if (next_execute.mem_rmask[1]) 
-                    execute_output.rd_data[15:8] = dmem_rdata[15:8];
-
-                if (next_execute.mem_rmask[0]) 
-                    execute_output.rd_data[7:0] = dmem_rdata[7:0];
-                
-                if (next_execute.memop == mem_op_b)
-                    execute_output.rd_data[31:8] = {24{dmem_rdata[7]}};
-                else if (next_execute.memop == mem_op_h)
-                    execute_output.rd_data[31:16] = {16{dmem_rdata[15]}};
+                unique case (next_execute.memop)
+                    mem_op_b    : execute_output.rd_data = {{24{dmem_rdata[7 +8 *next_addr[1:0]]}}, dmem_rdata[8 *next_addr[1:0] +: 8 ]};
+                    mem_op_bu   : execute_output.rd_data = {{24{1'b0}}                          , dmem_rdata[8 *next_addr[1:0] +: 8 ]};
+                    mem_op_h    : execute_output.rd_data = {{16{dmem_rdata[15+8 *next_addr[1:0]]}}, dmem_rdata[8 *next_addr[1:0] +: 16]};
+                    mem_op_hu   : execute_output.rd_data = {{16{1'b0}}                          , dmem_rdata[8 *next_addr[1:0] +: 16]};
+                    mem_op_w    : execute_output.rd_data = dmem_rdata >> 8*next_addr[1:0];
+                    default     : execute_output.rd_data = 'x;
+                endcase
             end 
             
             else if (is_store) begin
