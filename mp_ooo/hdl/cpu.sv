@@ -383,6 +383,7 @@ import rv32i_types::*;
         end
     end
 
+    if_id_stage_reg_t  decode_struct_in_prev;
 
     always_comb begin : prep_decode_in
         dequeue_i = (!empty_o && !rst && !stall); 
@@ -400,6 +401,9 @@ import rv32i_types::*;
                 decode_struct_in.order = data_o[127:64];
                 decode_struct_in.valid = 1'b1;
             end else begin
+                decode_struct_in.inst = decode_struct_in_prev.inst;
+                decode_struct_in.pc = decode_struct_in_prev.pc;
+                decode_struct_in.order = decode_struct_in_prev.order;       
                 decode_struct_in.valid = 1'b0;
             end
         end
@@ -422,6 +426,7 @@ import rv32i_types::*;
     end
 
     always_ff @(posedge clk) begin : update_dispatch_str
+        decode_struct_in_prev <= decode_struct_in;
         if (rst || cdbus.flush) begin
             dispatch_struct_in <= '{default: '0};
             next_execute <= '{default: '0};
