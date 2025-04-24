@@ -33,7 +33,8 @@ import rv32i_types::*;
 
     // Stage Registers
     localparam NUM_FUNC_UNIT = 2;
-    
+
+    if_id_stage_reg_t  fetch_struct_out;
     if_id_stage_reg_t  decode_struct_in;
     id_dis_stage_reg_t decode_struct_out;
     id_dis_stage_reg_t dispatch_struct_in;
@@ -348,16 +349,16 @@ import rv32i_types::*;
         dequeue_i = (!empty_o && !rst && !stall); 
 
         if (rst) begin
-            decode_struct_in = '0;
+            fetch_struct_out = '0;
         end else begin
             if (dequeue_i) begin
-                decode_struct_in.inst = data_o[31:0];
-                decode_struct_in.pc = data_o[63:32];
-                decode_struct_in.order = data_o[127:64];
-                decode_struct_in.valid = 1'b1 /*&& !stall*/;
+                fetch_struct_out.inst = data_o[31:0];
+                fetch_struct_out.pc = data_o[63:32];
+                fetch_struct_out.order = data_o[127:64];
+                fetch_struct_out.valid = 1'b1 /*&& !stall*/;
             end else begin
-                decode_struct_in = '0;
-                decode_struct_in.valid = 1'b0;
+                fetch_struct_out = '0;
+                fetch_struct_out.valid = 1'b0;
             end
         end
     end   
@@ -392,6 +393,7 @@ import rv32i_types::*;
 
     always_ff @(posedge clk) begin : update_dispatch_str
         if (rst) begin
+            decode_struct_in <= '0;
             dispatch_struct_in <= '0;
             next_execute <= '{default: '0};
             next_writeback <= '{default: '0};
@@ -399,6 +401,7 @@ import rv32i_types::*;
         else begin
             //if (((decode_struct_out.op_type == mul) && mul_alu_available) || ((decode_struct_out.op_type == alu) && integer_alu_available))
             // if (!stall)
+            decode_struct_in <= fetch_struct_out;
             dispatch_struct_in <= decode_struct_out;
             //if (!(((decode_struct_out.op_type == mul) && mul_alu_available) || ((decode_struct_out.op_type == alu) && integer_alu_available)))
               //  dispatch_struct_in.valid <= 0;
