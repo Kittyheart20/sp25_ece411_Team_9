@@ -46,7 +46,7 @@ import rv32i_types::*;
     reservation_station_t stations[5];
     logic[31:0] debug_1, debug_2;
 
-    logic update;
+    logic cdb_update;
     assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.regf_we);
 
     logic [31:0] debug_array;
@@ -170,7 +170,7 @@ import rv32i_types::*;
             for (integer i = 0 ; i < 32; i++) begin
             //  if ((rob_table[i].rd_valid) && (rob_table[i].valid)) begin
                     if ((!rs1_ready) && (rob_table[i].rd_addr == new_rs_entry.rs1_addr) && rob_table[i].valid && rob_table[i].rd_valid) begin
-                        debug_array[i] = 1;
+                        debug_array[i] = 1'd1;
                         debug_1 = i;
                     end
                     // else if (cdbus.alu_valid && (new_rs_entry.rs1_addr == cdbus.alu_rd_addr)) begin
@@ -190,7 +190,34 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin
 
         if (rst || cdbus.flush) begin
-            stations <= '{default: '0};     // ss: initialize with 0s -- status and valid will be automatically set
+            for (integer i = 0; i < DEPTH; i++) begin // Assuming DEPTH is 5 based on stations[5] declaration
+                    stations[i] <= '{
+                    valid: '0,
+                    pc: '0,
+                    inst: '0,
+                    opcode: '0,
+                    rd_addr: '0,
+                    rs1_addr: '0,
+                    rs2_addr: '0,
+                    rs1_data: '0,
+                    rs1_ready: '0,
+                    rs2_data: '0,
+                    rs2_ready: '0,
+                    imm_sext: '0,
+                    regf_we: '0,
+                    valid_out: '0, // Assuming valid_out is not part of reservation_station_t
+                    alu_m1_sel: alu_m1_sel_t'(0),
+                    alu_m2_sel: alu_m2_sel_t'(0),
+                    aluop: alu_ops'(0),
+                    multop: mult_ops'(0),
+                    brop: branch_f3_t'(0), // Assuming brop is not part of reservation_station_t
+                    rs1_rob_idx: '0,
+                    rs2_rob_idx: '0,
+                    rd_rob_idx: '0,
+                    pc_new: '0, // Assuming pc_new is not part of reservation_station_t
+                    status: status_rs_t'(IDLE) // Use appropriate default from enum if available, e.g., IDLE
+                };
+            end        
             debug_3 <= '0;
         end
         

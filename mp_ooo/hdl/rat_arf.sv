@@ -69,13 +69,13 @@ import rv32i_types::*;
             if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
                 rat_arf_table[cdbus.commit_rd_addr].data <= cdbus.commit_data;
                 rat_arf_table[cdbus.commit_rd_addr].ready <= 1'b1 && (ready_count[cdbus.commit_rd_addr] < 5'd2);
-                ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 1;
+                ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 5'd1;
             end
 
             if (dispatch_struct_in.valid && (rd_addr != 5'd0)/* && dispatch_struct_in.regf_we*/) begin           // Creating a new entry   
                 rat_arf_table[rd_addr].ready <= 1'b0;
                 rat_arf_table[rd_addr].rob_idx <= rd_rob_idx;
-                ready_count[rd_addr] <= ready_count[rd_addr] + 1;
+                ready_count[rd_addr] <= ready_count[rd_addr] + 5'd1;
             end
             
             case ({dispatch_struct_in.valid && (rd_addr != 5'd0), cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)})

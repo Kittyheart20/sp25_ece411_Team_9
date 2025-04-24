@@ -61,9 +61,28 @@ import rv32i_types::*;
         if (rst || cdbus.flush) begin
             head <= '0;
             tail <= '0;
-            tail_addr <= 0;
+            tail_addr <= 5'd0;
             count <= '0;
-            rob_table <= '{default: 0}; // ss: initialize rob_table with 0s
+            for (integer i = 0; i < DEPTH; i++) begin
+                rob_table[i] <= '{
+                    valid: '0,
+                    status: status_t'(0), // Assuming status_t is an enum/typedef, use appropriate default
+                    op_type: types_t'(0), // Assuming types_t is an enum/typedef, use appropriate default
+                    rd_addr: '0,
+                    rd_data: '0,
+                    rd_rob_idx: '0,
+                    rd_valid: '0,
+                    regf_we: '0,
+                    pc: '0,
+                    inst: '0,
+                    rs1_addr: '0,
+                    rs2_addr: '0,
+                    rs1_data: '0,
+                    rs2_data: '0,
+                    br_en: '0,
+                    pc_new: '0
+                };
+            end
             debug <= '0;
             // for (integer i = 0; i < DEPTH; i++) begin
             //     rob_table[i].status = empty;
@@ -116,9 +135,9 @@ import rv32i_types::*;
             end else if (rob_table[head].status == donex2) begin
                 rob_table[head].status <= empty;
                 rob_table[head].valid <= '0;
-                head <= (head == DEPTH-1) ? '0 : head + 1'b1;
+                head <= (head == 5'((DEPTH-1))) ? '0 : head + 1'b1;
             end else if (rob_table[head].status == empty) begin
-                head <= (head == DEPTH-1) ? '0 : head + 1'b1;
+                head <= (head == 5'((DEPTH-1))) ? '0 : head + 1'b1;
             end
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
@@ -128,7 +147,7 @@ import rv32i_types::*;
             if (insert) begin
                 rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
-                tail <= (tail == /*'1'*/DEPTH-1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
+                tail <= (tail == /*'1'*/5'((DEPTH-1))) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
             end
             
             // Commmit: dequeue == 1'b1
@@ -143,8 +162,8 @@ import rv32i_types::*;
             
             if(cdbus.flush) begin
                 count <= 0;
-                 head <= 0;
-                 tail <= 0;
+                 head <= 5'd0;
+                 tail <= 5'd0;
             end else begin
                 case ({insert, remove})
                     2'b10: count <= count + 1'b1; 

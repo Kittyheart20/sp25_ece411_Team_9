@@ -289,14 +289,14 @@ import rv32i_types::*;
             enqueue_i <= 1'b0;    
             bmem_flag <= 1'b0;   
             flush_stalling <= '0;
-            debug_r1 <= 0;
+          //  debug_r1 <= 1'b0;
         end else begin
             // debug_r1 = 0;
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
 
             if (ufp_resp && (flush_stalling == '1)) begin
-                debug_r1 <= 0;
+              //  debug_r1 <= 32'd0;
                 // debug_1 <= '1;
                 flush_stalling <= '0;
                 // pc <= pc_next;
@@ -306,7 +306,7 @@ import rv32i_types::*;
 
             end
             else if(cdbus.flush) begin 
-                debug_r1 <= 0;
+              //  debug_r1 <= 32'd0;
                 pc <= pc_next; 
                 if (dfp_resp) begin 
                     bmem_read <= 1'b0;
@@ -326,7 +326,7 @@ import rv32i_types::*;
                // enable <= 1'b1;
             end else begin
                 if (ufp_resp/* && !flush_stalling*/) begin
-                    debug_r1 <= 1;
+              //      debug_r1 <= 1'd1;
                     data_i <= {order, pc, ufp_rdata/*[32*pc[4:2] +: 32]*/}; 
                     if (!full_o) begin
                         ufp_rmask <= '0;
@@ -335,7 +335,7 @@ import rv32i_types::*;
                         order <= order + 'd1;
                         commit <= 1'b1;
                     end
-                end else if ((pc[31:5] == last_instr_addr[31:5]) && ~ufp_rmask) begin       // line buffer
+                end else if ((pc[31:5] == last_instr_addr[31:5]) && (ufp_rmask == 4'b0)) begin       // line buffer
                     ufp_rmask <= '0;
                     // reached_loop <= '1;
                     data_i <= {order, pc, last_instr_data[32*pc[4:2] +: 32]};
@@ -428,8 +428,60 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin : update_dispatch_str
         decode_struct_in_prev <= decode_struct_in;
         if (rst || cdbus.flush) begin
-            dispatch_struct_in <= '{default: '0};
-            next_execute <= '{default: '0};
+            dispatch_struct_in <= '{
+                inst: '0,
+                pc: '0,
+                pc_next: '0,
+                order: '0,
+                valid: '0,
+                opcode: '0,
+                funct3: '0,
+                funct7: '0,
+                rd_addr: '0,
+                rd_rob_idx: '0,
+                rs1_addr: '0,
+                rs2_addr: '0,
+                rs1_rob_idx: '0,
+                rs2_rob_idx: '0,
+                imm: '0,
+                regf_we: '0,
+                alu_m1_sel: alu_m1_sel_t'(0),
+                alu_m2_sel: alu_m2_sel_t'(0),
+                aluop: alu_ops'(0),
+                multop: mult_ops'(0),
+                brop: branch_f3_t'(0),
+                op_type: types_t'(0),
+                use_rs1: '0,
+                use_rs2: '0
+            };
+            for (integer i = 0; i < NUM_FUNC_UNIT; i++) begin
+                next_execute[i] <= '{
+                    valid: '0,
+                    pc: '0,
+                    inst: '0,
+                    opcode: '0,
+                    rd_addr: '0,
+                    rs1_addr: '0,
+                    rs2_addr: '0,
+                    rs1_data: '0,
+                    rs1_ready: '0,
+                    rs2_data: '0,
+                    rs2_ready: '0,
+                    imm_sext: '0,
+                    regf_we: '0,
+                    valid_out: '0, // Assuming valid_out is not part of reservation_station_t based on types.sv
+                    alu_m1_sel: alu_m1_sel_t'(0),
+                    alu_m2_sel: alu_m2_sel_t'(0),
+                    aluop: alu_ops'(0),
+                    multop: mult_ops'(0),
+                    brop: branch_f3_t'(0), // Assuming brop is not part of reservation_station_t based on types.sv
+                    rs1_rob_idx: '0,
+                    rs2_rob_idx: '0,
+                    rd_rob_idx: '0,
+                    pc_new: '0, // Assuming pc_new is not part of reservation_station_t based on types.sv
+                    status: status_rs_t'(IDLE) // Use appropriate default from enum if available, e.g., IDLE
+                };
+            end
             next_writeback <= '{default: '0};
         end
         else begin
@@ -497,33 +549,33 @@ import rv32i_types::*;
     end
 
     logic stall_prev;
-    logic stall_till_new_resp;
-    logic[4:0] stall_counter;
+  //  logic stall_till_new_resp;
+   // logic[4:0] stall_counter;
     always_ff @(posedge clk) begin
         if (rst) begin
-            stall_prev <= 0;
-            stall_till_new_resp <= 1'b0;
-            stall_counter <= '0;
+            stall_prev <= 1'd0;
+     //       stall_till_new_resp <= 1'b0;
+     //       stall_counter <= '0;
         end
         else begin
-             if(cdbus.flush) begin
-                 stall_till_new_resp <= 1'b1;
-                 if((pc_next[31:5] == last_instr_addr[31:5])) begin
-                    stall_counter <= 5'd1;
-                 end else begin
-                stall_counter <= '0;
-                 end
-             end else if(dfp_resp) begin
-                // stall_till_new_resp <= 1'b0;
-                stall_counter <= stall_counter + 1;
-             end
-             else if (stall_counter > 0) begin
-                // stall_till_new_resp <= 1'b0;
-                stall_counter <= stall_counter + 1;
-             end
-             if(stall_counter == 5) begin
-                stall_till_new_resp <= 1'b0;
-             end
+            //  if(cdbus.flush) begin
+            //      stall_till_new_resp <= 1'b1;
+            //      if((pc_next[31:5] == last_instr_addr[31:5])) begin
+            //         stall_counter <= 5'd1;
+            //      end else begin
+            //     stall_counter <= '0;
+            //      end
+            //  end else if(dfp_resp) begin
+            //     // stall_till_new_resp <= 1'b0;
+            //     stall_counter <= stall_counter + 1;
+            //  end
+            //  else if (stall_counter > 0) begin
+            //     // stall_till_new_resp <= 1'b0;
+            //     stall_counter <= stall_counter + 1;
+            //  end
+            //  if(stall_counter == 5) begin
+            //     stall_till_new_resp <= 1'b0;
+            //  end
                 
             // end else if ()
             stall_prev <= stall;
@@ -543,10 +595,10 @@ import rv32i_types::*;
     end
 
 
-    logic[64:0] m_order;
+    logic[63:0] m_order;
     always_ff @(posedge clk) begin
         if (rst) begin
-            m_order <= 0;
+            m_order <= 64'd0;
         end
         else begin
             if(cdbus.regf_we)

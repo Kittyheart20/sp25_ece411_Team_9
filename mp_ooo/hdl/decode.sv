@@ -41,8 +41,8 @@ import rv32i_types::*;
         decode_struct_out.rs2_addr = rs2_addr;
         decode_struct_out.rd_addr = rd_addr;
         decode_struct_out.op_type = alu;
-        decode_struct_out.use_rs1 = 0;
-        decode_struct_out.use_rs2 = 0;
+        decode_struct_out.use_rs1 = 1'd0;
+        decode_struct_out.use_rs2 = 1'd0;
 
         
         unique case (opcode)
@@ -84,7 +84,7 @@ import rv32i_types::*;
                 decode_struct_out.use_rs2 = 1'b1;
 
                 if (funct7 == mult) begin   // multiply extension
-                    decode_struct_out.multop = funct3;
+                    decode_struct_out.multop =  mult_ops'(funct3);
                     decode_struct_out.op_type = mul;
                 end else begin  // integer alu
                     unique case (funct3)
