@@ -24,20 +24,22 @@ module mem_unit
         assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
         assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
 
+        assign dmem_rmask = next_execute.mem_rmask << next_addr[1:0];
+
         always_ff @(posedge clk) begin
             if (rst) begin
                 dmem_addr <= '0;
-                dmem_rmask <= '0;
+                // dmem_rmask <= '0;
                 dmem_wmask <= '0;
                 dmem_wdata <= '0;
             end else begin
                 if (!(mem_stall) && next_execute.valid) begin
                     dmem_addr <= {next_addr[31:2], 2'd0};
-                    // dmem_addr <= next_addr;
 
-                    if (is_load) begin
-                        dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
-                    end else if (is_store) begin
+                    // if (is_load) begin
+                    //     // dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
+                    // end else 
+                    if (is_store) begin
                         dmem_wmask <= next_execute.mem_wmask;
                         dmem_wdata <= next_execute.rs2_data;
                     end
@@ -94,23 +96,5 @@ module mem_unit
                 execute_output.mem_wdata = next_execute.rs2_data;
             end
         end
-
-        // always_comb begin 
-        //     mem_commit_data = '0;
-
-        //     if (is_load && dmem_resp) begin
-        //         mem_commit_data.pc = next_execute.pc;
-        //         mem_commit_data.mem_addr = dmem_addr;
-        //         mem_commit_data.mem_rmask = dmem_rmask;
-        //         mem_commit_data.mem_wmask = dmem_wmask;
-        //         mem_commit_data.mem_rdata = execute_output.rd_data;
-        //     end else if (is_store) begin
-        //         mem_commit_data.pc = next_execute.pc;
-        //         mem_commit_data.mem_addr = dmem_addr;
-        //         mem_commit_data.mem_rmask = dmem_rmask;
-        //         mem_commit_data.mem_wmask = dmem_wmask;
-        //         mem_commit_data.mem_wdata = next_execute.rs2_data;
-        //     end
-        // end
 
 endmodule
