@@ -18,40 +18,65 @@ module mem_unit
     );
         logic [31:0] next_addr;
         assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
-        assign mem_stall = (dmem_addr != '0) && (dmem_addr == next_addr) && !(dmem_resp);
 
         logic is_load, is_store;
         assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
         assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
+        
+        logic   [31:0]   addr;
+        logic   [3:0]    rmask;
+        logic   [3:0]    wmask;
+        logic   [31:0]   wdata;
 
-        assign dmem_rmask = next_execute.mem_rmask << next_addr[1:0];
+        always_comb begin 
+            addr = {next_addr[31:2], 2'd0};
+            rmask = next_execute.mem_rmask << next_addr[1:0];
+            wmask = next_execute.mem_wmask << next_addr[1:0];
+            wdata = next_execute.rs2_data;
+        end
+        
+        assign mem_stall = (dmem_addr != '0) && (dmem_addr == next_addr) && !(dmem_resp);
+
+        // logic prev_inst;
+        // always_ff @(posedge clk) begin
+        //     if (rst) begin
+        //         prev_inst <= '0;
+        //     end else begin
+        //         prev_inst <= next_execute.inst;
+        //     end
+        // end
+        // assign mem_stall = (dmem_addr != '0) && (next_execute.inst == prev_inst) && !(dmem_resp);
 
         always_ff @(posedge clk) begin
             if (rst) begin
                 dmem_addr <= '0;
-                // dmem_rmask <= '0;
+                dmem_rmask <= '0;
                 dmem_wmask <= '0;
                 dmem_wdata <= '0;
             end else begin
                 if (!(mem_stall) && next_execute.valid) begin
-                    dmem_addr <= {next_addr[31:2], 2'd0};
+                    // dmem_addr <= {next_addr[31:2], 2'd0};
 
-                    // if (is_load) begin
-                    //     // dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
-                    // end else 
-                    if (is_store) begin
-                        dmem_wmask <= next_execute.mem_wmask;
-                        dmem_wdata <= next_execute.rs2_data;
+                    // // if (is_load) begin
+                    // //     // dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
+                    // // end else 
+                    // if (is_store) begin
+                    //     dmem_wmask <= next_execute.mem_wmask;
+                    //     dmem_wdata <= next_execute.rs2_data;
+                    // end
+                    dmem_addr <= addr;
+                    if (is_load) begin
+                        dmem_rmask <= rmask;
+                        dmem_wmask <= '0;
+                        dmem_wdata <= '0;
+                        
+                    end else if (is_store) begin
+                        dmem_rmask <= '0;
+                        dmem_wmask <= wmask;
+                        dmem_wdata <= wdata;                        
                     end
+
                 end 
-                // else if (mem_stall) begin
-                //     if (is_load) begin
-                //         dmem_rmask <= '0;
-                //     end else if (is_store) begin
-                //         dmem_wmask <= '0;
-                //         dmem_wdata <= '0;
-                //     end
-                // end
             end
         end
 
