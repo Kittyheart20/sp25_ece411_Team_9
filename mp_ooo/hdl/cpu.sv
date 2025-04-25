@@ -108,8 +108,10 @@ import rv32i_types::*;
         .dfp_write  (dfp_write),
         .dfp_rdata  (dfp_rdata),
         .dfp_raddr  (dfp_raddr),
+        .dfp_addr(dfp_addr),
         .dfp_resp   (dfp_resp),
-        .bmem_wdata (bmem_wdata)
+        .bmem_wdata (bmem_wdata),
+        .bmem_write(bmem_write)
     );
 
     cache instruction_cache (
@@ -432,7 +434,7 @@ import rv32i_types::*;
             ufp_rmask   <= '0;
             data_i      <= '0;
             bmem_read   <= 1'b0;
-            bmem_write  <= 1'b0;
+         //   bmem_write  <= 1'b0;
             commit <= 1'b0;
             enqueue_i <= 1'b0;    
             bmem_flag <= 1'b0;   
@@ -516,11 +518,12 @@ import rv32i_types::*;
 
                 if (dfp_write) begin
                     bmem_addr <= dfp_addr;
-                    bmem_write <= 1'b1;
-                    if (bmem_write && bmem_wdata == 64'h0) begin 
-                        bmem_write <= 1'b0;
-                    end
+                 //   bmem_write <= 1'b1;
+                    // if (bmem_write && bmem_wdata == 64'h0) begin 
+                    //     bmem_write <= 1'b0;
+                    // end
                 end else if (dfp_read) begin
+                  //  bmem_write <= 1'b0;
                     bmem_addr <= dfp_addr;
                     if (bmem_flag == 1'b0) begin
                         bmem_read <= 1'b1;
@@ -537,6 +540,8 @@ import rv32i_types::*;
             end
         end
     end
+
+    //assign bmem_write = dfp_write;
 
     always_comb begin : data_cache_ufp
         ufp_addr_mem = dmem_addr;
