@@ -36,7 +36,7 @@ module mem_unit
         always_ff @(posedge clk) begin
             if (rst)
                 prev_pc <= '0;
-            else if (next_execute.valid)
+            else if (1)
                 prev_pc <= next_execute.pc;
         end
 
