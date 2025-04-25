@@ -317,6 +317,7 @@ import rv32i_types::*;
         .rob_table(rob_table_o),
 
         .cdbus(cdbus),
+        .dmem_resp(dmem_resp),
 
         .rs1_rob_idx(rs1_rob_idx),
         .rs2_rob_idx(rs2_rob_idx),

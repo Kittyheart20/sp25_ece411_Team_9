@@ -30,7 +30,8 @@ package rv32i_types;
     typedef enum logic [1:0] {
         IDLE = 2'b00,
         BUSY = 2'b01,
-        COMPLETE = 2'b10
+        COMPLETE = 2'b10,
+        WAIT_STORE = 2'b11
     } status_rs_t;
 
     typedef enum logic [6:0] {

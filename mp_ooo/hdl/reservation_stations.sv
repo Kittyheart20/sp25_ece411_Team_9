@@ -18,6 +18,7 @@ import rv32i_types::*;
     input logic         rs2_ready,
     
     input cdb cdbus,
+    input logic dmem_resp,
     input rob_entry_t rob_table [32],
 
     input  logic [4:0] rs1_rob_idx,
@@ -214,9 +215,14 @@ import rv32i_types::*;
                     stations[i].status <= COMPLETE;
                     debug_3 <= '1;                         
                 end            
-                else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx  && cdbus.mem_valid ) begin
+                else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx  && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
+                    stations[i].status <= COMPLETE;
+                end else if  (cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
+                    stations[i].status <= WAIT_STORE;
+                end else if  ((stations[i].status == WAIT_STORE) && dmem_resp ) begin
                     stations[i].status <= COMPLETE;
                 end
+
             end
         end
     end
