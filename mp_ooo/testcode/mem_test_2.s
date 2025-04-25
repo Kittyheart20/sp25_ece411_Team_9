@@ -1,8 +1,15 @@
 # Basic Load/Store Test Suite
+.section .data
+data_word1:   .word  0x12345678    # 32-bit data (aligned to 4 bytes)
+data_word2:   .word  0x89ABCDEF    # 32-bit data (aligned to 4 bytes)
+
+.section .text
 .globl _start
 _start:
-    # Initialize base address for tests (within valid range but offset from PC)
-    li x1, 0xABBBB000    # Base memory address (offset from PC)
+    # Initialize base address in x1
+    # la x1, data_word1
+    lui x1, %hi(data_word1)    # Load the upper 20 bits of the address into x1
+    addi x1, x1, %lo(data_word1) # Add the lower 12 bits of the address to x1
     
     # Test 1: Basic Store Word / Load Word
     li x2, 0xDEADBEEF    # Test pattern
