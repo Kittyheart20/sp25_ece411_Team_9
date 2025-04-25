@@ -30,7 +30,7 @@ _start:
     # -------------------------------------------------------------------------
 
     # SW (Store Word)
-    li x5, 0x89ABCDEF     # Load value to store
+    li x5, 0xECEBCAFE     # Load value to store
     sw x5, 4(x1)          # Store 0x89ABCDEF at data_word2
     lw x6, 4(x1)          # Verify: x6 = 0x89ABCDEF
 
