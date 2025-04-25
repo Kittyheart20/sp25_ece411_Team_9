@@ -48,7 +48,7 @@ import rv32i_types::*;
     logic[31:0] debug_1, debug_2;
 
     logic update;
-    assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.regf_we);
+    assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
 
     logic [31:0] debug_array;
     
@@ -153,6 +153,13 @@ import rv32i_types::*;
 
     logic debug_status, debug_3;
     assign debug_status = (cdbus.br_rob_idx == stations[2].rd_rob_idx  && cdbus.br_valid);
+    logic debug_s1;
+
+    assign debug_s1 = (cdbus.mem_rob_idx == stations[3].rd_rob_idx  && cdbus.mem_valid && (|stations[3].mem_rmask) );
+    logic debug_s3;
+    integer debug_i;
+    assign debug_i = 3;
+    assign debug_s3 = (!(dispatch_struct_in.valid && dispatch_struct_in.op_type == 3) );
     always_ff @(posedge clk) begin
 
         if (rst || cdbus.flush) begin
@@ -162,10 +169,18 @@ import rv32i_types::*;
         
         else if (dispatch_struct_in.valid) begin        // creates new entry
             case (dispatch_struct_in.op_type)
-                alu:    stations[0] <= new_rs_entry;
-                mul:    stations[1] <= new_rs_entry;
-                br:     stations[2] <= new_rs_entry;
-                mem:    stations[3] <= new_rs_entry;
+                alu:    begin 
+                    stations[0] <= new_rs_entry;
+                end
+                mul:    begin 
+                    stations[1] <= new_rs_entry;
+                end
+                br:     begin 
+                    stations[2] <= new_rs_entry;
+                end
+                mem:    begin 
+                    stations[3] <= new_rs_entry;
+                end
                 default: ;
             endcase
 
@@ -173,56 +188,106 @@ import rv32i_types::*;
             //     stations[dispatch_struct_in.op_type] <= new_rs_entry;
         end
 
-        else if (cdb_update) begin                  // updates rs1 and rs2 according to the writeback cdbus
+        if (cdb_update) begin                  // updates rs1 and rs2 according to the writeback cdbus
             for (integer i = 0; i < 4; i++) begin
-                if (stations[i].rs1_ready == 0) begin 
-                    if(cdbus.alu_valid && (stations[i].rs1_addr == cdbus.alu_rd_addr) && (stations[i].rs1_rob_idx == cdbus.alu_rob_idx))begin
-                        stations[i].rs1_data <= cdbus.alu_data; 
-                        stations[i].rs1_ready <= 1'b1;                         
+                if (!(dispatch_struct_in.valid && dispatch_struct_in.op_type == types_t'(i)) ) begin
+                    if (stations[i].rs1_ready == 0) begin 
+                        if(cdbus.alu_valid && (stations[i].rs1_addr == cdbus.alu_rd_addr) && (stations[i].rs1_rob_idx == cdbus.alu_rob_idx))begin
+                            stations[i].rs1_data <= cdbus.alu_data; 
+                            stations[i].rs1_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mul_valid && (stations[i].rs1_addr == cdbus.mul_rd_addr) && (stations[i].rs1_rob_idx == cdbus.mul_rob_idx))begin
+                            stations[i].rs1_data <= cdbus.mul_data; 
+                            stations[i].rs1_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mem_valid && (stations[i].rs1_addr == cdbus.mem_rd_addr) && (stations[i].rs1_rob_idx == cdbus.mem_rob_idx))begin
+                            stations[i].rs1_data <= cdbus.mem_data; 
+                            stations[i].rs1_ready <= 1'b1;                         
+                        end
+                    end 
+                    
+                    if (stations[i].rs2_ready == 0) begin
+                        if(cdbus.alu_valid && (stations[i].rs2_addr == cdbus.alu_rd_addr) && (stations[i].rs2_rob_idx == cdbus.alu_rob_idx)) begin
+                            stations[i].rs2_data <= cdbus.alu_data; 
+                            stations[i].rs2_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mul_valid && (stations[i].rs2_addr == cdbus.mul_rd_addr) && (stations[i].rs2_rob_idx == cdbus.mul_rob_idx))begin 
+                            stations[i].rs2_data <= cdbus.mul_data; 
+                            stations[i].rs2_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mem_valid && (stations[i].rs2_addr == cdbus.mem_rd_addr) && (stations[i].rs2_rob_idx == cdbus.mem_rob_idx))begin
+                            stations[i].rs2_data <= cdbus.mem_data; 
+                            stations[i].rs2_ready <= 1'b1;                         
+                        end
                     end
-                    else if (cdbus.mul_valid && (stations[i].rs1_addr == cdbus.mul_rd_addr) && (stations[i].rs1_rob_idx == cdbus.mul_rob_idx))begin
-                        stations[i].rs1_data <= cdbus.mul_data; 
-                        stations[i].rs1_ready <= 1'b1;                         
-                    end
-                    else if (cdbus.mem_valid && (stations[i].rs1_addr == cdbus.mem_rd_addr) && (stations[i].rs1_rob_idx == cdbus.mem_rob_idx))begin
-                        stations[i].rs1_data <= cdbus.mem_data; 
-                        stations[i].rs1_ready <= 1'b1;                         
-                    end
-                end 
-                
-                if (stations[i].rs2_ready == 0) begin
-                    if(cdbus.alu_valid && (stations[i].rs2_addr == cdbus.alu_rd_addr) && (stations[i].rs2_rob_idx == cdbus.alu_rob_idx)) begin
-                        stations[i].rs2_data <= cdbus.alu_data; 
-                        stations[i].rs2_ready <= 1'b1;                         
-                    end
-                    else if (cdbus.mul_valid && (stations[i].rs2_addr == cdbus.mul_rd_addr) && (stations[i].rs2_rob_idx == cdbus.mul_rob_idx))begin 
-                        stations[i].rs2_data <= cdbus.mul_data; 
-                        stations[i].rs2_ready <= 1'b1;                         
-                    end
-                    else if (cdbus.mem_valid && (stations[i].rs2_addr == cdbus.mem_rd_addr) && (stations[i].rs2_rob_idx == cdbus.mem_rob_idx))begin
-                        stations[i].rs2_data <= cdbus.mem_data; 
-                        stations[i].rs2_ready <= 1'b1;                         
+
+                    if (cdbus.alu_rob_idx == stations[i].rd_rob_idx  && cdbus.alu_valid  ) begin
+                        stations[i].status <= COMPLETE;                         // This complete will move on to the next instruction even if next instruction should be busy
+                    end     
+                    else if  (cdbus.mul_rob_idx == stations[i].rd_rob_idx  && cdbus.mul_valid ) begin
+                        stations[i].status <= COMPLETE;                         
+                    end      
+                    else if  (cdbus.br_rob_idx == stations[i].rd_rob_idx  && cdbus.br_valid ) begin
+                        stations[i].status <= COMPLETE;
+                        debug_3 <= '1;                         
+                    end            
+                    else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx  && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
+                        stations[i].status <= COMPLETE;
+                    end else if  (cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
+                        stations[i].status <= WAIT_STORE;
+                    end else if  ((stations[i].status == WAIT_STORE) && dmem_resp ) begin
+                        stations[i].status <= COMPLETE;
                     end
                 end
+                else begin
+                    if (new_rs_entry.rs1_ready == 0) begin 
+                        if(cdbus.alu_valid && (new_rs_entry.rs1_addr == cdbus.alu_rd_addr) && (new_rs_entry.rs1_rob_idx == cdbus.alu_rob_idx))begin
+                            stations[i].rs1_data <= cdbus.alu_data; 
+                            stations[i].rs1_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mul_valid && (new_rs_entry.rs1_addr == cdbus.mul_rd_addr) && (new_rs_entry.rs1_rob_idx == cdbus.mul_rob_idx))begin
+                            stations[i].rs1_data <= cdbus.mul_data; 
+                            stations[i].rs1_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mem_valid && (new_rs_entry.rs1_addr == cdbus.mem_rd_addr) && (new_rs_entry.rs1_rob_idx == cdbus.mem_rob_idx))begin
+                            stations[i].rs1_data <= cdbus.mem_data; 
+                            stations[i].rs1_ready <= 1'b1;                         
+                        end
+                    end 
+                    
+                    if (new_rs_entry.rs2_ready == 0) begin
+                        if(cdbus.alu_valid && (new_rs_entry.rs2_addr == cdbus.alu_rd_addr) && (new_rs_entry.rs2_rob_idx == cdbus.alu_rob_idx)) begin
+                            stations[i].rs2_data <= cdbus.alu_data; 
+                            stations[i].rs2_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mul_valid && (new_rs_entry.rs2_addr == cdbus.mul_rd_addr) && (new_rs_entry.rs2_rob_idx == cdbus.mul_rob_idx))begin 
+                            stations[i].rs2_data <= cdbus.mul_data; 
+                            stations[i].rs2_ready <= 1'b1;                         
+                        end
+                        else if (cdbus.mem_valid && (new_rs_entry.rs2_addr == cdbus.mem_rd_addr) && (new_rs_entry.rs2_rob_idx == cdbus.mem_rob_idx))begin
+                            stations[i].rs2_data <= cdbus.mem_data; 
+                            stations[i].rs2_ready <= 1'b1;                         
+                        end
+                    end
 
-                if (cdbus.alu_rob_idx == stations[i].rd_rob_idx  && cdbus.alu_valid  ) begin
-                    stations[i].status <= COMPLETE;                         // This complete will move on to the next instruction even if next instruction should be busy
-                end     
-                else if  (cdbus.mul_rob_idx == stations[i].rd_rob_idx  && cdbus.mul_valid ) begin
-                    stations[i].status <= COMPLETE;                         
-                end      
-                else if  (cdbus.br_rob_idx == stations[i].rd_rob_idx  && cdbus.br_valid ) begin
-                    stations[i].status <= COMPLETE;
-                    debug_3 <= '1;                         
-                end            
-                else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx  && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
-                    stations[i].status <= COMPLETE;
-                end else if  (cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
-                    stations[i].status <= WAIT_STORE;
-                end else if  ((stations[i].status == WAIT_STORE) && dmem_resp ) begin
-                    stations[i].status <= COMPLETE;
+                    if (cdbus.alu_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.alu_valid  ) begin
+                        stations[i].status <= COMPLETE;                         // This complete will move on to the next instruction even if next instruction should be busy
+                    end     
+                    else if  (cdbus.mul_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.mul_valid ) begin
+                        stations[i].status <= COMPLETE;                         
+                    end      
+                    else if  (cdbus.br_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.br_valid ) begin
+                        stations[i].status <= COMPLETE;
+                        debug_3 <= '1;                         
+                    end            
+                    else if  (cdbus.mem_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.mem_valid && (|new_rs_entry.mem_rmask) ) begin
+                        stations[i].status <= COMPLETE;
+                    end else if  (cdbus.commit_rob_idx == new_rs_entry.rd_rob_idx && cdbus.regf_we && (|new_rs_entry.mem_wmask) ) begin
+                        stations[i].status <= WAIT_STORE;
+                    end else if  ((new_rs_entry.status == WAIT_STORE) && dmem_resp ) begin
+                        stations[i].status <= COMPLETE;
+                    end
                 end
-
             end
         end
     end
