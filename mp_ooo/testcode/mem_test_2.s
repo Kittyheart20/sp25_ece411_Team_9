@@ -339,7 +339,7 @@ test_passed_6:
     
     # Test pattern: Store bytes, half-words, and words interleaved
     li x3, 0xAA          # Byte pattern
-    li x4, 0xBBBB        # Half-word pattern
+    li x4, 0xBBBB        # Half-word pattern #stuck
     li x5, 0xCCCCCCCC    # Word pattern
     
     # Store mixed sizes

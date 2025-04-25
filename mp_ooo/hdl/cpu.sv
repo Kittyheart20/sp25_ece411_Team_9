@@ -27,6 +27,7 @@ import rv32i_types::*;
     logic           rs1_rdy, rs2_rdy;
     logic res_station_stall;    // ss: we're not using this anywhere?
     logic mem_stall;
+    logic mem_stall_prev;
 
     logic mul_alu_available, integer_alu_available, br_alu_available, mem_available;
     assign res_station_stall = ((decode_struct_out.op_type == mul) && !mul_alu_available) || ((decode_struct_out.op_type == alu) && !integer_alu_available) || ((decode_struct_out.op_type == br) && !br_alu_available);
@@ -212,9 +213,12 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin
         if (rst) begin
             cycles_since_mem_stall_done <= 0;
+            mem_stall_prev <= 1'b0;
         end else if (mem_stall) begin
             cycles_since_mem_stall_done <= 1;
+            mem_stall_prev <= mem_stall;
         end else begin
+            mem_stall_prev <= mem_stall;
            // if(cycles_since_mem_stall_done == 1) begin
                 if(!mem_stall) begin
                     cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 1;
@@ -402,8 +406,12 @@ import rv32i_types::*;
     //     .dequeue_i(mem_used),
     //     .empty_o(commit_data_empty)
     // );
-    
+    logic debug_y1;
     always_comb begin
+        dfp_resp_inst = 0;
+        debug_y1 = 0;
+        dfp_rdata_inst = 0;
+
         if (!mem_stall) begin
             dfp_addr = dfp_addr_inst;
             dfp_read = dfp_read_inst;
@@ -418,6 +426,12 @@ import rv32i_types::*;
             dfp_wdata = dfp_wdata_mem;
             dfp_rdata_mem = dfp_rdata;
             dfp_resp_mem = dfp_resp;
+        end
+        if((mem_stall && (!mem_stall_prev))) begin
+            debug_y1 = dfp_resp && (cycles_since_mem_stall_done > 2);
+            dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 2);
+            dfp_rdata_inst = dfp_rdata;
+
         end
     end
 
