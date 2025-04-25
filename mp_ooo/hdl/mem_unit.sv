@@ -12,6 +12,8 @@ module mem_unit
         output logic   [31:0]   dmem_wdata,
         input  logic            dmem_resp,
 
+        input rob_entry_t rob_entry_o,
+
         input  reservation_station_t next_execute,
         output to_writeback_t   execute_output
         // output mem_commit_t     mem_commit_data
@@ -19,9 +21,10 @@ module mem_unit
         logic [31:0] next_addr;
         assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
 
-        logic is_load, is_store;
+        logic is_load, is_store, curr_store;
         assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
         assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
+        mem_commit_t store_commit;
         
         logic   [31:0]   addr;
         logic   [3:0]    rmask;
@@ -29,6 +32,8 @@ module mem_unit
         logic   [31:0]   wdata;
 
         always_comb begin 
+            curr_store = rob_entry_o.valid && (rob_entry_o.status == done ) && |rob_entry_o.mem_wmask;
+
             addr = {next_addr[31:2], 2'd0};
             rmask = next_execute.mem_rmask << next_addr[1:0];
             wmask = next_execute.mem_wmask << next_addr[1:0];
@@ -67,17 +72,20 @@ module mem_unit
                     //     dmem_wmask <= next_execute.mem_wmask;
                     //     dmem_wdata <= next_execute.rs2_data;
                     // end
-                    dmem_addr <= {next_addr[31:2], 2'd0};
                     // addr = {next_addr[31:2], 2'd0};
-                    if (is_load) begin
+                    if (curr_store) begin
+                        dmem_addr = rob_entry_o.mem_addr;
+                        dmem_rmask <= '0;
+                        dmem_wmask  = rob_entry_o.mem_wmask;
+                        dmem_wdata  = rob_entry_o.mem_wdata;
+                        mem_stall <= '1;
+                    end else if (is_load) begin
+                        dmem_addr <= {next_addr[31:2], 2'd0};
                         dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
                         dmem_wmask <= '0;
                         dmem_wdata <= '0;
                         mem_stall <= '1;
-                        // rmask <= next_execute.mem_rmask << next_addr[1:0];
-                        // wmask <= '0;
-                        // wdata <= '0;
-                        
+                    end
                     // end else if (is_store) begin
                     //     dmem_rmask <= '0;
                     //     dmem_wmask <= next_execute.mem_wmask << next_addr[1:0];
@@ -87,7 +95,6 @@ module mem_unit
                     //     // wmask <= next_execute.mem_wmask << next_addr[1:0];
                     //     // wdata <= next_execute.rs2_data;       
                     // end
-                    end
                 end 
             end
         end

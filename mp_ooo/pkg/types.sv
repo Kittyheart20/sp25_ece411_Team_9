@@ -232,8 +232,9 @@ package rv32i_types;
 
     typedef struct packed {
         logic [31:0] pc;
+        logic        valid;
         logic [31:0] mem_addr;
-        logic [3:0]  mem_rmask;
+        // logic [3:0]  mem_rmask;
         logic [3:0]  mem_wmask;
         logic [31:0] mem_rdata;
         logic [31:0] mem_wdata;
