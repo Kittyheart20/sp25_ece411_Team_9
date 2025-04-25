@@ -31,6 +31,18 @@ module mem_unit
         logic   [3:0]    wmask;
         logic   [31:0]   wdata;
 
+        logic   [31:0]  prev_pc;
+
+        always_ff @(posedge clk) begin
+            if (rst)
+                prev_pc <= '0;
+            else if (next_execute.valid)
+                prev_pc <= next_execute.pc;
+        end
+
+        logic           new_inst;
+        assign new_inst = (prev_pc != next_execute.pc);
+
         always_comb begin 
             curr_store = 1'b0;
             if (rob_entry_o.valid !== 1'bx &&
@@ -73,7 +85,7 @@ module mem_unit
                     dmem_rmask <= '0;
                     dmem_wmask <= '0;
                 end
-                if (!(mem_stall) && next_execute.valid) begin
+                if (!(mem_stall) && new_inst) begin
                     // dmem_addr <= {next_addr[31:2], 2'd0};
 
                     // // if (is_load) begin
@@ -90,7 +102,7 @@ module mem_unit
                         dmem_wmask <= rob_entry_o.mem_wmask;
                         dmem_wdata <= rob_entry_o.mem_wdata;
                         mem_stall <= '1;
-                    end else if (is_load) begin
+                    end else if (is_load && next_execute.valid) begin
                         dmem_addr <= {next_addr[31:2], 2'd0};
                         dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
                         dmem_wmask <= '0;
