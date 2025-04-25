@@ -85,7 +85,7 @@ module mem_unit
                     dmem_rmask <= '0;
                     dmem_wmask <= '0;
                 end
-                if (!(mem_stall) && new_inst) begin
+                if (!(mem_stall)) begin
                     // dmem_addr <= {next_addr[31:2], 2'd0};
 
                     // // if (is_load) begin
@@ -102,7 +102,7 @@ module mem_unit
                         dmem_wmask <= rob_entry_o.mem_wmask;
                         dmem_wdata <= rob_entry_o.mem_wdata;
                         mem_stall <= '1;
-                    end else if (is_load && next_execute.valid) begin
+                    end else if (is_load && next_execute.valid && new_inst) begin
                         dmem_addr <= {next_addr[31:2], 2'd0};
                         dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
                         dmem_wmask <= '0;

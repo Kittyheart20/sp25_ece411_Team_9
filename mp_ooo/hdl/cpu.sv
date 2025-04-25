@@ -585,7 +585,8 @@ import rv32i_types::*;
             instr_enable = 1'b1;            
         end else if (ufp_resp_mem && mem_stall && |dmem_wmask) begin
             curr_dmem_addr = dmem_addr;
-            curr_dmem_data = ufp_wdata_mem;
+            curr_dmem_data = last_dmem_data;
+            curr_dmem_data[32*dmem_addr[4:2] +: 32] = ufp_wdata_mem;
             dmem_enable = 1'b1;            
         end else if (ufp_resp_mem && mem_stall) begin
             curr_dmem_addr = dmem_addr;
