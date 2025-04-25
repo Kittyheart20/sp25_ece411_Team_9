@@ -160,7 +160,7 @@ module mem_unit
                 execute_output.mem_addr = addr;
                 execute_output.mem_rmask = '0; //dmem_rmask;
                 execute_output.mem_wmask = wmask; //dmem_wmask;
-                execute_output.mem_wdata = next_execute.rs2_data;
+                execute_output.mem_wdata = next_execute.rs2_data << (8 * next_addr[1:0]);
             end
         end
 
