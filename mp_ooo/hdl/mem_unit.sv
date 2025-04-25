@@ -68,8 +68,11 @@ module mem_unit
                 dmem_wdata <= '0;
                 mem_stall <= '0;
             end else begin
-                if (dmem_resp)
+                if (dmem_resp) begin
                     mem_stall <= '0;
+                    dmem_rmask <= '0;
+                    dmem_wmask <= '0;
+                end
                 if (!(mem_stall) && next_execute.valid) begin
                     // dmem_addr <= {next_addr[31:2], 2'd0};
 
