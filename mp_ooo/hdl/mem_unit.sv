@@ -78,16 +78,16 @@ module mem_unit
                         // wmask <= '0;
                         // wdata <= '0;
                         
-                    end else if (is_store) begin
-                        dmem_rmask <= '0;
-                        dmem_wmask <= next_execute.mem_wmask << next_addr[1:0];
-                        dmem_wdata <= next_execute.rs2_data;  
-                        mem_stall <= '0;
-                        // rmask <= '0;
-                        // wmask <= next_execute.mem_wmask << next_addr[1:0];
-                        // wdata <= next_execute.rs2_data;       
+                    // end else if (is_store) begin
+                    //     dmem_rmask <= '0;
+                    //     dmem_wmask <= next_execute.mem_wmask << next_addr[1:0];
+                    //     dmem_wdata <= next_execute.rs2_data;  
+                    //     mem_stall <= '0;
+                    //     // rmask <= '0;
+                    //     // wmask <= next_execute.mem_wmask << next_addr[1:0];
+                    //     // wdata <= next_execute.rs2_data;       
+                    // end
                     end
-
                 end 
             end
         end
@@ -127,7 +127,7 @@ module mem_unit
                 execute_output.mem_rdata = execute_output.rd_data;
             end else if (is_store) begin
                 execute_output.pc = next_execute.pc;
-                execute_output.mem_addr = dmem_addr;
+                execute_output.mem_addr = addr;
                 execute_output.mem_rmask = '0; //dmem_rmask;
                 execute_output.mem_wmask = wmask; //dmem_wmask;
                 execute_output.mem_wdata = next_execute.rs2_data;
