@@ -54,9 +54,6 @@ test_end:
 
 
 # Memory Dependency Test Suite
-.section .text
-.globl _start
-_start:
     # Initialize memory region (valid address range)
     li x1, 0xACCCC100    # Base memory address (well away from code)
     
@@ -110,8 +107,6 @@ test_passed_2:
 
 # Sequential Memory Access Test
 .section .text
-.globl _start
-_start:
     # Initialize memory region with sequential pattern (valid address range)
     li x1, 0xADDDD200    # Base memory address (well away from code)
     li x2, 0             # Counter
@@ -156,8 +151,6 @@ test_passed_3:
 
     # Memory Forwarding Test
 .section .text
-.globl _start
-_start:
     # Test 1: Store-to-Load Forwarding (valid address range)
     li x1, 0xAEEEE300    # Base memory address (well away from code)
     li x2, 0xFEDCBA98    # Test pattern
@@ -208,8 +201,6 @@ test_passed_4:
 
 # Out-of-Order Memory Access Test
 .section .text
-.globl _start
-_start:
     # Initialize memory region (valid address range)
     li x1, 0xAFFFF800    # Base memory address (well away from code)
     
@@ -263,8 +254,6 @@ test_passed_5:
 
     # Cache Line Boundary Test
 .section .text
-.globl _start
-_start:
     # Test memory operations across cache line boundaries
     # Assuming 64-byte cache lines
     li x1, 0xB111103C    # 4 bytes before potential 64-byte boundary
@@ -331,8 +320,6 @@ test_passed_6:
 
     # Mixed Data Size Access Test
 .section .text
-.globl _start
-_start:
     # Initialize memory region (valid address range)
     li x1, 0xB3333000    # Base memory address (well away from code)
     
@@ -407,8 +394,6 @@ test_passed_7:
 
     # Store Buffer Forwarding Test
 .section .text
-.globl _start
-_start:
     # Test store buffer forwarding with multiple stores
     li x1, 0xB4444000    # Base memory address (well away from code)
     
