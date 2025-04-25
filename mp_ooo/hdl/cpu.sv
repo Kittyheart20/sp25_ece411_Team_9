@@ -409,7 +409,7 @@ import rv32i_types::*;
     logic inst_use_linebuffer, mem_use_linebuffer;
     assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
     assign mem_use_linebuffer = (dmem_addr != '0) && (dmem_addr[31:5] == last_dmem_addr[31:5]);
-    logic flush_prev;
+
     always_ff @(posedge clk) begin : fetch
         if (rst) begin
             pc          <= 32'haaaaa000;
@@ -423,13 +423,12 @@ import rv32i_types::*;
             bmem_flag <= 1'b0;   
             flush_stalling <= '0;
             debug_r1 <= 0;
-            flush_prev <= '0;
         end else begin
             // debug_r1 = 0;
-            flush_prev <= cdbus.flush;
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
-            if (dfp_read_mem) begin     // ss: dmem read
+            
+            if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
                 bmem_addr <= dfp_addr;
 
                 if (bmem_flag == 2'd0) begin
@@ -443,16 +442,12 @@ import rv32i_types::*;
                     bmem_flag <= 2'd0;
                 end        
             end 
-            if(0) begin // magical fix WARNING 
-                pc <= pc_next;
-            end
             else if (ufp_resp && (flush_stalling == '1)) begin
                 debug_r1 <= 0;
                 flush_stalling <= '0;
                 data_i <= {order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
                 ufp_addr <= pc;
                 ufp_rmask <= '1;   
-
             end
             else if(cdbus.flush) begin 
                 debug_r1 <= 0;
@@ -691,24 +686,24 @@ import rv32i_types::*;
             stall_counter <= '0;
         end
         else begin
-             if(cdbus.flush) begin
-                 stall_till_new_resp <= 1'b1;
-                 if((pc_next[31:5] == last_instr_addr[31:5])) begin
+            if(cdbus.flush) begin
+                stall_till_new_resp <= 1'b1;
+                if((pc_next[31:5] == last_instr_addr[31:5])) begin
                     stall_counter <= 5'd1;
-                 end else begin
+                end else begin
                 stall_counter <= '0;
-                 end
-             end else if(dfp_resp) begin
+                end
+            end else if(dfp_resp) begin
                 // stall_till_new_resp <= 1'b0;
                 stall_counter <= stall_counter + 1;
-             end
-             else if (stall_counter > 0) begin
+            end
+            else if (stall_counter > 0) begin
                 // stall_till_new_resp <= 1'b0;
                 stall_counter <= stall_counter + 1;
-             end
-             if(stall_counter == 5) begin
+            end
+            if(stall_counter == 5) begin
                 stall_till_new_resp <= 1'b0;
-             end
+            end
                 
             // end else if ()
             stall_prev <= stall;
