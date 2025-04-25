@@ -32,7 +32,15 @@ module mem_unit
         logic   [31:0]   wdata;
 
         always_comb begin 
-            curr_store = rob_entry_o.valid && (rob_entry_o.status == done ) && |rob_entry_o.mem_wmask;
+            curr_store = 1'b0;
+            if (rob_entry_o.valid !== 1'bx &&
+                rob_entry_o.status !== status_t'('x) &&
+                rob_entry_o.mem_wmask !== 4'bx)
+            begin
+                curr_store = rob_entry_o.valid &&
+                            (rob_entry_o.status == done) &&
+                            (|rob_entry_o.mem_wmask);
+            end
 
             addr = {next_addr[31:2], 2'd0};
             rmask = next_execute.mem_rmask << next_addr[1:0];
@@ -74,10 +82,10 @@ module mem_unit
                     // end
                     // addr = {next_addr[31:2], 2'd0};
                     if (curr_store) begin
-                        dmem_addr = rob_entry_o.mem_addr;
+                        dmem_addr <= rob_entry_o.mem_addr;
                         dmem_rmask <= '0;
-                        dmem_wmask  = rob_entry_o.mem_wmask;
-                        dmem_wdata  = rob_entry_o.mem_wdata;
+                        dmem_wmask <= rob_entry_o.mem_wmask;
+                        dmem_wdata <= rob_entry_o.mem_wdata;
                         mem_stall <= '1;
                     end else if (is_load) begin
                         dmem_addr <= {next_addr[31:2], 2'd0};
