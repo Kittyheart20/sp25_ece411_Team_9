@@ -409,7 +409,7 @@ import rv32i_types::*;
     logic inst_use_linebuffer, mem_use_linebuffer;
     assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
     assign mem_use_linebuffer = (dmem_addr != '0) && (dmem_addr[31:5] == last_dmem_addr[31:5]);
-
+    logic flush_prev;
     always_ff @(posedge clk) begin : fetch
         if (rst) begin
             pc          <= 32'haaaaa000;
@@ -423,11 +423,12 @@ import rv32i_types::*;
             bmem_flag <= 1'b0;   
             flush_stalling <= '0;
             debug_r1 <= 0;
+            flush_prev <= '0;
         end else begin
             // debug_r1 = 0;
+            flush_prev <= cdbus.flush;
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
-            
             if (dfp_read_mem) begin     // ss: dmem read
                 bmem_addr <= dfp_addr;
 
@@ -442,6 +443,9 @@ import rv32i_types::*;
                     bmem_flag <= 2'd0;
                 end        
             end 
+            if(0) begin // magical fix WARNING 
+                pc <= pc_next;
+            end
             else if (ufp_resp && (flush_stalling == '1)) begin
                 debug_r1 <= 0;
                 flush_stalling <= '0;
