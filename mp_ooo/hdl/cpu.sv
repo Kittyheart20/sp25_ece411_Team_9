@@ -206,6 +206,21 @@ import rv32i_types::*;
     logic [255:0] curr_dmem_data, last_dmem_data;
     logic dmem_enable;
 
+    logic[63:0] cycles_since_mem_stall_done;
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            cycles_since_mem_stall_done <= 0;
+        end else if (mem_stall) begin
+            cycles_since_mem_stall_done <= 1;
+        end else begin
+           // if(cycles_since_mem_stall_done == 1) begin
+                if(!mem_stall) begin
+                    cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 1;
+                end
+          //  end
+        end
+    end
+
     register #(
         .A_LEN          (ALEN),
         .B_LEN          (BLEN)
@@ -393,7 +408,7 @@ import rv32i_types::*;
             dfp_write = dfp_write_inst;
             dfp_wdata = dfp_wdata_inst;
             dfp_rdata_inst = dfp_rdata;
-            dfp_resp_inst = dfp_resp;
+            dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 2);
         end else begin
             dfp_addr = dfp_addr_mem;
             dfp_read = dfp_read_mem;
