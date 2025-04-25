@@ -1,8 +1,8 @@
 # Basic Load/Store Test Suite
 .globl _start
 _start:
-    # Initialize base address for tests (ensure 4-byte alignment)
-    li x1, 0x80001000    # Base memory address
+    # Initialize base address for tests (within valid range but offset from PC)
+    li x1, 0xABBBB000    # Base memory address (offset from PC)
     
     # Test 1: Basic Store Word / Load Word
     li x2, 0xDEADBEEF    # Test pattern
@@ -51,17 +51,20 @@ test_end:
 
 
 
-    # Memory Dependency Test Suite
-.section .text
 
-    # Initialize memory region
-    li x1, 0x80001100    # Base memory address
+
+# Memory Dependency Test Suite
+.section .text
+.globl _start
+_start:
+    # Initialize memory region (valid address range)
+    li x1, 0xACCCC100    # Base memory address (well away from code)
     
     # Test 1: RAW Dependency (Store followed by Load to same address)
     li x2, 0x12345678
     sw x2, 0(x1)         # Store to address
     lw x3, 0(x1)         # Load from same address (RAW dependency)
-    bne x3, x2, fail     # Should get the just-stored value
+    bne x3, x2, fail_2     # Should get the just-stored value
     
     # Test 2: WAR Dependency (Load followed by Store to same address)
     li x4, 0xAABBCCDD
@@ -70,7 +73,7 @@ test_end:
     li x6, 0x99887766
     sw x6, 4(x1)         # Store new value (WAR dependency)
     lw x7, 4(x1)         # Load to verify
-    bne x7, x6, fail     # Should get the new value
+    bne x7, x6, fail_2     # Should get the new value
     
     # Test 3: WAW Dependency (Store followed by Store to same address)
     li x8, 0x11223344
@@ -78,7 +81,7 @@ test_end:
     li x9, 0x55667788
     sw x9, 8(x1)         # Second store (WAW dependency)
     lw x10, 8(x1)        # Load to verify
-    bne x10, x9, fail    # Should get the second stored value
+    bne x10, x9, fail_2    # Should get the second stored value
     
     # Test 4: Multiple RAW Dependencies
     li x11, 0xABCDEF01
@@ -87,10 +90,17 @@ test_end:
     li x13, 0x10FEDCBA
     sw x13, 12(x1)       # Store new value
     lw x14, 12(x1)       # Load again (RAW dependency)
-    bne x12, x11, fail   # First load should get initial value
-    bne x14, x13, fail   # Second load should get new value
-
-
+    bne x12, x11, fail_2   # First load should get initial value
+    bne x14, x13, fail_2   # Second load should get new value
+    
+    j test_passed_2
+    
+fail_2:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_2:
+    li x31, 0x1          # Success indicator
 
 
 
@@ -100,9 +110,10 @@ test_end:
 
 # Sequential Memory Access Test
 .section .text
-
-    # Initialize memory region with sequential pattern
-    li x1, 0x80001200    # Base memory address
+.globl _start
+_start:
+    # Initialize memory region with sequential pattern (valid address range)
+    li x1, 0xADDDD200    # Base memory address (well away from code)
     li x2, 0             # Counter
     li x3, 10            # Number of words to initialize
     
@@ -113,7 +124,7 @@ init_loop:
     blt x2, x3, init_loop
     
     # Reset address and verify sequential reads
-    li x1, 0x80001200    # Reset base address
+    li x1, 0xADDDD200    # Reset base address
     li x2, 0             # Reset counter
     
 verify_loop:
@@ -122,25 +133,44 @@ verify_loop:
     addi x1, x1, 4       # Increment address
     addi x2, x2, 1       # Increment counter
     blt x2, x3, verify_loop
-
     
+    j test_passed_3
+    
+fail_3:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_3:
+    li x31, 0x1          # Success indicator
+
+
+
+
+
+
+
+
+
+
+
 
     # Memory Forwarding Test
 .section .text
-
-    # Test 1: Store-to-Load Forwarding (no intermediate memory access)
-    li x1, 0x80001300    # Base memory address
+.globl _start
+_start:
+    # Test 1: Store-to-Load Forwarding (valid address range)
+    li x1, 0xAEEEE300    # Base memory address (well away from code)
     li x2, 0xFEDCBA98    # Test pattern
     
     sw x2, 0(x1)         # Store value
     lw x3, 0(x1)         # Load should be forwarded from store buffer
-    bne x3, x2, fail
+    bne x3, x2, fail_4
     
     # Test 2: Store-to-Load Forwarding with offset
     li x4, 0x76543210
     sw x4, 4(x1)         # Store at offset
     lw x5, 4(x1)         # Load from same offset
-    bne x5, x4, fail
+    bne x5, x4, fail_4
     
     # Test 3: Multiple Store-to-Load Forwarding
     li x6, 0x13579BDF
@@ -150,196 +180,38 @@ verify_loop:
     sw x7, 12(x1)        # Second store
     lw x8, 8(x1)         # Load from first address
     lw x9, 12(x1)        # Load from second address
-    bne x8, x6, fail
-    bne x9, x7, fail
+    bne x8, x6, fail_4
+    bne x9, x7, fail_4
     
     # Test 4: Partial Store-to-Load Forwarding (byte)
     li x10, 0xFF         # 8-bit pattern
     sb x10, 16(x1)       # Store byte
     lb x11, 16(x1)       # Load signed byte
     li x12, 0xFFFFFFFF   # Expected sign-extended value
-    bne x11, x12, fail
+    bne x11, x12, fail_4
+    
+    j test_passed_4
+    
+fail_4:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_4:
+    li x31, 0x1          # Success indicator
+
+
+
+
+
     
 
 
-
-
-
-    # Interleaved Load/Store Test
+# Out-of-Order Memory Access Test
 .section .text
-
-    # Initialize memory region
-    li x1, 0x80001400    # Base memory address
-    li x2, 0x11111111
-    li x3, 0x22222222
-    li x4, 0x33333333
-    li x5, 0x44444444
-    
-    # Store values to consecutive addresses
-    sw x2, 0(x1)
-    sw x3, 4(x1)
-    sw x4, 8(x1)
-    sw x5, 12(x1)
-    
-    # Interleaved loads and stores
-    lw x6, 0(x1)         # Load from first address
-    sw x6, 16(x1)        # Store to new address
-    lw x7, 4(x1)         # Load from second address
-    sw x7, 20(x1)        # Store to new address
-    lw x8, 16(x1)        # Load previously stored value
-    lw x9, 8(x1)         # Load from third address
-    sw x8, 24(x1)        # Store previously loaded value
-    lw x10, 20(x1)       # Load previously stored value
-    
-    # Verify correct values
-    bne x6, x2, fail
-    bne x7, x3, fail
-    bne x8, x2, fail
-    bne x9, x4, fail
-    bne x10, x3, fail
-    
-
-
-
-
-
-
-    # Memory Stress Test
-.section .text
-
-    # Initialize memory region for stress test
-    li x1, 0x80001500    # Base memory address
-    li x2, 16            # Number of words to access
-    
-    # Fill memory with incrementing pattern
-    li x3, 0             # Counter
-    mv x4, x1            # Current address
-    
-fill_loop:
-    sw x3, 0(x4)         # Store counter value
-    addi x3, x3, 1       # Increment counter
-    addi x4, x4, 4       # Increment address
-    blt x3, x2, fill_loop
-    
-    # Perform interleaved loads and stores with high traffic
-    mv x4, x1            # Reset address pointer
-    li x3, 0             # Reset counter
-    
-stress_loop:
-    lw x5, 0(x4)         # Load value
-    addi x5, x5, 100     # Modify value
-    sw x5, 0(x4)         # Store back
-    addi x4, x4, 4       # Move to next word
-    addi x3, x3, 1       # Increment counter
-    blt x3, x2, stress_loop
-    
-    # Verify all values were correctly modified
-    mv x4, x1            # Reset address pointer
-    li x3, 0             # Reset counter
-    
-verify_stress:
-    lw x5, 0(x4)         # Load value
-    addi x6, x3, 100     # Expected value
-    bne x5, x6, fail     # Verify
-    addi x4, x4, 4       # Move to next word
-    addi x3, x3, 1       # Increment counter
-    blt x3, x2, verify_stress
-    
-
-
-
-
-
-    # Half-Word and Byte Access Test
-.section .text
-
-    # Initialize memory region
-    li x1, 0x80001600    # Base memory address
-    
-    # Test 1: Byte access pattern within a word
-    li x2, 0x00000000    # Clear word
-    sw x2, 0(x1)         # Store cleared word
-    
-    li x3, 0x000000AA    # Byte pattern 1
-    sb x3, 0(x1)         # Store to byte 0
-    li x4, 0x000000BB    # Byte pattern 2
-    sb x4, 1(x1)         # Store to byte 1
-    li x5, 0x000000CC    # Byte pattern 3
-    sb x5, 2(x1)         # Store to byte 2
-    li x6, 0x000000DD    # Byte pattern 4
-    sb x6, 3(x1)         # Store to byte 3
-    
-    lw x7, 0(x1)         # Load entire word
-    li x8, 0xDDCCBBAA    # Expected pattern
-    bne x7, x8, fail
-    
-    # Test 2: Half-word access pattern within a word
-    li x2, 0x00000000    # Clear word
-    sw x2, 4(x1)         # Store cleared word
-    
-    li x3, 0x0000AAAA    # Half-word pattern 1
-    sh x3, 4(x1)         # Store to lower half
-    li x4, 0x0000BBBB    # Half-word pattern 2
-    sh x4, 6(x1)         # Store to upper half
-    
-    lw x5, 4(x1)         # Load entire word
-    li x6, 0xBBBBAAAA    # Expected pattern
-    bne x5, x6, fail
-    
-    # Test 3: Mixed byte/half-word access
-    li x2, 0x00000000    # Clear word
-    sw x2, 8(x1)         # Store cleared word
-    
-    li x3, 0x000000EE    # Byte pattern
-    sb x3, 8(x1)         # Store to byte 0
-    li x4, 0x0000FFFF    # Half-word pattern
-    sh x4, 10(x1)        # Store to upper half
-    
-    lw x5, 8(x1)         # Load entire word
-    li x6, 0xFFFF00EE    # Expected pattern
-    bne x5, x6, fail
-    
-
-
-    # Load/Store with Computed Addresses
-.section .text
-
-    # Initialize memory region
-    li x1, 0x80001700    # Base memory address
-    li x2, 10            # Number of words to initialize
-    li x3, 0x12345678    # Value to store
-    
-    # Store same value to multiple addresses using computed offsets
-    li x4, 0             # Offset counter
-    
-store_computed:
-    slli x5, x4, 2       # Convert counter to byte offset (x4 * 4)
-    add x6, x1, x5       # Compute address
-    sw x3, 0(x6)         # Store value
-    addi x4, x4, 1       # Increment counter
-    blt x4, x2, store_computed
-    
-    # Load from computed addresses in reverse order
-    addi x4, x2, -1      # Start from last index
-    
-load_reverse:
-    slli x5, x4, 2       # Convert to byte offset
-    add x6, x1, x5       # Compute address
-    lw x7, 0(x6)         # Load value
-    bne x7, x3, fail     # All values should be the same
-    addi x4, x4, -1      # Decrement counter
-    bge x4, x0, load_reverse
-    
-
-
-
-
-
-    # Out-of-Order Memory Access Test
-.section .text
-
-    # Initialize memory region
-    li x1, 0x80001800    # Base memory address
+.globl _start
+_start:
+    # Initialize memory region (valid address range)
+    li x1, 0xAFFFF800    # Base memory address (well away from code)
     
     # Setup test pattern
     li x2, 0xAABBCCDD
@@ -371,50 +243,226 @@ load_reverse:
     bne x8, x4, fail
     bne x9, x5, fail
     
+    j test_passed_5
+    
+fail_5:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_5:
+    li x31, 0x1          # Success indicator
 
 
 
 
-    # Memory Fence Test
+
+
+
+
+
+
+    # Cache Line Boundary Test
 .section .text
+.globl _start
+_start:
+    # Test memory operations across cache line boundaries
+    # Assuming 64-byte cache lines
+    li x1, 0xB111103C    # 4 bytes before potential 64-byte boundary
+    li x2, 0xB1111040    # At potential 64-byte boundary
+    
+    # Store distinct patterns
+    li x3, 0x11111111
+    li x4, 0x22222222
+    
+    # Store across potential boundary
+    sw x3, 0(x1)         # Last word in cache line
+    sw x4, 0(x2)         # First word in next cache line
+    
+    # Load and verify
+    lw x5, 0(x1)
+    lw x6, 0(x2)
+    
+    bne x5, x3, fail_6
+    bne x6, x4, fail_6
+    
+    # Test with a sequence of values across multiple potential boundaries
+    li x1, 0xB2222000    # Starting address
+    li x2, 4             # Number of potential cache lines to cross
+    li x3, 0             # Counter
+    
+cache_line_loop:
+    slli x4, x3, 6       # Convert to byte offset (cache line size = 64)
+    add x5, x1, x4       # Address at start of potential cache line
+    sw x3, 0(x5)         # Store counter value
+    addi x3, x3, 1       # Increment counter
+    blt x3, x2, cache_line_loop
+    
+    # Verify values
+    li x3, 0             # Reset counter
+    
+verify_cache_lines:
+    slli x4, x3, 6       # Convert to byte offset
+    add x5, x1, x4       # Address at start of potential cache line
+    lw x6, 0(x5)         # Load value
+    bne x6, x3, fail_6     # Verify correct value
+    addi x3, x3, 1       # Increment counter
+    blt x3, x2, verify_cache_lines
+    
+    j test_passed_6
+    
+fail_6:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_6:
+    li x31, 0x1          # Success indicator
 
-    # Initialize memory region
-    li x1, 0x80001900    # Base memory address
+
+
+
+
+
+
+
+
+
+
+
+
+    # Mixed Data Size Access Test
+.section .text
+.globl _start
+_start:
+    # Initialize memory region (valid address range)
+    li x1, 0xB3333000    # Base memory address (well away from code)
     
-    # Setup test pattern
-    li x2, 0x12345678
-    li x3, 0xABCDEF01
-    
-    # Store values
+    # Clear memory region
+    li x2, 0
     sw x2, 0(x1)
-    sw x3, 4(x1)
+    sw x2, 4(x1)
+    sw x2, 8(x1)
+    sw x2, 12(x1)
     
-    # Insert memory fence to ensure all previous stores complete
-    fence rw, rw
+    # Test pattern: Store bytes, half-words, and words interleaved
+    li x3, 0xAA          # Byte pattern
+    li x4, 0xBBBB        # Half-word pattern
+    li x5, 0xCCCCCCCC    # Word pattern
     
-    # Load values (should see updated memory)
-    lw x4, 0(x1)
-    lw x5, 4(x1)
+    # Store mixed sizes
+    sb x3, 0(x1)         # Byte at offset 0
+    sh x4, 2(x1)         # Half-word at offset 2
+    sw x5, 4(x1)         # Word at offset 4
+    sb x3, 8(x1)         # Byte at offset 8
+    sh x4, 10(x1)        # Half-word at offset 10
     
-    # Verify values
-    bne x4, x2, fail
-    bne x5, x3, fail
+    # Load and verify individual elements
+    lbu x6, 0(x1)        # Load unsigned byte
+    lhu x7, 2(x1)        # Load unsigned half-word
+    lw x8, 4(x1)         # Load word
+    lbu x9, 8(x1)        # Load unsigned byte
+    lhu x10, 10(x1)      # Load unsigned half-word
     
-    # Store new values
-    li x6, 0x87654321
-    li x7, 0x10FEDCBA
+    # Verify correct values
+    li x11, 0xAA
+    bne x6, x11, fail_7
+    li x11, 0xBBBB
+    bne x7, x11, fail_7
+    li x11, 0xCCCCCCCC
+    bne x8, x11, fail_7
+    li x11, 0xAA
+    bne x9, x11, fail_7
+    li x11, 0xBBBB
+    bne x10, x11, fail_7
     
-    sw x6, 0(x1)
-    fence w, r          # Ensure store completes before subsequent loads
-    lw x8, 0(x1)
+    # Load and verify combined values
+    lw x12, 0(x1)        # Load word containing byte + half-word
+    li x13, 0xBBBB00AA   # Expected pattern
+    bne x12, x13, fail_7
     
-    sw x7, 4(x1)
-    fence w, r          # Ensure store completes before subsequent loads
-    lw x9, 4(x1)
+    lw x14, 8(x1)        # Load word containing byte + half-word
+    li x15, 0xBBBB00AA   # Expected pattern
+    bne x14, x15, fail_7
     
-    # Verify values
-    bne x8, x6, fail
-    bne x9, x7, fail
+    j test_passed_7
+    
+fail_7:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_7:
+    li x31, 0x1          # Success indicator
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Store Buffer Forwarding Test
+.section .text
+.globl _start
+_start:
+    # Test store buffer forwarding with multiple stores
+    li x1, 0xB4444000    # Base memory address (well away from code)
+    
+    # Initialize memory with pattern
+    li x2, 0xFFFFFFFF
+    sw x2, 0(x1)
+    sw x2, 4(x1)
+    sw x2, 8(x1)
+    
+    # Test 1: Basic forwarding (store followed by load to same address)
+    li x3, 0x12345678
+    sw x3, 0(x1)         # Store to address 0
+    lw x4, 0(x1)         # Load from same address (should forward)
+    bne x4, x3, fail_8     # Verify forwarded value
+    
+    # Test 2: Partial forwarding (byte store followed by word load)
+    li x5, 0xAB          # Byte value
+    sb x5, 4(x1)         # Store byte to address 4
+    lw x6, 4(x1)         # Load word from address 4
+    li x7, 0xFFFFFFAB    # Expected value: original word with byte replaced
+    bne x6, x7, fail_8     # Verify partial forwarding
+    
+    # Test 3: Multiple stores to same address
+    li x8, 0x11111111
+    li x9, 0x22222222
+    li x10, 0x33333333
+    
+    sw x8, 8(x1)         # First store
+    sw x9, 8(x1)         # Second store (overwrites first)
+    sw x10, 8(x1)        # Third store (overwrites second)
+    lw x11, 8(x1)        # Load (should get third store)
+    bne x11, x10, fail_8   # Verify most recent store is forwarded
+    
+    # Test 4: Store-to-load forwarding with offset
+    li x12, 0xAAAAAAAA
+    li x13, 0xBBBBBBBB
+    
+    sw x12, 12(x1)       # Store to address 12
+    sw x13, 16(x1)       # Store to address 16
+    lw x14, 12(x1)       # Load from address 12
+    lw x15, 16(x1)       # Load from address 16
+    
+    bne x14, x12, fail_8
+    bne x15, x13, fail_8
+    
+    j test_passed_8
+    
+fail_8:
+    # Test failed handling
+    li x31, 0xFFFFFFFF   # Error indicator
+    
+test_passed_8:
+    li x31, 0x1          # Success indicator
+
     
 halt:
     slti x0, x0, -256

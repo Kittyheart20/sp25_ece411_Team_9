@@ -363,6 +363,7 @@ import rv32i_types::*;
         .dmem_rdata(dmem_rdata),
         .dmem_wdata(dmem_wdata),
         .dmem_resp(dmem_resp),
+        .rob_entry_o(rob_entry_o),
         .next_execute(next_execute[3]),
         .execute_output(execute_output[3])
         // .mem_commit_data(mem_commit_data)
