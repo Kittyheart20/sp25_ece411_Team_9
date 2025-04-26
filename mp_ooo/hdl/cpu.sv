@@ -19,6 +19,7 @@ import rv32i_types::*;
     logic   [63:0]  order;
     logic           commit;
     logic           stall;
+    logic           stall_except_empty;
 
     rat_arf_entry_t rat_arf_table [32];
     // logic   [31:0]  data    [32];
@@ -511,7 +512,7 @@ import rv32i_types::*;
                     ufp_rmask <= '0;
                     // reached_loop <= '1;
                     data_i <= {order, pc, last_instr_data[32*pc[4:2] +: 32]};
-                    if (!full_o && !stall) begin
+                    if (!full_o && !stall_except_empty) begin
                         enqueue_i <= 1'b1;
                         pc <= pc_next;
                         order <= order + 'd1;
@@ -756,6 +757,8 @@ import rv32i_types::*;
 
     always_comb begin : update_stall
         stall = 1'b0;
+        stall_except_empty = 1'b0;
+
         if (empty_o || full_o /*|| stall_till_new_resp*/) stall = 1'b1;
         else if (stall_prev == 0) stall = 1'b1;
         else if ( (!integer_alu_available && (decode_struct_out.op_type == alu || decode_struct_out.op_type == none)) 
@@ -764,6 +767,15 @@ import rv32i_types::*;
                     || (!br_alu_available &&  (decode_struct_out.op_type == br || decode_struct_out.op_type == none)) )  begin
             stall = 1'b1;    
         end  
+
+        if (full_o) stall_except_empty = 1'b1;
+            else if (stall_prev == 0) stall_except_empty = 1'b1;
+            else if ((!integer_alu_available && (decode_struct_out.op_type == alu || decode_struct_out.op_type == none)) 
+                || (!mul_alu_available && (decode_struct_out.op_type == mul || decode_struct_out.op_type == none))  
+                || (!mem_available && (decode_struct_out.op_type == mem  || decode_struct_out.op_type == none))
+                || (!br_alu_available && (decode_struct_out.op_type == br || decode_struct_out.op_type == none))) begin
+                stall_except_empty = 1'b1;
+            end
 
     end
 
