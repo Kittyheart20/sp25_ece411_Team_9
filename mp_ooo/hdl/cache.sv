@@ -484,15 +484,18 @@ module cache (
             dfp_rdata_stored <= 256'b0;
         end
         else begin
-            ufp_addr_prev <= ufp_addr;
-            ufp_rmask_prev <= ufp_rmask;
-            ufp_wmask_prev <= ufp_wmask;
-            dfp_resp_prev <= dfp_resp;
-            dfp_rdata_prev <= dfp_rdata;
+            if ((|ufp_rmask || |ufp_wmask)) begin
+                    if(state == IDLE) begin
+                        ufp_addr_prev <= ufp_addr;
+                        ufp_rmask_prev <= ufp_rmask;
+                        ufp_wmask_prev <= ufp_wmask;
+                        dfp_resp_prev <= dfp_resp;
+                        dfp_rdata_prev <= dfp_rdata;
+                    end
+            end
             first_trans <= first_trans && (state != COMPARE);
-            if(dfp_resp) begin
+            if(dfp_resp && (state == WRITEBACK || state == ALLOCATE)) begin
                  dfp_rdata_stored <= dfp_rdata;
-
             end
         end
     end
