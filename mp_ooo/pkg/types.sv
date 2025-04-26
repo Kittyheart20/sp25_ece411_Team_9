@@ -120,7 +120,7 @@ package rv32i_types;
     typedef struct packed {
         logic   [31:0]      inst;
         logic   [31:0]      pc;
-        logic   [31:0]      pc_next;
+        // logic   [31:0]      pc_next;
         logic   [63:0]      order;
     	logic         	    valid;
         logic   [6:0]       opcode;
@@ -140,7 +140,6 @@ package rv32i_types;
         alu_m2_sel_t        alu_m2_sel;
         alu_ops		        aluop;
         mult_ops            multop;
-        // pc_sel_t            pc_sel;
         branch_f3_t         brop;
         mem_ops             memop;  
         
