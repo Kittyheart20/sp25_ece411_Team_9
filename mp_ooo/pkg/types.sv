@@ -174,7 +174,6 @@ package rv32i_types;
 
         // Control Signals
         logic           regf_we;
-        logic           valid_out;
         alu_m1_sel_t    alu_m1_sel;
         alu_m2_sel_t    alu_m2_sel;
         
