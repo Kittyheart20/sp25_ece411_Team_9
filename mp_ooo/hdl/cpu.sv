@@ -536,6 +536,10 @@ import rv32i_types::*;
                     // if (bmem_write && bmem_wdata == 64'h0) begin 
                     //     bmem_write <= 1'b0;
                     // end
+                end 
+                if (dfp_resp) begin 
+                        bmem_read <= 1'b0;
+                        bmem_flag <= 1'b0;
                 end else if (dfp_read) begin
                   //  bmem_write <= 1'b0;
                     bmem_addr <= dfp_addr;
@@ -544,10 +548,6 @@ import rv32i_types::*;
                         bmem_flag <= 1'b1;
                     end else begin
                         bmem_read <= 1'b0;
-                    end
-                    if (dfp_resp) begin 
-                        bmem_read <= 1'b0;
-                        bmem_flag <= 1'b0;
                     end
                 end
 

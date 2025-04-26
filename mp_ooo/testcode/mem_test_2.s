@@ -352,7 +352,7 @@ test_passed_6:
     # Load and verify individual elements
     lbu x6, 0(x1)        # Load unsigned byte
     lhu x7, 2(x1)        # Load unsigned half-word
-    lw x8, 4(x1)         # Load word
+    lw x8, 4(x1)         # Load word stuck
     lbu x9, 8(x1)        # Load unsigned byte
     lhu x10, 10(x1)      # Load unsigned half-word
     
