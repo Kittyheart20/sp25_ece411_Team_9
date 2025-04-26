@@ -26,7 +26,7 @@ module deserializer (
     logic[255:0] dfp_wdata_prev;
 
     logic dfp_write_prev;
-    logic [31:0] expected_bmem_raddr;
+    logic [31:0] expected_bmem_raddr, past_bmem_addr;
     always_comb begin
         expected_bmem_raddr = {dfp_addr[31:5], 5'b0}; // Base address
         case (word_count)
@@ -48,13 +48,15 @@ module deserializer (
             dfp_addr_prev <= 32'd0;
             dfp_wdata_prev <= 256'd0;
             dfp_write_prev <= 1'b0;
+            past_bmem_addr <= '0;
         end else begin
+            past_bmem_addr <= bmem_addr;
             dfp_write_prev <= dfp_write;
             dfp_addr_prev <= dfp_addr;
             dfp_wdata_prev <= dfp_wdata;
             dfp_resp <= 1'b0;
             if (bmem_rvalid && bmem_ready) begin
-                if (word_count == 2'd0 && (bmem_raddr == bmem_addr)) begin
+                if (word_count == 2'd0 && ((bmem_raddr == bmem_addr) || bmem_raddr == past_bmem_addr)) begin
                     accumulator[63:0] <= bmem_rdata;
                     word_count <= (word_count == 2'd3) ? 2'd0 : (word_count + 2'd1);
                 end
