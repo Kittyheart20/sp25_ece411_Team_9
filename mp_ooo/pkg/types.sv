@@ -142,9 +142,7 @@ package rv32i_types;
         mult_ops            multop;
         // pc_sel_t            pc_sel;
         branch_f3_t         brop;
-        mem_ops             memop;
-        logic [3:0]         mem_rmask;
-        logic [3:0]         mem_wmask;        
+        mem_ops             memop;  
         
         logic [31:0] mem_addr;
         logic [3:0]  mem_rmask;

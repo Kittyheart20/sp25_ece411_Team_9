@@ -316,60 +316,60 @@ import rv32i_types::*;
         $display("Deserializer tests completed");
     endtask
 
-    // Decode signals
-    logic stall;
-    if_id_stage_reg_t    id_in;
-    id_dis_stage_reg_t   id_out;
-    id_dis_stage_reg_t   id_out_old;
+    // // Decode signals
+    // logic stall;
+    // if_id_stage_reg_t    id_in;
+    // id_dis_stage_reg_t   id_out;
+    // id_dis_stage_reg_t   id_out_old;
 
-    decode dut_decode (
-        .stall(stall),
-        .decode_struct_in(id_in),
-        .decode_struct_out(id_out)
-    );
+    // decode dut_decode (
+    //     .stall(stall),
+    //     .decode_struct_in(id_in),
+    //     .decode_struct_out(id_out)
+    // );
 
-    task decode_test();
-        $display("-----Starting Decode Test-----");
+    // task decode_test();
+    //     $display("-----Starting Decode Test-----");
         
-        @(posedge clk);
-        stall = 0;
-        id_in.inst = $random();
-        id_in.pc = 32'hAAAAA000;
-        id_in.order = 32'd0;
-        id_in.valid = 1;
+    //     @(posedge clk);
+    //     stall = 0;
+    //     id_in.inst = $random();
+    //     id_in.pc = 32'hAAAAA000;
+    //     id_in.order = 32'd0;
+    //     id_in.valid = 1;
         
-        // Test 1 Decode struct out has correct instruction data
-        @(posedge clk);
-        if (id_out.inst != id_in.inst) $error("Out's instruction does not match");
-        if (id_out.pc != 32'hAAAAA000) $error("Out's pc does not match");
-        if (id_out.order != 32'd0) $error("Out's order does not match");
-        if (id_out.valid != 1'b1) $error("Out's valid does not match");
-        if (id_out.opcode != id_in.inst[6:0]) $error("Out's opcode does not match");
-        if (id_out.funct3 != id_in.inst[14:12]) $error("Out's funct3 does not match");
-        if (id_out.funct7 != id_in.inst[31:25]) $error("Out's funct7 does not match");
-        if (id_out.rs1_addr != id_in.inst[19:15]) $error("Out's rs1_addr does not match");
-        if (id_out.rs2_addr != id_in.inst[24:20]) $error("Out's rs2_addr does not match");
-        if (id_out.rd_addr != id_in.inst[11:7]) $error("Out's rd_addr does not match");
-        $display("Test 1 Completed");
+    //     // Test 1 Decode struct out has correct instruction data
+    //     @(posedge clk);
+    //     if (id_out.inst != id_in.inst) $error("Out's instruction does not match");
+    //     if (id_out.pc != 32'hAAAAA000) $error("Out's pc does not match");
+    //     if (id_out.order != 32'd0) $error("Out's order does not match");
+    //     if (id_out.valid != 1'b1) $error("Out's valid does not match");
+    //     if (id_out.opcode != id_in.inst[6:0]) $error("Out's opcode does not match");
+    //     if (id_out.funct3 != id_in.inst[14:12]) $error("Out's funct3 does not match");
+    //     if (id_out.funct7 != id_in.inst[31:25]) $error("Out's funct7 does not match");
+    //     if (id_out.rs1_addr != id_in.inst[19:15]) $error("Out's rs1_addr does not match");
+    //     if (id_out.rs2_addr != id_in.inst[24:20]) $error("Out's rs2_addr does not match");
+    //     if (id_out.rd_addr != id_in.inst[11:7]) $error("Out's rd_addr does not match");
+    //     $display("Test 1 Completed");
 
-        // Test 2 Decode struct out does not execute at stall 
-        id_out_old = id_out;        
-        stall = 1;
-        id_in.inst = 32'hFFFFF0B7;  // lui x1, 0xFFFFF0000
-        @(posedge clk);
-        if (id_out != id_out) $error("Decode executes at stall");
-        $display("Test 2 Completed");
+    //     // Test 2 Decode struct out does not execute at stall 
+    //     id_out_old = id_out;        
+    //     stall = 1;
+    //     id_in.inst = 32'hFFFFF0B7;  // lui x1, 0xFFFFF0000
+    //     @(posedge clk);
+    //     if (id_out != id_out) $error("Decode executes at stall");
+    //     $display("Test 2 Completed");
         
-        // Test 3 Decode struct out has correct LUI specific instruction data
-        stall = 0;
-        @(posedge clk);
-        if (id_out.imm != {id_in.inst[31:12], 12'b0}) $error("Wrong LUI imm");
-        if (id_out.alu_m1_sel != 2'b10) $error("Wrong LUI alu_m1_sel value");
-        if (id_out.alu_m2_sel != 2'b01) $error("Wrong LUI alu_m2_sel value");
-        if (id_out.aluop != 4'd0) $error("Wrong LUI alu_op selection");
-        $display("Test 3 Completed");
+    //     // Test 3 Decode struct out has correct LUI specific instruction data
+    //     stall = 0;
+    //     @(posedge clk);
+    //     if (id_out.imm != {id_in.inst[31:12], 12'b0}) $error("Wrong LUI imm");
+    //     if (id_out.alu_m1_sel != 2'b10) $error("Wrong LUI alu_m1_sel value");
+    //     if (id_out.alu_m2_sel != 2'b01) $error("Wrong LUI alu_m2_sel value");
+    //     if (id_out.aluop != 4'd0) $error("Wrong LUI alu_op selection");
+    //     $display("Test 3 Completed");
 
-    endtask
+    // endtask
 
     initial begin
         fsdbDump();

@@ -1,7 +1,6 @@
 module decode
 import rv32i_types::*;
 (
-    input  logic        stall,
     input if_id_stage_reg_t     decode_struct_in, // Will only contain instr, pc, order & valid
     output id_dis_stage_reg_t   decode_struct_out
 );
