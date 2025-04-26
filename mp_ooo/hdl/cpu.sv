@@ -614,7 +614,14 @@ import rv32i_types::*;
         end
     end
 
-
+    to_writeback_t   next_writeback_prev [NUM_FUNC_UNIT]; 
+    always_ff @(posedge clk) begin 
+        if (rst) begin
+            next_writeback_prev <= '{NUM_FUNC_UNIT{default_to_writeback}};
+        end else begin
+            next_writeback_prev <= next_writeback;
+        end
+    end
 
     always_comb begin : update_rs_we_cdbus
         cdbus = '0;
@@ -641,10 +648,10 @@ import rv32i_types::*;
             cdbus.br_data = next_writeback[2].rd_data;
             cdbus.br_rd_addr = next_writeback[2].rd_addr;
             cdbus.br_rob_idx = next_writeback[2].rd_rob_idx;
-            cdbus.br_valid = next_writeback[2].valid;
+            cdbus.br_valid = next_writeback[2].valid && (next_writeback[2] != next_writeback_prev[2]);
             cdbus.br_en = next_writeback[2].br_en;
             cdbus.pc_new = next_writeback[2].pc_new;
-        end
+        end 
         if (next_writeback[3].valid) begin 
             cdbus.mem_data = next_writeback[3].rd_data;
             cdbus.mem_rd_addr = next_writeback[3].rd_addr;
