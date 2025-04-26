@@ -112,9 +112,11 @@ import rv32i_types::*;
         // .dfp_raddr  (dfp_raddr),
         .dfp_addr   (dfp_addr),
         .dfp_resp   (dfp_resp),
+        .dfp_read(dfp_read),
         .bmem_wdata (bmem_wdata),
         .bmem_write (bmem_write),
-        .bmem_read  (bmem_read)
+        .bmem_read  (bmem_read),
+        .bmem_addr  (bmem_addr)
     );
 
     cache instruction_cache (
@@ -371,7 +373,7 @@ import rv32i_types::*;
         if (mem_stall) begin
             dfp_addr = dfp_addr_mem;
             dfp_read = dfp_read_mem;
-            dfp_write = dfp_write_mem;
+            dfp_write = dfp_write_mem && (!dfp_resp);
             dfp_wdata = dfp_wdata_mem;
 
             dfp_rdata_mem = dfp_rdata;
