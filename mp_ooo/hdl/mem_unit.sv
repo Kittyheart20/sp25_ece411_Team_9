@@ -3,6 +3,7 @@ module mem_unit
     (
         input  logic            clk,
         input  logic            rst,
+        input cdb cdbus,
 
         output logic            mem_stall,
 
@@ -101,7 +102,7 @@ module mem_unit
                     dmem_rmask <= '0;
                     dmem_wmask <= '0;
                 end
-                if (!(mem_stall)) begin
+                if (!(mem_stall) && (!cdbus.flush)) begin
                     // dmem_addr <= {next_addr[31:2], 2'd0};
 
                     // // if (is_load) begin
