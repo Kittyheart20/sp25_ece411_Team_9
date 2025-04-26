@@ -278,7 +278,7 @@ test_passed_3:
     li x5, 0             # Result accumulator
     
     # Test 1: Loop with multiplication and division
-mul_div_loop:
+mul_div_loop_2:
     mul x6, x2, x3       # x6 = 7 * 3 = 21
     add x5, x5, x6       # Add to accumulator
     
@@ -295,7 +295,7 @@ mul_div_loop:
     
     # Branch condition
     addi x4, x4, -1      # Decrement counter
-    bnez x4, mul_div_loop # Loop if counter not zero
+    bnez x4, mul_div_loop_2 # Loop if counter not zero
     
     # Reset memory pointer
     li x1, 0xB9000000
@@ -652,7 +652,7 @@ test_passed_6:
     li x7, 10            # Loop counter
     li x8, 0             # Accumulator
     
-hazard_loop:
+hazard_loop_2:
     lw x9, 0(x1)         # Load x2's value (RAW memory dependency)
     lw x10, 4(x1)        # Load x3's value (potential memory reordering)
     add x8, x8, x9       # Update accumulator with x2's value
@@ -668,15 +668,15 @@ hazard_loop:
     # Even iteration
     mul x12, x8, x7      # Long-latency operation
     sw x12, 28(x1)
-    j continue_loop
+    j continue_loop_2
     
 odd_iteration:
     div x12, x8, x7      # Different long-latency operation
     sw x12, 32(x1)
     
-continue_loop:
+continue_loop_2:
     addi x7, x7, -1      # Decrement counter
-    bnez x7, hazard_loop # Loop back
+    bnez x7, hazard_loop_2 # Loop back
 
 
 
@@ -1059,6 +1059,7 @@ addr_selected:
     li x2, 0             # Loop counter
     li x3, 10            # Loop limit
     li x4, 0             # Result accumulator
+    li x5, 0
     
     # Create a scenario with frequent pipeline flushes
     # due to branches and data dependencies
@@ -1129,7 +1130,10 @@ branch_end:
     
 nested_branch_taken:
     # Nested branch taken
-    subi x15, x12, 30    # Perform different operation
+    li   x5, -30       # load -30 into x10
+    add  x15, x12, x5  # x15 = x12 + (-30) = x12 - 30
+
+    # subi x15, x12, 30    # Perform different operation
     sw x15, 16(x1)       # Store to different location
     
 nested_branch_end:
