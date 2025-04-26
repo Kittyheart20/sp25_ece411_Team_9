@@ -1,8 +1,8 @@
 module br_unit // and jumps
     import rv32i_types::*;
     (
-        input  logic            clk,
-        input  logic            rst,
+        // input  logic            clk,
+        // input  logic            rst,
         input  reservation_station_t next_execute,
         output to_writeback_t   execute_output
     );
@@ -21,7 +21,7 @@ module br_unit // and jumps
         rd_new = '0;
         pc_new = '0;
 
-    if (next_execute.valid && !rst) begin
+    if (next_execute.valid) begin
             unique case(next_execute.opcode)
                 op_b_jal: begin
                     a = next_execute.pc;

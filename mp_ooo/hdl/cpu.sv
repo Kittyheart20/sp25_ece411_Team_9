@@ -329,8 +329,8 @@ import rv32i_types::*;
     logic mul_ready;
     
     alu_unit alu_inst (
-        .clk(clk),
-        .rst(rst),
+        // .clk(clk),
+        // .rst(rst),
         .next_execute(next_execute[0]),
         .execute_output(execute_output[0])
     );
@@ -343,8 +343,8 @@ import rv32i_types::*;
     );
 
     br_unit br_inst (
-        .clk(clk),
-        .rst(rst),
+        // .clk(clk),
+        // .rst(rst),
         .next_execute(next_execute[2]),
         .execute_output(execute_output[2])
     );
