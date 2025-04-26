@@ -104,7 +104,8 @@ import rv32i_types::*;
         .dfp_addr   (dfp_addr),
         .dfp_resp   (dfp_resp),
         .bmem_wdata (bmem_wdata),
-        .bmem_write (bmem_write)
+        .bmem_write (bmem_write),
+        .bmem_read  (bmem_read)
     );
 
     cache instruction_cache (
