@@ -26,7 +26,7 @@ import rv32i_types::*;
     logic [4:0]  head, tail;
     logic [31:0] count; 
     logic        empty_o;//, full_o;
-    logic debug;
+    // logic debug;
     
     assign empty_o = (count == 32'd0);
     assign full_o = (count == DEPTH);
@@ -58,6 +58,8 @@ import rv32i_types::*;
         //     current_rd_rob_idx = tail;
     end
 
+    logic [2:0] debug;
+
     always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst || cdbus.flush) begin
             head <= '0;
@@ -86,18 +88,19 @@ import rv32i_types::*;
                     rob_table[i].valid <= '0;
                     rob_table[i].regf_we <= '0;
                 end else begin
-                    if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx)) begin
+                    if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx) && rob_table[i].valid) begin
                         rob_table[i].status <= done;
                         rob_table[i].rd_data <= cdbus.alu_data;
                         rob_table[i].rd_valid <= 1'b1;
 
                     end                  
-                    if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx)) begin
+                    if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx) && rob_table[i].valid) begin
                         rob_table[i].status <= done;
                         rob_table[i].rd_data <= cdbus.mul_data;
                         rob_table[i].rd_valid <= 1'b1;
                     end                
-                    if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx)) begin
+                    if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx) && rob_table[i].valid) begin
+                        debug <= '1;
                         rob_table[i].status <= done;
                         rob_table[i].rd_data <= cdbus.mem_data;
                         rob_table[i].rd_valid <= 1'b1;
@@ -108,8 +111,7 @@ import rv32i_types::*;
                         rob_table[i].mem_rdata <= cdbus.mem_rdata;
                         rob_table[i].mem_wdata <= cdbus.mem_wdata;
                     end
-                    if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx)) begin
-                        debug <= '1;
+                    if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx) && rob_table[i].valid) begin
                         rob_table[i].status <= done;
                         rob_table[i].rd_data <= cdbus.br_data;
                         rob_table[i].rd_valid <= 1'b1;
