@@ -59,7 +59,7 @@ module deserializer (
                 end
                     
                 write_count <= (write_count == 2'd3) ? 2'd0 : (write_count + 2'd1);
-            end
+            end else write_count <= 2'd0;
         end
     end
     
