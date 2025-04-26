@@ -3,7 +3,7 @@ module deserializer (
     input   logic rst,
 
     input   logic bmem_ready,
-    // input   logic [31:0] bmem_raddr,
+    input   logic [31:0] bmem_raddr,
     input   logic [63:0] bmem_rdata,
     input   logic bmem_rvalid,
     input   logic[255:0]  dfp_wdata,
@@ -16,8 +16,8 @@ module deserializer (
     output  logic dfp_resp,
     output  logic[63:0]  bmem_wdata,
     output logic bmem_write,
-    input logic bmem_read,
-    input logic dfp_read
+    input logic bmem_read
+    // input logic dfp_read
 );
     logic [255:0] accumulator;
     logic [1:0] word_count;
@@ -26,7 +26,6 @@ module deserializer (
     logic[255:0] dfp_wdata_prev;
 
     logic dfp_write_prev;
-    logic[64:0] cycles_since_write;
     logic [31:0] expected_bmem_raddr;
     always_comb begin
         expected_bmem_raddr = {dfp_addr[31:5], 5'b0}; // Base address
@@ -49,13 +48,7 @@ module deserializer (
             dfp_addr_prev <= 32'd0;
             dfp_wdata_prev <= 256'd0;
             dfp_write_prev <= 1'b0;
-            cycles_since_write <= 64'd0;
         end else begin
-            if(dfp_write) begin
-                cycles_since_write <= 64'd0;
-            end else begin
-                cycles_since_write <= cycles_since_write + 1;
-            end
             dfp_write_prev <= dfp_write;
             dfp_addr_prev <= dfp_addr;
             dfp_wdata_prev <= dfp_wdata;
@@ -78,7 +71,7 @@ module deserializer (
                     dfp_resp  <= 1'b1;
                     word_count <= (word_count == 2'd3) ? 2'd0 : (word_count + 2'd1);
                 end
-                dfp_raddr <= bmem_raddr;
+                // dfp_raddr <= bmem_raddr;
             end
             
             if (dfp_write && bmem_ready) begin

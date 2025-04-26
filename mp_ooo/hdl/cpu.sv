@@ -103,7 +103,7 @@ import rv32i_types::*;
         .clk        (clk),
         .rst        (rst),
         .bmem_ready (bmem_ready),
-        // .bmem_raddr (bmem_raddr),
+        .bmem_raddr (bmem_raddr),
         .bmem_rdata (bmem_rdata),
         .bmem_rvalid(bmem_rvalid),
         .dfp_wdata  (dfp_wdata),
@@ -112,7 +112,7 @@ import rv32i_types::*;
         // .dfp_raddr  (dfp_raddr),
         .dfp_addr   (dfp_addr),
         .dfp_resp   (dfp_resp),
-        .dfp_read(dfp_read),
+        // .dfp_read   (dfp_read),
         .bmem_wdata (bmem_wdata),
         .bmem_write (bmem_write),
         .bmem_read  (bmem_read),
@@ -180,7 +180,7 @@ import rv32i_types::*;
     ) instruction_queue (
         .clk        (clk),
         .rst        (rst),
-        .flush(cdbus.flush),
+        .flush      (cdbus.flush),
         .data_i     (data_i),
         .enqueue_i  (enqueue_i),
         .full_o     (full_o),
@@ -392,6 +392,7 @@ import rv32i_types::*;
     end
 
     logic bmem_flag, flush_stalling;
+    logic [63:0] m_order;
 
     logic inst_use_linebuffer, mem_use_linebuffer;
     assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
@@ -429,7 +430,8 @@ import rv32i_types::*;
             end 
             else if (ufp_resp && (flush_stalling == '1)) begin
                 flush_stalling <= '0;
-                data_i <= {order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
+                data_i <= {m_order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
+                order <= m_order;
                 ufp_addr <= pc;
                 ufp_rmask <= '1;   
             end
@@ -442,8 +444,9 @@ import rv32i_types::*;
                  end
                 if (ufp_rmask > '0)
                     flush_stalling <= '1;
-               else begin
-                    data_i <= {order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
+                else begin
+                    data_i <= {m_order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
+                    order <= m_order;
                     ufp_rmask <= '1; 
                     ufp_addr <= pc_next; 
                end
@@ -727,8 +730,6 @@ import rv32i_types::*;
 
     end
 
-
-    logic [63:0] m_order;
     always_ff @(posedge clk) begin
         if (rst) begin
             m_order <= '0;

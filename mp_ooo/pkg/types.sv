@@ -323,7 +323,7 @@ package rv32i_types;
         logic [31:0] inst;
         logic [31:0] pc;
         logic [31:0] pc_new;
-        logic flush;
+        logic        flush;
         logic [31:0] mem_addr;
         logic [3:0]  mem_rmask;
         logic [3:0]  mem_wmask;

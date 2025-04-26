@@ -120,7 +120,7 @@ module cache (
     logic   [31:0]  cache_debug_addr;
     assign cache_debug_addr = 32'haaab0000;
     logic cache_debug_hit;
-    assign debug_hit = (ufp_addr == cache_debug_addr);
+    assign cache_debug_hit = (ufp_addr == cache_debug_addr);
     logic [31:9] cache_debug_tag;
     assign cache_debug_tag = cache_debug_addr[31:9];
     logic cache_debug_tag_hit;
