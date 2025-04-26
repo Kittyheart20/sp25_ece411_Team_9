@@ -3,6 +3,7 @@ module mem_unit
     (
         input  logic            clk,
         input  logic            rst,
+        input cdb cdbus,
 
         output logic            mem_stall,
 
@@ -102,7 +103,7 @@ module mem_unit
                     dmem_rmask <= '0;
                     dmem_wmask <= '0;
                 end
-                if (!(mem_stall)) begin
+                if (!(mem_stall) && (!cdbus.flush)) begin
                     if (curr_store) begin
                         dmem_addr <= rob_entry_o.mem_addr;
                         dmem_rmask <= '0;
