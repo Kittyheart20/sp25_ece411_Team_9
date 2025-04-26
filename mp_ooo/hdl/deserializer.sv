@@ -11,7 +11,6 @@ module deserializer (
     input logic   [31:0]  dfp_addr,
 
     output  logic [255:0] dfp_rdata,
-    output  logic [31:0] dfp_raddr,
     output  logic dfp_resp,
     output  logic[63:0]  bmem_wdata,
     output logic bmem_write,
@@ -34,7 +33,6 @@ module deserializer (
             word_count  <= 2'd0;
             write_count <= 2'd0;
             dfp_rdata   <= 256'd0;
-            dfp_raddr   <= 32'd0;
             dfp_resp    <= 1'b0;
             dfp_addr_prev <= 32'd0;
             dfp_wdata_prev <= 256'd0;
@@ -56,7 +54,6 @@ module deserializer (
                     dfp_resp  <= 1'b1;
                 end
                 word_count <= (word_count == 2'd3) ? 2'd0 : (word_count + 2'd1);
-                dfp_raddr <= bmem_raddr;
             end
             
             if (dfp_write && bmem_ready) begin

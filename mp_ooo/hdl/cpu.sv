@@ -100,7 +100,7 @@ import rv32i_types::*;
         .dfp_wdata  (dfp_wdata),
         .dfp_write  (dfp_write),
         .dfp_rdata  (dfp_rdata),
-        .dfp_raddr  (dfp_raddr),
+        // .dfp_raddr  (dfp_raddr),
         .dfp_addr   (dfp_addr),
         .dfp_resp   (dfp_resp),
         .bmem_wdata (bmem_wdata),
@@ -158,6 +158,10 @@ import rv32i_types::*;
     logic enqueue_i, dequeue_i;
     logic [WIDTH-1:0] data_i, data_o;
     logic [31:0] curr_instr_addr, last_instr_addr;
+    logic [255:0] curr_instr_data, last_instr_data;
+
+    logic [31:0]  curr_dmem_addr,  last_dmem_addr;
+    logic [255:0] curr_dmem_data, last_dmem_data;
 
     queue #(
         .WIDTH      (WIDTH),
@@ -174,8 +178,6 @@ import rv32i_types::*;
         .empty_o    (empty_o)
     );
 
-    logic [255:0] curr_instr_data, last_instr_data;
-    logic [255:0] curr_instr_data, last_instr_data;
     logic instr_enable;
 
     register #(
@@ -191,8 +193,6 @@ import rv32i_types::*;
         .data_b_output  (last_instr_addr)
     );
 
-    logic [31:0]  curr_dmem_addr, last_dmem_addr;
-    logic [255:0] curr_dmem_data, last_dmem_data;
     logic dmem_enable;
 
     logic[63:0] cycles_since_mem_stall_done;
@@ -365,8 +365,8 @@ import rv32i_types::*;
     );
     
     always_comb begin
-        dfp_resp_inst = 0;
-        dfp_rdata_inst = 0;
+        dfp_resp_inst = '0;
+        dfp_rdata_inst = '0;
 
         dfp_addr = dfp_addr_inst;
         dfp_read = dfp_read_inst;
@@ -375,11 +375,15 @@ import rv32i_types::*;
         dfp_rdata_inst = dfp_rdata;
         dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 2);
 
+        dfp_rdata_mem = '0;
+        dfp_resp_mem = 1'b0;
+
         if (mem_stall) begin
             dfp_addr = dfp_addr_mem;
             dfp_read = dfp_read_mem;
             dfp_write = dfp_write_mem;
             dfp_wdata = dfp_wdata_mem;
+
             dfp_rdata_mem = dfp_rdata;
             dfp_resp_mem = dfp_resp;
 
@@ -461,7 +465,7 @@ import rv32i_types::*;
                         order <= order + 'd1;
                         commit <= 1'b1;
                     end
-                end else if (pc[31:5] == last_instr_addr[31:5] && !ufp_rmask) begin
+                end else if (pc[31:5] == last_instr_addr[31:5] && ~&ufp_rmask) begin    // ~& is bitwise NAND
                     ufp_rmask <= '0;
                     data_i <= {order, pc, last_instr_data[32*pc[4:2] +: 32]};
                     if (!full_o && !stall) begin
