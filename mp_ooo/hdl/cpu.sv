@@ -94,7 +94,7 @@ import rv32i_types::*;
         .clk        (clk),
         .rst        (rst),
         .bmem_ready (bmem_ready),
-        .bmem_raddr (bmem_raddr),
+        // .bmem_raddr (bmem_raddr),
         .bmem_rdata (bmem_rdata),
         .bmem_rvalid(bmem_rvalid),
         .dfp_wdata  (dfp_wdata),
@@ -230,7 +230,7 @@ import rv32i_types::*;
     logic       regf_we;
 
     logic [4:0] rob_addr;
-    rob_entry_t rob_entry_i, rob_entry_o;
+    rob_entry_t rob_entry_o;
     logic       rob_enqueue_i, rob_update_i, rob_dequeue_i;
     logic       rob_full_o;
 
@@ -257,26 +257,7 @@ import rv32i_types::*;
         .rs2_rdy(rs2_rdy)
     );
 
-    always_comb begin : fill_rob_entry
-        rob_entry_i.valid = 1'b1;
-        rob_entry_i.status = rob_wait;
-        rob_entry_i.rd_addr = decode_struct_in.inst[11:7];
-        rob_entry_i.rd_data = 'x;
-
-        case (decode_struct_in.inst[6:0])
-            op_b_lui, op_b_auipc, op_b_imm, op_b_reg:
-                rob_entry_i.op_type = alu;
-                
-            op_b_br, op_b_jal, op_b_jalr:
-                rob_entry_i.op_type = br;
-
-            op_b_load, op_b_store:
-                rob_entry_i.op_type = mem;
-
-            default: 
-                rob_entry_i.op_type = none;
-        endcase
-    end
+    
 
     rob_entry_t rob_table_o [32];
 
@@ -490,7 +471,7 @@ import rv32i_types::*;
 
                 if (dfp_write) begin
                     bmem_addr <= dfp_addr;
-                 //   bmem_write <= 1'b1;
+                //   bmem_write <= 1'b1;
                     // if (bmem_write && bmem_wdata == 64'h0) begin 
                     //     bmem_write <= 1'b0;
                     // end
@@ -499,7 +480,7 @@ import rv32i_types::*;
                         bmem_read <= 1'b0;
                         bmem_flag <= 1'b0;
                 end else if (dfp_read) begin
-                  //  bmem_write <= 1'b0;
+                //  bmem_write <= 1'b0;
                     bmem_addr <= dfp_addr;
                     if (bmem_flag == 1'b0) begin
                         bmem_read <= 1'b1;
@@ -775,6 +756,8 @@ import rv32i_types::*;
     assign monitor_mem_rdata = rob_entry_o.mem_rdata;
     assign monitor_mem_wdata = rob_entry_o.mem_wdata;
 
+    logic dummy;
+    assign dummy = bmem_rvalid && (bmem_raddr == 32'd0);
 
 endmodule : cpu
 

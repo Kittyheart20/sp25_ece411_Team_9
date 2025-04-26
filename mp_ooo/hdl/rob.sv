@@ -48,14 +48,11 @@ import rv32i_types::*;
         rob_entry_i.status = rob_wait;
         rob_entry_i.op_type = dispatch_struct_in.op_type;
         rob_entry_i.rd_addr = dispatch_struct_in.rd_addr;
-        rob_entry_i.rd_rob_idx = tail; //dispatch_struct_in.rd_rob_idx;
+        rob_entry_i.rd_rob_idx = tail;
         rob_entry_i.rd_valid = 1'b0;
         rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
         rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
         rob_entry_i.regf_we = dispatch_struct_in.regf_we;
-        
-        // if (dispatch_struct_in.valid) 
-        //     current_rd_rob_idx = tail;
     end
 
     logic [2:0] debug;
@@ -68,9 +65,6 @@ import rv32i_types::*;
             count <= '0;
             rob_table <= '{default: 0}; // ss: initialize rob_table with 0s
             debug <= '0;
-            // for (integer i = 0; i < DEPTH; i++) begin
-            //     rob_table[i].status = empty;
-            // end
         end
         //else if (dispatch_struct_in.valid) begin
         else begin

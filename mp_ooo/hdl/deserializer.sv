@@ -3,7 +3,7 @@ module deserializer (
     input   logic rst,
 
     input   logic bmem_ready,
-    input   logic [31:0] bmem_raddr,
+    // input   logic [31:0] bmem_raddr,
     input   logic [63:0] bmem_rdata,
     input   logic bmem_rvalid,
     input   logic[255:0]  dfp_wdata,
@@ -19,13 +19,9 @@ module deserializer (
     logic [255:0] accumulator;
     logic [1:0] word_count;
     logic [1:0] write_count;  
-    logic bmem_write;
     logic[31:0] dfp_addr_prev;
     logic[255:0] dfp_wdata_prev;
-    logic new_request;
 
-
-    assign new_request = (!bmem_read && (dfp_addr != dfp_addr_prev) || ((dfp_wdata ^ dfp_wdata_prev) & ~(dfp_wdata ^ dfp_wdata_prev ^ dfp_wdata_prev) != 0));
     logic dfp_write_prev;
     always_ff @(posedge clk) begin
         if (rst) begin

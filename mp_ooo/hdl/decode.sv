@@ -76,7 +76,6 @@ import rv32i_types::*;
                 endcase
             end
             op_b_reg  : begin
-                decode_struct_out.op_type = alu;
                 decode_struct_out.regf_we = 1'b1;
                 decode_struct_out.alu_m1_sel = rs1_out;
                 decode_struct_out.alu_m2_sel = rs2_out;
@@ -84,10 +83,11 @@ import rv32i_types::*;
                 decode_struct_out.use_rs2 = 1'b1;
 
                 if (funct7 == mult) begin   // multiply extension
-                    decode_struct_out.multop = funct3;
+                    decode_struct_out.multop = mult_ops'(funct3);
                     decode_struct_out.op_type = mul;
                 end 
                 else begin                  // integer alu
+                    decode_struct_out.op_type = alu;
                     unique case (funct3)
                         arith_f3_slt: decode_struct_out.aluop = alu_op_slt;
                         arith_f3_sltu: decode_struct_out.aluop = alu_op_sltu;
