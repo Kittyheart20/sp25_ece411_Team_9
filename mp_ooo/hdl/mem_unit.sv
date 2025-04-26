@@ -3,6 +3,7 @@ module mem_unit
     (
         input  logic            clk,
         input  logic            rst,
+
         output logic            mem_stall,
 
         output logic   [31:0]   dmem_addr,
@@ -32,6 +33,20 @@ module mem_unit
         logic   [31:0]   wdata;
 
         logic   [31:0]  prev_pc;
+        logic   [31:0]  debug_addr;
+        assign debug_addr = 32'haaab0000;
+        logic debug_hit;
+        assign debug_hit = (dmem_addr == debug_addr);
+        logic [31:9] debug_tag;
+        assign debug_tag = debug_addr[31:9];
+        logic debug_tag_hit;
+        always_comb begin
+            debug_tag_hit = 1'b0;
+            if(dmem_addr[31:9] == debug_tag) begin
+                debug_tag_hit = 1'b1;
+            end
+        end
+
 
         always_ff @(posedge clk) begin
             if (rst)
