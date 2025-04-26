@@ -439,7 +439,7 @@ import rv32i_types::*;
 
     logic inst_use_linebuffer, mem_use_linebuffer;
     assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
-    assign mem_use_linebuffer = (dmem_addr != '0) && (dmem_addr[31:5] == last_dmem_addr[31:5]);
+    assign mem_use_linebuffer = 0;
 
     always_ff @(posedge clk) begin : fetch
         if (rst) begin
@@ -604,6 +604,7 @@ import rv32i_types::*;
             end
         end
     end   
+    logic[31:0]  ufp_wdata_mem_latched;
 
     always_comb begin : update_line_buffer
         instr_enable = 1'b0;
@@ -626,6 +627,14 @@ import rv32i_types::*;
             curr_dmem_addr = dmem_addr;
             curr_dmem_data = ufp_rcache_line_mem;
             dmem_enable = 1'b1;            
+        end
+    end
+
+    always_ff @(posedge clk) begin
+        if(rst) begin
+            ufp_wdata_mem_latched <= '0;
+        end else begin
+            ufp_wdata_mem_latched <= ufp_wdata_mem;
         end
     end
 
