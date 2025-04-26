@@ -485,6 +485,7 @@ import rv32i_types::*;
             else if(cdbus.flush) begin 
                 debug_r1 <= 0;
                 pc <= pc_next; 
+                bmem_read <= 1'b0;
                 if (dfp_resp) begin 
                     bmem_read <= 1'b0;
                     bmem_flag <= 1'b0;
