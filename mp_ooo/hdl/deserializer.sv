@@ -23,7 +23,9 @@ module deserializer (
     logic[31:0] dfp_addr_prev;
     logic[255:0] dfp_wdata_prev;
     logic new_request;
-    assign new_request = (dfp_addr != dfp_addr_prev) || (dfp_wdata != dfp_wdata_prev);
+
+
+    assign new_request = ((dfp_addr != dfp_addr_prev) || ((dfp_wdata ^ dfp_wdata_prev) & ~(dfp_wdata ^ dfp_wdata_prev ^ dfp_wdata_prev) != 0));
     always_ff @(posedge clk) begin
         if (rst) begin
             accumulator <= 256'd0;
