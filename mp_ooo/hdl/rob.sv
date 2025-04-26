@@ -56,7 +56,8 @@ import rv32i_types::*;
     end
 
     logic [2:0] debug;
-    rob_entry_t empty_rob_entry = '0;
+    rob_entry_t empty_rob_entry;
+    assign empty_rob_entry = '0;
 
     always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst || cdbus.flush) begin

@@ -36,10 +36,7 @@ import rv32i_types::*;
     output reservation_station_t next_execute_mem
 );
     reservation_station_t default_reservation_station;
-
-    always_comb begin: default_values
-        default_reservation_station = '0;
-    end
+    assign default_reservation_station = '0;
 
     reservation_station_t       new_rs_entry;
     logic [ROB_IDX_WIDTH-1:0]   rob_idx [DEPTH];
