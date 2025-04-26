@@ -59,7 +59,8 @@ module mem_unit
             wmask = next_execute.mem_wmask << next_addr[1:0];
             wdata = next_execute.rs2_data;
         end
-        
+        logic debug_y2;
+        assign debug_y2 = (curr_store) && mem_stall;
         // assign mem_stall = (addr != '0) && (addr == next_addr) && !(dmem_resp);
 
         // logic prev_inst;
@@ -154,7 +155,7 @@ module mem_unit
                 execute_output.mem_addr = dmem_addr;
                 execute_output.mem_rmask = rmask; //dmem_rmask;
                 execute_output.mem_wmask = '0; //wmask;
-                execute_output.mem_rdata = execute_output.rd_data;
+                execute_output.mem_rdata = dmem_rdata;
             end else if (is_store) begin
                 execute_output.pc = next_execute.pc;
                 execute_output.mem_addr = addr;
