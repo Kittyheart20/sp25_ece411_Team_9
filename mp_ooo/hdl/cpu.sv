@@ -802,9 +802,9 @@ import rv32i_types::*;
     assign monitor_rs1_addr  = cdbus.rs1_addr;
     assign monitor_rs2_addr  = cdbus.rs2_addr;
     assign monitor_rs1_rdata = rat_arf_table[cdbus.rs1_addr].data;
-    assign monitor_rs2_rdata = rat_arf_table[cdbus.rs2_addr].data;
+    assign monitor_rs2_rdata = (^rat_arf_table[cdbus.rs2_addr].data === 1'bx)  ? '0 : rat_arf_table[cdbus.rs2_addr].data;
     assign monitor_rd_addr   = cdbus.commit_rd_addr;
-    assign monitor_rd_wdata  = cdbus.commit_data;
+    assign monitor_rd_wdata  = (^cdbus.commit_data === 1'bx)  ? '0 : cdbus.commit_data;
     assign monitor_pc_rdata  = cdbus.pc;
 
     always_comb begin
@@ -815,11 +815,11 @@ import rv32i_types::*;
     end
 
     //assign monitor_pc_wdata  = cdbus.pc + 4;
-    assign monitor_mem_addr  = rob_entry_o.mem_addr;
-    assign monitor_mem_rmask = rob_entry_o.mem_rmask;
-    assign monitor_mem_wmask = rob_entry_o.mem_wmask;
-    assign monitor_mem_rdata = rob_entry_o.mem_rdata;
-    assign monitor_mem_wdata = rob_entry_o.mem_wdata;
+    assign monitor_mem_addr  = (^rob_entry_o.mem_addr === 1'bx)  ? '0 : rob_entry_o.mem_addr;
+    assign monitor_mem_rmask = (^rob_entry_o.mem_rmask === 1'bx)  ? '0 : rob_entry_o.mem_rmask;
+    assign monitor_mem_wmask = (^rob_entry_o.mem_wmask === 1'bx)  ? '0 : rob_entry_o.mem_wmask;
+    assign monitor_mem_rdata = (^rob_entry_o.mem_rdata === 1'bx)  ? '0 : rob_entry_o.mem_rdata;
+    assign monitor_mem_wdata = (^rob_entry_o.mem_wdata === 1'bx)  ? '0 : rob_entry_o.mem_wdata;
 
 
 endmodule : cpu
