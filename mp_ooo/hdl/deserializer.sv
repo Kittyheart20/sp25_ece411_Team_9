@@ -27,6 +27,7 @@ module deserializer (
 
 
     assign new_request = (!bmem_read && (dfp_addr != dfp_addr_prev) || ((dfp_wdata ^ dfp_wdata_prev) & ~(dfp_wdata ^ dfp_wdata_prev ^ dfp_wdata_prev) != 0));
+    logic dfp_write_prev;
     always_ff @(posedge clk) begin
         if (rst) begin
             accumulator <= 256'd0;
@@ -37,7 +38,9 @@ module deserializer (
             dfp_resp    <= 1'b0;
             dfp_addr_prev <= 32'd0;
             dfp_wdata_prev <= 256'd0;
+            dfp_write_prev <= 1'b0;
         end else begin
+            dfp_write_prev <= dfp_write;
             dfp_addr_prev <= dfp_addr;
             dfp_wdata_prev <= dfp_wdata;
             dfp_resp <= 1'b0;
@@ -72,7 +75,9 @@ module deserializer (
             case (write_count)
                 2'd0: begin 
                     bmem_wdata = dfp_wdata[63:0];
-
+                    if(!dfp_write_prev) begin
+                        bmem_write = 1'b1;
+                    end
                 end
                 2'd1: begin 
                     bmem_wdata = dfp_wdata[127:64];
@@ -88,9 +93,6 @@ module deserializer (
                 end
                 default: bmem_wdata = 64'h0;
             endcase
-            if(new_request) begin
-                bmem_write = 1'b1;
-            end
         end else begin
             bmem_wdata = 64'h0;
         end
