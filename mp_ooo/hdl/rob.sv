@@ -56,14 +56,15 @@ import rv32i_types::*;
     end
 
     logic [2:0] debug;
+    rob_entry_t empty_rob_entry = '0;
 
     always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
         if (rst || cdbus.flush) begin
             head <= '0;
             tail <= '0;
-            tail_addr <= 0;
+            tail_addr <= '0;
             count <= '0;
-            rob_table <= '{default: 0}; // ss: initialize rob_table with 0s
+            rob_table <= '{DEPTH{empty_rob_entry}}; // ss: initialize rob_table with 0s
             debug <= '0;
         end
         //else if (dispatch_struct_in.valid) begin
@@ -124,9 +125,11 @@ import rv32i_types::*;
             end else if (rob_table[head].status == donex2) begin
                 rob_table[head].status <= empty;
                 rob_table[head].valid <= '0;
-                head <= (head == DEPTH-1) ? '0 : head + 1'b1;
+                // head <= (head == DEPTH-1) ? '0 : head + 5'd1;
+                head <= head + 5'd1;
             end else if (rob_table[head].status == empty) begin
-                head <= (head == DEPTH-1) ? '0 : head + 1'b1;
+                // head <= (head == DEPTH-1) ? '0 : head + 5'd1;
+                head <= head + 5'd1;
             end
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
@@ -136,7 +139,8 @@ import rv32i_types::*;
             if (insert) begin
                 rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
-                tail <= (tail == /*'1'*/DEPTH-1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
+                // tail <= (tail == /*'1'*/DEPTH-1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
+                tail <= tail + 5'd1;
             end
             
             // Commmit: dequeue == 1'b1
@@ -150,9 +154,9 @@ import rv32i_types::*;
             
             
             if(cdbus.flush) begin
-                count <= 0;
-                 head <= 0;
-                 tail <= 0;
+                count <= '0;
+                head <= '0;
+                tail <= '0;
             end else begin
                 case ({insert, remove})
                     2'b10: count <= count + 1'b1; 

@@ -164,7 +164,7 @@ import rv32i_types::*;
                         execute_output.rs2_addr <= next_execute.rs2_addr;
                         execute_output.regf_we <= next_execute.regf_we;
                         execute_output.rd_rob_idx <= next_execute.rd_rob_idx;
-                        execute_output.rd_data <= 1'b0; 
+                        execute_output.rd_data <= '0; 
 
                         mult_op_running <= next_execute.multop;
                         start[module_idx] <= 1'b1;

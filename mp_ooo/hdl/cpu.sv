@@ -14,6 +14,14 @@ import rv32i_types::*;
     input   logic   [63:0]      bmem_rdata,
     input   logic               bmem_rvalid
 );
+    reservation_station_t default_reservation_station;
+    to_writeback_t default_to_writeback;
+
+    always_comb begin: default_values
+        default_reservation_station = '0;
+
+        default_to_writeback = '0;
+    end
 
     logic   [31:0]  pc, pc_next, pc_wdata;
     logic   [63:0]  order;
@@ -198,15 +206,15 @@ import rv32i_types::*;
     logic[63:0] cycles_since_mem_stall_done;
     always_ff @(posedge clk) begin
         if (rst) begin
-            cycles_since_mem_stall_done <= 0;
+            cycles_since_mem_stall_done <= 64'd0;
             mem_stall_prev <= 1'b0;
         end else if (mem_stall) begin
-            cycles_since_mem_stall_done <= 1;
+            cycles_since_mem_stall_done <= 64'd1;
             mem_stall_prev <= mem_stall;
         end else begin
             mem_stall_prev <= mem_stall;
             if(!mem_stall) begin
-                cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 1;
+                cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 64'd1;
             end
         end
     end
@@ -354,7 +362,7 @@ import rv32i_types::*;
         dfp_write = dfp_write_inst;
         dfp_wdata = dfp_wdata_inst;
         dfp_rdata_inst = dfp_rdata;
-        dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 2);
+        dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2);
 
         dfp_rdata_mem = '0;
         dfp_resp_mem = 1'b0;
@@ -369,7 +377,7 @@ import rv32i_types::*;
             dfp_resp_mem = dfp_resp;
 
             if (!mem_stall_prev) begin
-                dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 2);
+                dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2);
                 dfp_rdata_inst = dfp_rdata;
             end
         end
@@ -384,7 +392,7 @@ import rv32i_types::*;
 
     logic inst_use_linebuffer, mem_use_linebuffer;
     assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
-    assign mem_use_linebuffer = 0;
+    assign mem_use_linebuffer = 1'b0;
 
     always_ff @(posedge clk) begin : fetch
         if (rst) begin
@@ -405,15 +413,15 @@ import rv32i_types::*;
             if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
                 bmem_addr <= dfp_addr;
 
-                if (bmem_flag == 2'd0) begin
-                    bmem_read <= 2'd1;
-                    bmem_flag <= 2'd1;
+                if (bmem_flag == 1'd0) begin
+                    bmem_read <= 1'd1;
+                    bmem_flag <= 1'd1;
                 end else begin
-                    bmem_read <= 2'd0;
+                    bmem_read <= 1'd0;
                 end
 
                 if (dfp_resp) begin 
-                    bmem_flag <= 2'd0;
+                    bmem_flag <= 1'd0;
                 end        
             end 
             else if (ufp_resp && (flush_stalling == '1)) begin
@@ -588,8 +596,8 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin : update_dispatch_str
         if (rst || cdbus.flush) begin
             dispatch_struct_in <= '0;
-            next_execute <= '{default: '0};
-            next_writeback <= '{default: '0};
+            next_execute <= '{NUM_FUNC_UNIT{default_reservation_station}};
+            next_writeback <= '{NUM_FUNC_UNIT{default_to_writeback}};
         end
         else begin
             dispatch_struct_in <= decode_struct_out;
@@ -663,7 +671,7 @@ import rv32i_types::*;
     logic[4:0] stall_counter;
     always_ff @(posedge clk) begin
         if (rst) begin
-            stall_prev <= 0;
+            stall_prev <= 1'b0;
             stall_till_new_resp <= 1'b0;
             stall_counter <= '0;
         end
@@ -677,11 +685,11 @@ import rv32i_types::*;
                 end
             end else if(dfp_resp) begin
                 // stall_till_new_resp <= 1'b0;
-                stall_counter <= stall_counter + 1;
+                stall_counter <= stall_counter + 5'd1;
             end
             else if (stall_counter > 0) begin
                 // stall_till_new_resp <= 1'b0;
-                stall_counter <= stall_counter + 1;
+                stall_counter <= stall_counter + 5'd1;
             end
             if(stall_counter == 5) begin
                 stall_till_new_resp <= 1'b0;
@@ -705,10 +713,10 @@ import rv32i_types::*;
     end
 
 
-    logic[64:0] m_order;
+    logic [63:0] m_order;
     always_ff @(posedge clk) begin
         if (rst) begin
-            m_order <= 0;
+            m_order <= '0;
         end
         else if (cdbus.regf_we)
             m_order <= m_order + 1;

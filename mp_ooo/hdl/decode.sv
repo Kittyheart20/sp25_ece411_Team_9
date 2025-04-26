@@ -84,7 +84,7 @@ import rv32i_types::*;
 
                 if (funct7 == mult) begin   // multiply extension
                     decode_struct_out.multop = mult_ops'(funct3);
-                    decode_struct_out.op_type = mul;
+                    decode_struct_out.op_type = mul; 
                 end 
                 else begin                  // integer alu
                     decode_struct_out.op_type = alu;

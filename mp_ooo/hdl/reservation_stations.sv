@@ -35,10 +35,16 @@ import rv32i_types::*;
     output reservation_station_t next_execute_branch,
     output reservation_station_t next_execute_mem
 );
+    reservation_station_t default_reservation_station;
+
+    always_comb begin: default_values
+        default_reservation_station = '0;
+    end
 
     reservation_station_t       new_rs_entry;
     logic [ROB_IDX_WIDTH-1:0]   rob_idx [DEPTH];
     reservation_station_t       stations[5];
+    logic cdb_update;
 
     assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
     
@@ -108,7 +114,7 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin
 
         if (rst || cdbus.flush) begin
-            stations <= '{default: '0};
+            stations <= '{5{default_reservation_station}};
         end
         
         else if (dispatch_struct_in.valid) begin : new_rs_entry_to_station

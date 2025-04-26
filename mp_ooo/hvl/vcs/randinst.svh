@@ -2,7 +2,7 @@
 // RISC-V cores.
 
 class RandInst;
-    import rv32i_types::*;
+    // import rv32i_types::*;
     // You will increment this number as you generate more random instruction
     // types. Once finished, NUM_TYPES should be 9, for each opcode type in
     // rv32i_opcode.
