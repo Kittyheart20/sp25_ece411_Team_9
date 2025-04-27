@@ -40,7 +40,6 @@ import rv32i_types::*;
     localparam NUM_FUNC_UNIT = 4;
     
     if_id_stage_reg_t  decode_struct_in;
-    id_dis_stage_reg_t decode_struct_out;
     id_dis_stage_reg_t dispatch_struct_in;
     reservation_station_t dispatch_struct_out [NUM_FUNC_UNIT];
     reservation_station_t next_execute [NUM_FUNC_UNIT];
@@ -350,6 +349,8 @@ import rv32i_types::*;
     alu_unit alu_inst (
         // .clk(clk),
         // .rst(rst),
+        // .clk(clk),
+        // .rst(rst),
         .next_execute(next_execute[0]),
         .execute_output(execute_output[0])
     );
@@ -573,6 +574,10 @@ import rv32i_types::*;
 
     always_comb begin : prep_decode_in
         dequeue_i = (!empty_o && !rst && !stall); 
+        // decode_struct_in.inst = '0;          // times out
+        // decode_struct_in.pc = '0;
+        // decode_struct_in.order = '0;
+        // decode_struct_in.valid = '0;
 
         if (rst || cdbus.flush) begin
             decode_struct_in = '0;
@@ -631,6 +636,7 @@ import rv32i_types::*;
     end
 
     always_ff @(posedge clk) begin : update_dispatch_str
+        decode_struct_in_prev <= decode_struct_in;
         if (rst || cdbus.flush) begin
             dispatch_struct_in <= '0;
             next_execute <= '{NUM_FUNC_UNIT{default_reservation_station}};
@@ -711,8 +717,8 @@ import rv32i_types::*;
     end
 
     logic stall_prev;
-    logic stall_till_new_resp;
-    logic[4:0] stall_counter;
+  //  logic stall_till_new_resp;
+   // logic[4:0] stall_counter;
     always_ff @(posedge clk) begin
         if (rst) begin
             stall_prev <= 1'b0;
