@@ -10,6 +10,7 @@ module deserializer (
     input   logic dfp_write,
     input logic   [31:0]  dfp_addr,
     input  logic   [31:0]      bmem_addr,
+    input logic new_write,
 
 
     output  logic [255:0] dfp_rdata,
@@ -26,17 +27,7 @@ module deserializer (
     logic[255:0] dfp_wdata_prev;
 
     logic dfp_write_prev;
-    logic [31:0] expected_bmem_raddr, past_bmem_addr;
-    always_comb begin
-        expected_bmem_raddr = {dfp_addr[31:5], 5'b0}; // Base address
-        case (word_count)
-            2'd0: expected_bmem_raddr = expected_bmem_raddr + 32'd0;
-            2'd1: expected_bmem_raddr = expected_bmem_raddr + 32'd8;
-            2'd2: expected_bmem_raddr = expected_bmem_raddr + 32'd16;
-            2'd3: expected_bmem_raddr = expected_bmem_raddr + 32'd24;
-            default: expected_bmem_raddr = 32'bX; // Undefined for other counts
-        endcase
-    end
+    logic [31:0] past_bmem_addr;
 
     logic   [31:0]  bmem_debug_addr;
     assign bmem_debug_addr = 32'hefffd7f0;
@@ -97,20 +88,23 @@ module deserializer (
                 end
                 // dfp_raddr <= bmem_raddr;
             end
-            
+
             if (dfp_write && bmem_ready) begin
                 if (write_count == 2'd3) begin
                     dfp_resp <= 1'b1;
                 end
                     
-                write_count <= (write_count == 2'd3) ? 2'd0 : (write_count + 2'd1);
+
+                if(new_write) write_count <= (write_count == 2'd3) ? 2'd0 : (write_count + 2'd1);
+                else write_count <= '0;
+              //  else if (!dfp_resp) dfp_resp <= 1'b1;
             end else write_count <= 2'd0;
         end
     end
     
     always_comb begin
         bmem_write = 1'b0;
-        if (dfp_write && !bmem_read) begin
+        if (dfp_write && !bmem_read && new_write) begin
             case (write_count)
                 2'd0: begin 
                     bmem_wdata = dfp_wdata[63:0];
