@@ -799,6 +799,11 @@ import rv32i_types::*;
     logic   [31:0]  monitor_mem_rdata;
     logic   [31:0]  monitor_mem_wdata;
 
+    // always_ff @(posedge cdbus.regf_we) begin        // we are taking the rob from the last 
+    //     if (cdbus.commit_rd_addr == 15)
+    //         ("instr: %h, data: %h", cdbus.inst, cdbus.commit_data);
+    // end
+
     assign monitor_valid     = cdbus.regf_we;
     assign monitor_order     = m_order; 
     assign monitor_inst      = cdbus.inst;

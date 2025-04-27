@@ -24,7 +24,6 @@ allowed_sv_tasks = [
     "onehot",
     "onehot0",
     "fatal",
-    "display",
 ]
 sus_keywords = ["DPI", "`", "verilator", "xprop_off", "translate_off", "dc_tcl_script_begin", "dc_script_begin"]
 banned_wholewords = ["bit", "int", "byte", "shortint", "longint", "real", "shortreal", "time"]
