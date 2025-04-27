@@ -79,46 +79,40 @@ import rv32i_types::*;
             // end
 
             for (integer unsigned i = 0; i < DEPTH; i++) begin  // Writeback rd & status update
-                if(cdbus.flush) begin
+                if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx) && rob_table[i].valid) begin
                     rob_table[i].status <= done;
-                    rob_table[i].valid <= '0;
-                    rob_table[i].regf_we <= '0;
-                end else begin
-                    if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx) && rob_table[i].valid) begin
-                        rob_table[i].status <= done;
-                        rob_table[i].rd_data <= cdbus.alu_data;
-                        rob_table[i].rd_valid <= 1'b1;
+                    rob_table[i].rd_data <= cdbus.alu_data;
+                    rob_table[i].rd_valid <= 1'b1;
+                end                  
+                if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx) && rob_table[i].valid) begin
+                    rob_table[i].status <= done;
+                    rob_table[i].rd_data <= cdbus.mul_data;
+                    rob_table[i].rd_valid <= 1'b1;
+                end                
+                if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx) && rob_table[i].valid) begin
+                    debug <= '1;
+                    rob_table[i].status <= done;
+                    rob_table[i].rd_data <= cdbus.mem_data;
+                    rob_table[i].rd_valid <= 1'b1;
 
-                    end                  
-                    if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx) && rob_table[i].valid) begin
-                        rob_table[i].status <= done;
-                        rob_table[i].rd_data <= cdbus.mul_data;
-                        rob_table[i].rd_valid <= 1'b1;
-                    end                
-                    if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx) && rob_table[i].valid) begin
-                        debug <= '1;
-                        rob_table[i].status <= done;
-                        rob_table[i].rd_data <= cdbus.mem_data;
-                        rob_table[i].rd_valid <= 1'b1;
-
-                        rob_table[i].mem_addr <= cdbus.mem_addr;
-                        rob_table[i].mem_rmask <= cdbus.mem_rmask;
-                        rob_table[i].mem_wmask <= cdbus.mem_wmask;
-                        rob_table[i].mem_rdata <= cdbus.mem_rdata;
-                        rob_table[i].mem_wdata <= cdbus.mem_wdata;
-                    end
-                    if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx) && rob_table[i].valid) begin
-                        rob_table[i].status <= done;
-                        rob_table[i].rd_data <= cdbus.br_data;
-                        rob_table[i].rd_valid <= 1'b1;
-                        rob_table[i].br_en <= cdbus.br_en;
-                        rob_table[i].pc_new <= cdbus.pc_new;
-                    end
+                    rob_table[i].mem_addr <= cdbus.mem_addr;
+                    rob_table[i].mem_rmask <= cdbus.mem_rmask;
+                    rob_table[i].mem_wmask <= cdbus.mem_wmask;
+                    rob_table[i].mem_rdata <= cdbus.mem_rdata;
+                    rob_table[i].mem_wdata <= cdbus.mem_wdata;
                 end
-                // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
-                //     rob_table[head].status <= empty;
-                // end
+                if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx) && rob_table[i].valid) begin
+                    rob_table[i].status <= done;
+                    rob_table[i].rd_data <= cdbus.br_data;
+                    rob_table[i].rd_valid <= 1'b1;
+                    rob_table[i].br_en <= cdbus.br_en;
+                    rob_table[i].pc_new <= cdbus.pc_new;
+                end
             end
+        
+            // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
+            //     rob_table[head].status <= empty;
+            // end
             
             if (rob_table[head].status == done) begin
                 rob_table[head].status <= donex2;
@@ -153,18 +147,11 @@ import rv32i_types::*;
             //     // head <= (head == DEPTH-1) ? '0 : head + 1'b1;
             // end
             
-            
-            if(cdbus.flush) begin
-                count <= '0;
-                head <= '0;
-                tail <= '0;
-            end else begin
-                case ({insert, remove})
-                    2'b10: count <= count + 1'b1; 
-                    2'b01: count <= count - 1'b1; 
-                    default: count <= count;      
-                endcase
-            end
+            case ({insert, remove})
+                2'b10: count <= count + 1'b1; 
+                2'b01: count <= count - 1'b1; 
+                default: count <= count;      
+            endcase
 
         //end
         end
