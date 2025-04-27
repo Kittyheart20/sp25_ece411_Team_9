@@ -16,12 +16,12 @@ module deserializer (
     output  logic dfp_resp,
     output  logic[63:0]  bmem_wdata,
     output logic bmem_write,
-    input logic bmem_read
-    // input logic dfp_read
+    input logic bmem_read,
+    input logic bmem_flag
 );
     logic [255:0] accumulator;
     logic [1:0] word_count;
-    logic [1:0] write_count;  
+    logic [2:0] write_count;  
     logic[31:0] dfp_addr_prev;
     logic[255:0] dfp_wdata_prev;
 
@@ -64,7 +64,7 @@ module deserializer (
         if (rst) begin
             accumulator <= 256'd0;
             word_count  <= 2'd0;
-            write_count <= 2'd0;
+            write_count <= 3'd0;
             dfp_rdata   <= 256'd0;
             dfp_resp    <= 1'b0;
             dfp_addr_prev <= 32'd0;
@@ -98,37 +98,41 @@ module deserializer (
                 // dfp_raddr <= bmem_raddr;
             end
             
-            if (dfp_write && bmem_ready) begin
-                if (write_count == 2'd3) begin
+            if (dfp_write && bmem_ready && !bmem_flag) begin
+                if (write_count == 3'd3) begin
                     dfp_resp <= 1'b1;
                 end
-                    
-                write_count <= (write_count == 2'd3) ? 2'd0 : (write_count + 2'd1);
-            end else write_count <= 2'd0;
+                if (bmem_write || (dfp_write && !bmem_read && !bmem_flag))
+                    write_count <= (write_count == 3'd4) ? 2'd0 : (write_count + 3'd1);
+            end else write_count <= 3'd0;
         end
     end
     
     always_comb begin
         bmem_write = 1'b0;
-        if (dfp_write && !bmem_read) begin
+        if (dfp_write && !bmem_read && !bmem_flag) begin
             case (write_count)
-                2'd0: begin 
+                3'd0: begin 
                     bmem_wdata = dfp_wdata[63:0];
-                    if(!dfp_write_prev) begin
-                        bmem_write = 1'b1;
-                    end
+                    //if(!dfp_write_prev) begin
+                    bmem_write = 1'b1;
+                    //end
                 end
-                2'd1: begin 
+                3'd1: begin 
                     bmem_wdata = dfp_wdata[127:64];
                     bmem_write = 1'b1;
                 end
-                2'd2: begin 
+                3'd2: begin 
                     bmem_wdata = dfp_wdata[191:128];
                     bmem_write = 1'b1;
                 end
-                2'd3: begin 
+                3'd3: begin 
                     bmem_wdata = dfp_wdata[255:192];
                     bmem_write = 1'b1;
+                end
+                3'd4: begin 
+                    bmem_wdata = '0;
+                    bmem_write = 1'b0;
                 end
                 default: bmem_wdata = 64'h0;
             endcase

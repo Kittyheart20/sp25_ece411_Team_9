@@ -14,6 +14,8 @@ import rv32i_types::*;
     input   logic   [63:0]      bmem_rdata,
     input   logic               bmem_rvalid
 );
+
+    logic bmem_flag;
     reservation_station_t default_reservation_station;
     to_writeback_t default_to_writeback;
 
@@ -99,8 +101,8 @@ import rv32i_types::*;
     logic   [255:0] dfp_wdata_mem;
     logic           dfp_resp_mem;
 
-    logic   [31:0]      bmem_addr_old;
-    assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
+    // logic   [31:0]      bmem_addr_old;
+    // assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
 
     deserializer cache_line_adapter (
         .clk        (clk),
@@ -119,7 +121,8 @@ import rv32i_types::*;
         .bmem_wdata (bmem_wdata),
         .bmem_write (bmem_write),
         .bmem_read  (bmem_read),
-        .bmem_addr  (bmem_addr)
+        .bmem_addr  (bmem_addr),
+        .bmem_flag(bmem_flag)
     );
 
     cache instruction_cache (
@@ -226,7 +229,7 @@ import rv32i_types::*;
         end
     end
 
-    logic inst_mem_stall;
+    logic inst_mem_stall;       // MEM STALL STARTS AT SAME TIME AS INSTR_MEM_STALL
     logic debug_q1;
     assign debug_q1 = (inst_mem_stall) && (mem_stall);
     logic[63:0] cycles_since_inst_mem_stall;
@@ -382,6 +385,7 @@ import rv32i_types::*;
         .next_execute(next_execute[3]),
         .execute_output(execute_output[3]),
         .cdbus(cdbus)
+        //.dfp_read_inst(dfp_read_inst)
         // .inst_mem_stall(inst_mem_stall)
     );
     
@@ -420,7 +424,7 @@ import rv32i_types::*;
         // end
     end
 
-    logic bmem_flag, flush_stalling;
+    logic flush_stalling;
     logic [63:0] m_order;
 
     logic inst_use_linebuffer, mem_use_linebuffer;
@@ -434,6 +438,7 @@ import rv32i_types::*;
             ufp_rmask   <= '0;
             data_i      <= '0;
             bmem_read   <= 1'b0;
+            bmem_addr      <= 32'h0;
          //   bmem_write  <= 1'b0;
             commit <= 1'b0;
             enqueue_i <= 1'b0;    
@@ -442,11 +447,12 @@ import rv32i_types::*;
         end else begin
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
+            if (bmem_read)  bmem_read <= 1'b0;
             
             if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
-                bmem_addr_old <= dfp_addr;
 
                 if (bmem_flag == 1'd0) begin
+                    bmem_addr  <= dfp_addr;
                     bmem_read <= 1'd1;
                     bmem_flag <= 1'd1;
                 end else begin
@@ -514,8 +520,8 @@ import rv32i_types::*;
                 //     end
                 // end
 
-                if (dfp_write) begin
-                    bmem_addr_old <= dfp_addr;
+                if (dfp_write && !bmem_flag) begin
+                    bmem_addr <= dfp_addr;
                 //   bmem_write <= 1'b1;
                     // if (bmem_write && bmem_wdata == 64'h0) begin 
                     //     bmem_write <= 1'b0;
@@ -526,8 +532,8 @@ import rv32i_types::*;
                         bmem_flag <= 1'b0;
                 end else if (dfp_read) begin
                 //  bmem_write <= 1'b0;
-                    bmem_addr_old <= dfp_addr;
                     if (bmem_flag == 1'b0) begin
+                        bmem_addr  <= dfp_addr;
                         bmem_read <= 1'b1;
                         bmem_flag <= 1'b1;
                     end else begin
