@@ -381,8 +381,8 @@ import rv32i_types::*;
         .rob_entry_o(rob_entry_o),
         .next_execute(next_execute[3]),
         .execute_output(execute_output[3]),
-        .cdbus(cdbus),
-        .inst_mem_stall(inst_mem_stall)
+        .cdbus(cdbus)
+        // .inst_mem_stall(inst_mem_stall)
     );
     
     always_comb begin

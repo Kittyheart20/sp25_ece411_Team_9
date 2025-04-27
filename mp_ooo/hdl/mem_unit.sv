@@ -4,7 +4,7 @@ module mem_unit
         input  logic            clk,
         input  logic            rst,
         input cdb cdbus,
-        input logic inst_mem_stall, 
+//        input logic inst_mem_stall, 
 
         output logic            mem_stall,
 
