@@ -6,7 +6,7 @@ We did this by introuducing a separate cache for data memory, appropriately arbi
 - Apply changes when flushing takes place and memory is accessed
 - Memory read and write at the same time
 
-**Contributions**
-Alex:
-Erin:
+**Contributions** \
+Alex: \
+Erin: \
 Sujin: 
