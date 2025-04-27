@@ -38,6 +38,28 @@ module deserializer (
         endcase
     end
 
+    logic   [31:0]  bmem_debug_addr;
+    assign bmem_debug_addr = 32'hefffd7f0;
+    logic bmem_debug_hit;
+    assign bmem_debug_hit = (bmem_addr == bmem_debug_addr);
+    logic [31:9] bmem_debug_tag;
+    assign bmem_debug_tag = bmem_debug_addr[31:9];
+    logic bmem_debug_tag_hit;
+    always_comb begin
+        bmem_debug_tag_hit = 1'b0;
+        if(bmem_addr[31:9] == bmem_debug_tag) begin
+            bmem_debug_tag_hit = 1'b1;
+        end
+    end
+
+    logic bmem_dfp_debug_tag_hit;
+    always_comb begin
+        bmem_dfp_debug_tag_hit = 1'b0;
+        if(dfp_addr[31:9] == bmem_debug_tag) begin
+            bmem_dfp_debug_tag_hit = 1'b1;
+        end
+    end
+
     always_ff @(posedge clk) begin
         if (rst) begin
             accumulator <= 256'd0;

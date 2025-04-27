@@ -118,7 +118,7 @@ module cache (
     end
 
     logic   [31:0]  cache_debug_addr;
-    assign cache_debug_addr = 32'haaab0000;
+    assign cache_debug_addr = 32'haaaac520;
     logic cache_debug_hit;
     assign cache_debug_hit = (ufp_addr == cache_debug_addr);
     logic [31:9] cache_debug_tag;
@@ -128,6 +128,14 @@ module cache (
         cache_debug_tag_hit = 1'b0;
         if(ufp_addr[31:9] == cache_debug_tag && ((state == ALLOCATE || (state == WRITEBACK)) || (|ufp_wmask))) begin
             cache_debug_tag_hit = 1'b1;
+        end
+    end
+
+    logic cache_dfp_debug_tag_hit;
+    always_comb begin
+        cache_dfp_debug_tag_hit = 1'b0;
+        if(dfp_addr[31:9] == cache_debug_tag) begin
+            cache_dfp_debug_tag_hit = 1'b1;
         end
     end
 

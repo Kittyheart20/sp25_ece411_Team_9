@@ -99,6 +99,9 @@ import rv32i_types::*;
     logic   [255:0] dfp_wdata_mem;
     logic           dfp_resp_mem;
 
+    logic   [31:0]      bmem_addr_old;
+    assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
+
     deserializer cache_line_adapter (
         .clk        (clk),
         .rst        (rst),
@@ -220,6 +223,30 @@ import rv32i_types::*;
                 cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 64'd1;
             end
         end
+    end
+
+    logic inst_mem_stall;
+    logic debug_q1;
+    assign debug_q1 = (inst_mem_stall) && (mem_stall);
+    logic[63:0] cycles_since_inst_mem_stall;
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            cycles_since_inst_mem_stall <= 64'd0;
+        end else if (inst_mem_stall) begin
+            cycles_since_inst_mem_stall <= cycles_since_inst_mem_stall + 64'd1;
+        end else begin
+            cycles_since_inst_mem_stall <= '0;
+        end
+    end
+
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            inst_mem_stall <= 1'b0;
+        end else if (dfp_resp) begin
+            inst_mem_stall <= 1'b0;
+        end else if (dfp_read_inst) begin
+            inst_mem_stall <= 1'b1;
+        end 
     end
 
     register #(
@@ -354,7 +381,8 @@ import rv32i_types::*;
         .rob_entry_o(rob_entry_o),
         .next_execute(next_execute[3]),
         .execute_output(execute_output[3]),
-        .cdbus(cdbus)
+        .cdbus(cdbus),
+        .inst_mem_stall(inst_mem_stall)
     );
     
     always_comb begin
@@ -366,23 +394,23 @@ import rv32i_types::*;
         dfp_write = dfp_write_inst;
         dfp_wdata = dfp_wdata_inst;
         dfp_rdata_inst = dfp_rdata;
-        dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2);
+        dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2 || (inst_mem_stall));
 
         dfp_rdata_mem = '0;
         dfp_resp_mem = 1'b0;
 
         if (mem_stall) begin
             dfp_addr = dfp_addr_mem;
-            dfp_read = dfp_read_mem;
-            dfp_write = dfp_write_mem && (!dfp_resp);
+            dfp_read = dfp_read_mem ;
+            dfp_write = dfp_write_mem;
             dfp_wdata = dfp_wdata_mem;
 
             dfp_rdata_mem = dfp_rdata;
-            dfp_resp_mem = dfp_resp;
+            dfp_resp_mem = dfp_resp && (!inst_mem_stall);
 
             if (!mem_stall_prev) begin
-                dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2);
-                dfp_rdata_inst = dfp_rdata;
+                dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2 || (inst_mem_stall));
+             //   dfp_rdata_inst = dfp_rdata;
             end
         end
 
@@ -416,7 +444,7 @@ import rv32i_types::*;
             if (enqueue_i)  enqueue_i <= 1'b0;
             
             if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
-                bmem_addr <= dfp_addr;
+                bmem_addr_old <= dfp_addr;
 
                 if (bmem_flag == 1'd0) begin
                     bmem_read <= 1'd1;
@@ -486,7 +514,7 @@ import rv32i_types::*;
                 end
 
                 if (dfp_write) begin
-                    bmem_addr <= dfp_addr;
+                    bmem_addr_old <= dfp_addr;
                 //   bmem_write <= 1'b1;
                     // if (bmem_write && bmem_wdata == 64'h0) begin 
                     //     bmem_write <= 1'b0;
@@ -497,7 +525,7 @@ import rv32i_types::*;
                         bmem_flag <= 1'b0;
                 end else if (dfp_read) begin
                 //  bmem_write <= 1'b0;
-                    bmem_addr <= dfp_addr;
+                    bmem_addr_old <= dfp_addr;
                     if (bmem_flag == 1'b0) begin
                         bmem_read <= 1'b1;
                         bmem_flag <= 1'b1;

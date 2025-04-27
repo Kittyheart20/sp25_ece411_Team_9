@@ -1,0 +1,3 @@
+Command Line: /software/Synopsys-2024_x86_64/verdi/W-2024.09/platform/LINUXAMD64/bin/Novas -ssf /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/vcs/dump.fsdb
+uname(Linux fastx3-25.ews.illinois.edu 4.18.0-553.50.1.el8_10.x86_64 #1 SMP Thu Apr 10 16:09:41 EDT 2025 x86_64)
+au time 21.776996 3.854932 0.417008 delta 136368128 136368128 total 1160245248 1160245248

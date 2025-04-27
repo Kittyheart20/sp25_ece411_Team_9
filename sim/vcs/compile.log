@@ -1,0 +1,83 @@
+Command: vcs /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../pkg/types.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/writeback_stage.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/sp_ff_array.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/register.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/cache.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/our_cpu.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/writeback.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/cpu.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/rob.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/queue.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/rat_arf.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/alu_unit.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/deserializer.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/reservation_stations.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/decode.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/mul_unit.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/rvfimon.v /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/mem_itf.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/dram_w_burst_frfcfs_controller.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/monitor.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/spike.so \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/mon_itf.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/vcs/rand_top_tb.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/vcs/random_tb.sv /home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/vcs/top_tb.sv \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../sram/output/mp_cache_data_array/mp_cache_data_array.v \
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../sram/output/mp_cache_tag_array/mp_cache_tag_array.v \
+/software/Synopsys-2024_x86_64/icc/W-2024.09/dw/sim_ver/DW02_mult.v /software/Synopsys-2024_x86_64/icc/W-2024.09/dw/sim_ver/DW_div.v \
++incdir+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/rand_common +define+ECE411_NO_FLOAT \
++define+DW_SUPPRESS_WARN +incdir+/software/Synopsys-2024_x86_64/icc/W-2024.09/dw/sim_ver \
++define+ECE411_NO_SPIKE_DPI +incdir+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/vcs \
+-licqueue -full64 -lca -sverilog -timescale=1ps/1ps -debug_acc+all -kdb -suppress=LCA_FEATURES_ENABLED \
+-msg_config=../vcs_warn.config -xprop=../xprop.config -xprop=flowctrl -assert svaext \
+-l compile.log -top top_tb -o top_tb
+                         Chronologic VCS (TM)
+         Version W-2024.09_Full64 -- Thu Apr 24 21:18:51 2025
+
+                    Copyright (c) 1991 - 2024 Synopsys, Inc.
+   This software and the associated documentation are proprietary to Synopsys,
+ Inc. This software may only be used in accordance with the terms and conditions
+ of a written license agreement with Synopsys, Inc. All other use, reproduction,
+   or distribution of this software is strictly prohibited.  Licensed Products
+     communicate with Synopsys servers for the purpose of providing software
+    updates, detecting software piracy and verifying that customers are using
+    Licensed Products in conformity with the applicable License Key for such
+  Licensed Products. Synopsys will use information gathered in connection with
+    this process to deliver software updates and pursue software pirates and
+                                   infringers.
+
+ Inclusivity & Diversity - Visit SolvNetPlus to read the "Synopsys Statement on
+            Inclusivity and Diversity" (Refer to article 000036315 at
+                        https://solvnetplus.synopsys.com)
+
+Reading Config file '../xprop.config'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../pkg/types.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/writeback_stage.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/sp_ff_array.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/register.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/cache.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/our_cpu.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/writeback.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/cpu.sv'
+
+Lint-[IWU] Implicit wire is used
+/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/cpu.sv, 257
+  No type is specified for wire 'load_store_alu_available'. Default wire type 
+  is being applied according to the IEEE spec.
+  See the Verilog LRM(1364-2005), section 4.5.
+
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/rob.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/queue.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/rat_arf.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/alu_unit.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/deserializer.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/reservation_stations.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/decode.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hdl/mul_unit.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/rvfimon.v'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/mem_itf.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/dram_w_burst_frfcfs_controller.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/monitor.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/common/mon_itf.sv'
+Parsing design file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/vcs/rand_top_tb.sv'
+Parsing included file '/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/rand_common/top_tb.svh'.
+
+Error-[SFCOR] Source file cannot be opened
+  Source file "rvfi_reference.svh" cannot be opened for reading due to 'No 
+  such file or directory'.
+  Please fix above issue and compile again.
+  "/home/krysiuk2/test/20/sp25_ece411_Team_9/sim/../hvl/rand_common/top_tb.svh",
+  29
+  Source info:     `include "rvfi_reference.svh"
+
+1 error
+CPU time: .433 seconds to compile
