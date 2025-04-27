@@ -7,6 +7,6 @@ We did this by introuducing a separate cache for data memory, appropriately arbi
 - Memory read and write at the same time
 
 **Contributions** \
-Alex: \ I helped implement flushing and branching, as well as interface between instruction and data memory. 
-Erin: \ I helped implement some of branching and some of memory as well as debugging
-Sujin: 
+Alex: I helped implement flushing and branching, as well as interface between instruction and data memory. \
+Erin: I helped implement some of branching and some of memory as well as debugging. \
+Sujin: I worked on the initial design for the memory functional unit and improving the multiplication unit from cp2.
