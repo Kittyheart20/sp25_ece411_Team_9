@@ -161,6 +161,7 @@ import rv32i_types::*;
         .dfp_wdata  (dfp_wdata_mem),
         .dfp_resp   (dfp_resp_mem)
     );
+    cdb cdbus;
 
     // Instruction Queue
     localparam WIDTH = 128;  // order + inst addr + data    
@@ -280,7 +281,6 @@ import rv32i_types::*;
     logic [4:0] rs1_dis_idx, rs2_dis_idx;
     assign rs1_dis_idx = dispatch_struct_in.rs1_addr;
     assign rs2_dis_idx = dispatch_struct_in.rs2_addr;
-    cdb cdbus;
     
     rat_arf regfile (
         .clk        (clk),
@@ -502,16 +502,17 @@ import rv32i_types::*;
                 end else if (ufp_rmask == 4'd0) begin
                     ufp_addr <= pc;
                     ufp_rmask <= '1;                   
-                end else if (ufp_resp) begin
-                    data_i <= {order, pc, ufp_rdata}; 
-                    if (!full_o) begin
-                        ufp_rmask <= '0;
-                        enqueue_i <= 1'b1;
-                        pc <= pc_next;
-                        order <= order + 'd1;
-                        commit <= 1'b1;
-                    end
-                end
+                end 
+                // else if (ufp_resp) begin
+                //     data_i <= {order, pc, ufp_rdata}; 
+                //     if (!full_o) begin
+                //         ufp_rmask <= '0;
+                //         enqueue_i <= 1'b1;
+                //         pc <= pc_next;
+                //         order <= order + 'd1;
+                //         commit <= 1'b1;
+                //     end
+                // end
 
                 if (dfp_write) begin
                     bmem_addr_old <= dfp_addr;
@@ -798,9 +799,11 @@ import rv32i_types::*;
     assign monitor_rs1_addr  = cdbus.rs1_addr;
     assign monitor_rs2_addr  = cdbus.rs2_addr;
     assign monitor_rs1_rdata = rat_arf_table[cdbus.rs1_addr].data;
-    assign monitor_rs2_rdata = (^rat_arf_table[cdbus.rs2_addr].data === 1'bx)  ? '0 : rat_arf_table[cdbus.rs2_addr].data;
+    // assign monitor_rs2_rdata = (^rat_arf_table[cdbus.rs2_addr].data === 1'bx)  ? '0 : rat_arf_table[cdbus.rs2_addr].data;
+    assign monitor_rs2_rdata = rat_arf_table[cdbus.rs2_addr].data;
     assign monitor_rd_addr   = cdbus.commit_rd_addr;
-    assign monitor_rd_wdata  = (^cdbus.commit_data === 1'bx)  ? '0 : cdbus.commit_data;
+    // assign monitor_rd_wdata  = (^cdbus.commit_data === 1'bx)  ? '0 : cdbus.commit_data;
+    assign monitor_rd_wdata  = cdbus.commit_data;
     assign monitor_pc_rdata  = cdbus.pc;
 
     always_comb begin

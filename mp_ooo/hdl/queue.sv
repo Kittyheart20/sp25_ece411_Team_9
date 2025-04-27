@@ -48,12 +48,12 @@ module queue #(
 
                 if (enqueue_i && (!full_o || dequeue_i)) begin
                     data[tail] <= data_i;
-                    tail <= (tail == DEPTH-1) ? '0 : tail + 1'b1;
+                    tail <= tail == $unsigned((DEPTH-1)) ? 32'd0 : tail + 32'd1;
                 end
                 
                 
                 if (dequeue_i && !empty_o) begin
-                    head <= (head == DEPTH-1) ? '0 : head + 1'b1;
+                    head <= (head == $unsigned(DEPTH-1)) ? 32'd0 : head + 32'd1;
                 end
                 
                 
