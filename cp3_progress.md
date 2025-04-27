@@ -7,6 +7,6 @@ We did this by introuducing a separate cache for data memory, appropriately arbi
 - Memory read and write at the same time
 
 **Contributions** \
-Alex: \
+Alex: \ I helped implement flushing and branching, as well as interface between instruction and data memory. 
 Erin: \
 Sujin: 
