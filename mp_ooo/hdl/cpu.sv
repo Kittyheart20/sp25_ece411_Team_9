@@ -115,7 +115,7 @@ import rv32i_types::*;
         end else if(dfp_resp) begin
             dfp_addr_prev <= dfp_addr;
             dfp_wdata_prev <= dfp_wdata;
-            dfp_write_prev = dfp_write;
+            dfp_write_prev <= dfp_write;
         end
      end
     deserializer cache_line_adapter (
