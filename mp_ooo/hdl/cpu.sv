@@ -244,7 +244,7 @@ import rv32i_types::*;
             inst_mem_stall <= 1'b0;
         end else if (dfp_resp) begin
             inst_mem_stall <= 1'b0;
-        end else if (dfp_read_inst) begin
+        end else if (dfp_read_inst && (!mem_stall)) begin
             inst_mem_stall <= 1'b1;
         end 
     end
