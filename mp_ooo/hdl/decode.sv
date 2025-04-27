@@ -27,7 +27,6 @@ import rv32i_types::*;
 
     always_comb begin
         decode_struct_out = '0;
-        decode_struct_out = '0;
         // decode_struct_out.valid = 1'b0;
         // if (!stall) begin
         decode_struct_out.inst = decode_struct_in.inst;
