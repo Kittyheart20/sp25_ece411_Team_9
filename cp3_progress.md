@@ -8,5 +8,5 @@ We did this by introuducing a separate cache for data memory, appropriately arbi
 
 **Contributions** \
 Alex: \ I helped implement flushing and branching, as well as interface between instruction and data memory. 
-Erin: \
+Erin: \ I helped implement some of branching and some of memory as well as debugging
 Sujin: 
