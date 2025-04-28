@@ -608,7 +608,7 @@ import rv32i_types::*;
         curr_dmem_addr = '0;
         curr_dmem_data = '0;
 
-        if (ufp_resp && !mem_stall) begin
+        if (ufp_resp) begin
             curr_instr_addr = pc;
             curr_instr_data = ufp_rcache_line;
             instr_enable = 1'b1;            
