@@ -644,7 +644,17 @@ import rv32i_types::*;
         end
         else begin
             dispatch_struct_in <= decode_struct_out;
-            next_execute <= dispatch_struct_out;
+
+            next_execute[0] <= dispatch_struct_out[0];
+
+            next_execute[1] <= dispatch_struct_out[1];
+
+            next_execute[2] <= dispatch_struct_out[2];
+
+            if (!mem_stall)
+                next_execute[3] <= dispatch_struct_out[3];
+
+            // next_execute <= dispatch_struct_out;
             next_writeback <= execute_output;
         end
     end
