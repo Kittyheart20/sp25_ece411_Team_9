@@ -104,17 +104,6 @@ import rv32i_types::*;
     // logic   [31:0]      bmem_addr_old;
     // assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
 
-     always_ff @(posedge clk) begin
-        if (rst) begin
-            dfp_addr_prev <= '0;
-            dfp_wdata_prev <= '0;
-            dfp_write_prev <= '0;
-        end else if(dfp_resp) begin
-            dfp_addr_prev <= dfp_addr;
-            dfp_wdata_prev <= dfp_wdata;
-            dfp_write_prev <= dfp_write;
-        end
-     end
     deserializer cache_line_adapter (
         .clk        (clk),
         .rst        (rst),
@@ -173,7 +162,7 @@ import rv32i_types::*;
         .dfp_write  (dfp_write_mem),
         .dfp_rdata  (dfp_rdata_mem),
         .dfp_wdata  (dfp_wdata_mem),
-        .dfp_resp   (dfp_resp_mem ) 
+        .dfp_resp   (dfp_resp_mem)
     );
     cdb cdbus;
 
@@ -421,15 +410,12 @@ import rv32i_types::*;
             dfp_wdata = dfp_wdata_mem;
 
             dfp_rdata_mem = dfp_rdata;
-            dfp_resp_mem = dfp_resp && (!inst_mem_stall) || (dfp_write && !new_write);
+            dfp_resp_mem = dfp_resp && (!inst_mem_stall);
 
             if (!mem_stall_prev) begin
                 dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2 || (inst_mem_stall));
              //   dfp_rdata_inst = dfp_rdata;
             end
-           //if(dfp_write && !new_write) begin
-           //     dfp_resp_mem = 1'b1;
-           // end
         end
 
         // if ((mem_stall && (!mem_stall_prev))) begin
