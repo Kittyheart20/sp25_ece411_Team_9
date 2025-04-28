@@ -611,8 +611,9 @@ import rv32i_types::*;
         if (ufp_resp) begin
             curr_instr_addr = pc;
             curr_instr_data = ufp_rcache_line;
-            instr_enable = 1'b1;            
-        end else if (cdbus.flush) begin
+            instr_enable = 1'b1;      
+        end
+        if (cdbus.flush) begin
             curr_instr_addr = pc;
             curr_instr_data = '0;
             instr_enable = 1'b1;            
