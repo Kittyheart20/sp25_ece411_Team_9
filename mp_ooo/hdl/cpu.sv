@@ -101,18 +101,8 @@ import rv32i_types::*;
     logic   [255:0] dfp_wdata_mem;
     logic           dfp_resp_mem;
 
-<<<<<<< HEAD
-    logic   [31:0]      bmem_addr_old;
-    assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
-    logic new_write;
-    logic[31:0] dfp_addr_prev;
-    logic[255:0]  dfp_wdata_prev;
-    logic dfp_write_prev;
-    assign new_write = ! ( (dfp_addr_prev == dfp_addr) && (dfp_wdata_prev == dfp_wdata) && (dfp_write_prev == dfp_write) );
-=======
     // logic   [31:0]      bmem_addr_old;
     // assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
->>>>>>> main_cp3
 
      always_ff @(posedge clk) begin
         if (rst) begin
@@ -143,11 +133,7 @@ import rv32i_types::*;
         .bmem_write (bmem_write),
         .bmem_read  (bmem_read),
         .bmem_addr  (bmem_addr),
-<<<<<<< HEAD
-        .new_write  (new_write)
-=======
         .bmem_flag(bmem_flag)
->>>>>>> main_cp3
     );
 
     cache instruction_cache (
