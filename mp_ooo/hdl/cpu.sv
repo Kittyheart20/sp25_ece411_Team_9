@@ -14,6 +14,8 @@ import rv32i_types::*;
     input   logic   [63:0]      bmem_rdata,
     input   logic               bmem_rvalid
 );
+
+    logic bmem_flag;
     reservation_station_t default_reservation_station;
     to_writeback_t default_to_writeback;
 
@@ -99,6 +101,7 @@ import rv32i_types::*;
     logic   [255:0] dfp_wdata_mem;
     logic           dfp_resp_mem;
 
+<<<<<<< HEAD
     logic   [31:0]      bmem_addr_old;
     assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
     logic new_write;
@@ -106,6 +109,10 @@ import rv32i_types::*;
     logic[255:0]  dfp_wdata_prev;
     logic dfp_write_prev;
     assign new_write = ! ( (dfp_addr_prev == dfp_addr) && (dfp_wdata_prev == dfp_wdata) && (dfp_write_prev == dfp_write) );
+=======
+    // logic   [31:0]      bmem_addr_old;
+    // assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
+>>>>>>> main_cp3
 
      always_ff @(posedge clk) begin
         if (rst) begin
@@ -136,7 +143,11 @@ import rv32i_types::*;
         .bmem_write (bmem_write),
         .bmem_read  (bmem_read),
         .bmem_addr  (bmem_addr),
+<<<<<<< HEAD
         .new_write  (new_write)
+=======
+        .bmem_flag(bmem_flag)
+>>>>>>> main_cp3
     );
 
     cache instruction_cache (
@@ -243,7 +254,7 @@ import rv32i_types::*;
         end
     end
 
-    logic inst_mem_stall;
+    logic inst_mem_stall;       // MEM STALL STARTS AT SAME TIME AS INSTR_MEM_STALL
     logic debug_q1;
     assign debug_q1 = (inst_mem_stall) && (mem_stall);
     logic[63:0] cycles_since_inst_mem_stall;
@@ -399,6 +410,7 @@ import rv32i_types::*;
         .next_execute(next_execute[3]),
         .execute_output(execute_output[3]),
         .cdbus(cdbus)
+        //.dfp_read_inst(dfp_read_inst)
         // .inst_mem_stall(inst_mem_stall)
     );
     
@@ -440,7 +452,7 @@ import rv32i_types::*;
         // end
     end
 
-    logic bmem_flag, flush_stalling;
+    logic flush_stalling;
     logic [63:0] m_order;
 
     logic inst_use_linebuffer, mem_use_linebuffer;
@@ -454,6 +466,7 @@ import rv32i_types::*;
             ufp_rmask   <= '0;
             data_i      <= '0;
             bmem_read   <= 1'b0;
+            bmem_addr      <= 32'h0;
          //   bmem_write  <= 1'b0;
             commit <= 1'b0;
             enqueue_i <= 1'b0;    
@@ -462,11 +475,12 @@ import rv32i_types::*;
         end else begin
             if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
+            if (bmem_read)  bmem_read <= 1'b0;
             
             if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
-                bmem_addr_old <= dfp_addr;
 
                 if (bmem_flag == 1'd0) begin
+                    bmem_addr  <= dfp_addr;
                     bmem_read <= 1'd1;
                     bmem_flag <= 1'd1;
                 end else begin
@@ -534,8 +548,8 @@ import rv32i_types::*;
                 //     end
                 // end
 
-                if (dfp_write) begin
-                    bmem_addr_old <= dfp_addr;
+                if (dfp_write && !bmem_flag) begin
+                    bmem_addr <= dfp_addr;
                 //   bmem_write <= 1'b1;
                     // if (bmem_write && bmem_wdata == 64'h0) begin 
                     //     bmem_write <= 1'b0;
@@ -546,8 +560,8 @@ import rv32i_types::*;
                         bmem_flag <= 1'b0;
                 end else if (dfp_read) begin
                 //  bmem_write <= 1'b0;
-                    bmem_addr_old <= dfp_addr;
                     if (bmem_flag == 1'b0) begin
+                        bmem_addr  <= dfp_addr;
                         bmem_read <= 1'b1;
                         bmem_flag <= 1'b1;
                     end else begin
@@ -622,11 +636,12 @@ import rv32i_types::*;
         curr_dmem_addr = '0;
         curr_dmem_data = '0;
 
-        if (ufp_resp && !mem_stall) begin
+        if (ufp_resp) begin
             curr_instr_addr = pc;
             curr_instr_data = ufp_rcache_line;
-            instr_enable = 1'b1;            
-        end else if (cdbus.flush) begin
+            instr_enable = 1'b1;      
+        end
+        if (cdbus.flush) begin
             curr_instr_addr = pc;
             curr_instr_data = '0;
             instr_enable = 1'b1;            
@@ -658,7 +673,17 @@ import rv32i_types::*;
         end
         else begin
             dispatch_struct_in <= decode_struct_out;
-            next_execute <= dispatch_struct_out;
+
+            next_execute[0] <= dispatch_struct_out[0];
+
+            next_execute[1] <= dispatch_struct_out[1];
+
+            next_execute[2] <= dispatch_struct_out[2];
+
+            if (!mem_stall)
+                next_execute[3] <= dispatch_struct_out[3];
+
+            // next_execute <= dispatch_struct_out;
             next_writeback <= execute_output;
         end
     end
@@ -812,6 +837,11 @@ import rv32i_types::*;
     logic   [3:0]   monitor_mem_wmask;
     logic   [31:0]  monitor_mem_rdata;
     logic   [31:0]  monitor_mem_wdata;
+
+    // always_ff @(posedge cdbus.regf_we) begin        // we are taking the rob from the last 
+    //     if (cdbus.commit_rd_addr == 15)
+    //         ("instr: %h, data: %h", cdbus.inst, cdbus.commit_data);
+    // end
 
     assign monitor_valid     = cdbus.regf_we;
     assign monitor_order     = m_order; 

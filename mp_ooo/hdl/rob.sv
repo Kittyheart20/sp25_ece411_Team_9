@@ -124,7 +124,7 @@ import rv32i_types::*;
                 head <= head + 5'd1;
             end else if (rob_table[head].status == empty) begin
                 // head <= (head == DEPTH-1) ? '0 : head + 5'd1;
-                head <= head + 5'd1;
+                //head <= head + 5'd1;
             end
             // Rename: enqueue == 1'b1
             // set v=1, status = wait
