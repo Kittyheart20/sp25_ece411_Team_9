@@ -213,19 +213,19 @@ import rv32i_types::*;
 
     logic dmem_enable;
 
-    logic[63:0] cycles_since_mem_stall_done;
+    // logic[63:0] cycles_since_mem_stall_done;
     always_ff @(posedge clk) begin
         if (rst) begin
-            cycles_since_mem_stall_done <= 64'd0;
+            // cycles_since_mem_stall_done <= 64'd0;
             mem_stall_prev <= 1'b0;
         end else if (mem_stall) begin
-            cycles_since_mem_stall_done <= 64'd1;
+            // cycles_since_mem_stall_done <= 64'd1;
             mem_stall_prev <= mem_stall;
         end else begin
             mem_stall_prev <= mem_stall;
-            if(!mem_stall) begin
-                cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 64'd1;
-            end
+            // if(!mem_stall) begin
+            //     cycles_since_mem_stall_done <= cycles_since_mem_stall_done + 64'd1;
+            // end
         end
     end
 
@@ -398,7 +398,7 @@ import rv32i_types::*;
         dfp_write = dfp_write_inst;
         dfp_wdata = dfp_wdata_inst;
         dfp_rdata_inst = dfp_rdata;
-        dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2 || (inst_mem_stall));
+        dfp_resp_inst = dfp_resp && (/*cycles_since_mem_stall_done > 64'd2 ||*/ (inst_mem_stall));
 
         dfp_rdata_mem = '0;
         dfp_resp_mem = 1'b0;
@@ -413,7 +413,7 @@ import rv32i_types::*;
             dfp_resp_mem = dfp_resp && (!inst_mem_stall);
 
             if (!mem_stall_prev) begin
-                dfp_resp_inst = dfp_resp && (cycles_since_mem_stall_done > 64'd2 || (inst_mem_stall));
+                dfp_resp_inst = dfp_resp && (/*cycles_since_mem_stall_done > 64'd2 ||*/ (inst_mem_stall));
              //   dfp_rdata_inst = dfp_rdata;
             end
         end
@@ -509,23 +509,8 @@ import rv32i_types::*;
                     ufp_addr <= pc;
                     ufp_rmask <= '1;                   
                 end 
-                // else if (ufp_resp) begin
-                //     data_i <= {order, pc, ufp_rdata}; 
-                //     if (!full_o) begin
-                //         ufp_rmask <= '0;
-                //         enqueue_i <= 1'b1;
-                //         pc <= pc_next;
-                //         order <= order + 'd1;
-                //         commit <= 1'b1;
-                //     end
-                // end
-
                 if (dfp_write && !bmem_flag) begin
                     bmem_addr <= dfp_addr;
-                //   bmem_write <= 1'b1;
-                    // if (bmem_write && bmem_wdata == 64'h0) begin 
-                    //     bmem_write <= 1'b0;
-                    // end
                 end 
                 if (dfp_resp) begin 
                         bmem_read <= 1'b0;
@@ -544,8 +529,6 @@ import rv32i_types::*;
             end
         end
     end
-
-    //assign bmem_write = dfp_write;
 
     always_comb begin : data_cache_ufp
         ufp_addr_mem = dmem_addr;
@@ -583,14 +566,6 @@ import rv32i_types::*;
         if (rst || cdbus.flush) begin
             decode_struct_in = '0;
         end else begin
-            // if (dequeue_i) begin
-            //     decode_struct_in.inst = data_o[31:0];
-            //     decode_struct_in.pc = data_o[63:32];
-            //     decode_struct_in.order = data_o[127:64];
-            //     decode_struct_in.valid = 1'b1;
-            // end else begin
-            //     decode_struct_in.valid = 1'b0;
-            // end
             decode_struct_in.inst = data_o[31:0];
             decode_struct_in.pc = data_o[63:32];
             decode_struct_in.order = data_o[127:64];
