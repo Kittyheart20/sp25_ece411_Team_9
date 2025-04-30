@@ -125,7 +125,7 @@ import rv32i_types::*;
         .bmem_flag(bmem_flag)
     );
 
-    cache instruction_cache (
+    prefetcher instruction_cache (
         .clk        (clk),
         .rst        (rst),
         
