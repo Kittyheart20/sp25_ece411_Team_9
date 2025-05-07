@@ -500,7 +500,7 @@ import rv32i_types::*;
                     ufp_rmask <= '1; 
                     ufp_addr <= pc_next; 
                end
-            end else if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
+            end else if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // critical path
                 if (bmem_flag == 1'd0) begin
                     bmem_addr  <= dfp_addr;
                     bmem_read <= 1'd1;
@@ -533,7 +533,7 @@ import rv32i_types::*;
                 /*end else if (gselect_taken && (decode_struct_out_early.pc != pc) && (!gselect_help_flag)) begin
                     pc <= pc_next;
                     gselect_help_flag <= 1'b1;*/
-                end else if (pc[31:5] == last_instr_addr[31:5] && ~&ufp_rmask) begin    // ~& is bitwise NAND
+                end else if (pc[31:5] == last_instr_addr[31:5] && ~&ufp_rmask) begin    // ~& is bitwise NAND   critical path
                     ufp_rmask <= '0;
                     data_i <= {prediction && prediction_followed, order, pc, last_instr_data[32*pc[4:2] +: 32]};
                     if (!full_o && (!stall_except_empty)/*&& !stall_except_empty*/) begin
@@ -780,7 +780,7 @@ import rv32i_types::*;
             cdbus.mem_rdata = next_writeback[3].mem_rdata;
             cdbus.mem_wdata = next_writeback[3].mem_wdata;
         end
-        // commit
+        // commit - critical path
         if (rob_entry_o.valid && rob_entry_o.status == done) begin
             cdbus.commit_data = rob_entry_o.rd_data;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;

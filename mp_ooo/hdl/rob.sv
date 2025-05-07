@@ -6,7 +6,7 @@ import rv32i_types::*;
     input id_dis_stage_reg_t dispatch_struct_in,
     output  rob_entry_t rob_entry_o,
 
-    input   logic       enqueue_i,  // Do we need this? We can just use dispatch_struct_in.valid
+    input   logic       enqueue_i,  // = dispatch_struct_in.valid
     input   logic       dequeue_i,
     input   cdb         cdbus,
     input   reservation_station_t next_execute[4],
@@ -30,7 +30,7 @@ import rv32i_types::*;
     
     logic insert, remove;
 
-    assign insert = (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i));
+    assign insert = (enqueue_i && (!full_o || dequeue_i));
     assign remove = dequeue_i && !empty_o;
 
     always_comb begin
@@ -125,21 +125,18 @@ import rv32i_types::*;
             // output head rd_data to update regfile
             // v=0, head ++
             // if branch mispredicted: flush all inst after it
-            // if (remove) begin
-            //     // rob_table[head].valid <= '0;
-            //     // head <= (head == DEPTH-1) ? '0 : head + 1'b1;
-            // end
+            if (remove) begin
+                rob_table[head].valid <= '0;
+                head <= head + 5'd1;
+            end
             // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
             //     rob_table[head].status <= empty;
             // end
             
-            if (rob_table[head].status == done) begin
-            //     rob_table[head].status <= donex2;
-            //     rob_table[head].valid <= '0;
-            // end else if (rob_table[head].status == donex2) begin
+            if (rob_table[head].status == done) begin   // critical path
                 rob_table[head].status <= empty;
-                rob_table[head].valid <= '0;
-                head <= head + 5'd1;
+                // rob_table[head].valid <= '0;
+                // head <= head + 5'd1;
             end
 
 
