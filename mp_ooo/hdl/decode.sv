@@ -37,13 +37,13 @@ import rv32i_types::*;
         decode_struct_out.funct3 = funct3;
         decode_struct_out.funct7 = funct7;
         decode_struct_out.rd_addr = rd_addr;
-        decode_struct_out.rs1_addr = rs1_addr;
-        decode_struct_out.rs2_addr = rs2_addr;
+        // decode_struct_out.rs1_addr = rs1_addr;
+        // decode_struct_out.rs2_addr = rs2_addr;
         decode_struct_out.aluop = alu_ops'('x);
         decode_struct_out.multop = mult_ops'('x);
         decode_struct_out.brop = branch_f3_t'('x);
         decode_struct_out.memop = mem_ops'('x);
-
+        decode_struct_out.prediction = decode_struct_in.prediction;
         
         unique case (opcode)
             op_b_lui  : begin
@@ -54,8 +54,9 @@ import rv32i_types::*;
                 decode_struct_out.alu_m2_sel = imm_out;
                 decode_struct_out.aluop = alu_op_add;
             end
-            op_b_imm  : begin
+            op_b_imm  : begin            
                 decode_struct_out.op_type = alu;
+                decode_struct_out.rs1_addr = rs1_addr;
                 decode_struct_out.imm = i_imm;
                 decode_struct_out.regf_we = 1'b1;
                 decode_struct_out.alu_m1_sel = rs1_out;
@@ -79,6 +80,8 @@ import rv32i_types::*;
                 decode_struct_out.regf_we = 1'b1;
                 decode_struct_out.alu_m1_sel = rs1_out;
                 decode_struct_out.alu_m2_sel = rs2_out;
+                decode_struct_out.rs1_addr = rs1_addr;
+                decode_struct_out.rs2_addr = rs2_addr;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.use_rs2 = 1'b1;
 
@@ -126,6 +129,8 @@ import rv32i_types::*;
 			    decode_struct_out.regf_we = 1'b1;
                 decode_struct_out.rd_addr = rd_addr;
                 decode_struct_out.op_type = br;
+               // decode_struct_out.a = decode_struct_out.pc;
+                //decode_struct_out.b = j_imm;
             end
             op_b_jalr : begin
                 decode_struct_out.imm = i_imm;
@@ -133,7 +138,8 @@ import rv32i_types::*;
                 decode_struct_out.rs1_addr = rs1_addr;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.op_type = br;
-
+                //decode_struct_out.a = i_imm;
+                //decode_struct_out.b = rs1_data;
             end
             op_b_br   : begin
                 decode_struct_out.imm = b_imm;
@@ -145,10 +151,12 @@ import rv32i_types::*;
                 decode_struct_out.op_type = br;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.use_rs2 = 1'b1;
+               // decode_struct_out.a = decode_struct_out.pc;
+               // decode_struct_out.b = b_imm;
             end
             op_b_load : begin
+                decode_struct_out.rs1_addr = rs1_addr; 
                 decode_struct_out.use_rs1 = 1'b1;
-                decode_struct_out.rs2_addr = 5'd0;
                 decode_struct_out.imm = i_imm;
                 decode_struct_out.regf_we = 1'b1;        // We can also use this to differentiate loads from stores in the mem unit
                 decode_struct_out.op_type = mem;
@@ -181,6 +189,8 @@ import rv32i_types::*;
 
             end
             op_b_store: begin 
+                decode_struct_out.rs1_addr = rs1_addr; 
+                decode_struct_out.rs2_addr = rs2_addr;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.use_rs2 = 1'b1;
                 decode_struct_out.imm = s_imm;

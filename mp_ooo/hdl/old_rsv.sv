@@ -1,4 +1,4 @@
-module reservation_station
+module old_rsv
 import rv32i_types::*;
 # (
     parameter DEPTH = 5,
@@ -22,6 +22,7 @@ import rv32i_types::*;
 
     input  logic [4:0] rs1_rob_idx,
     input  logic [4:0] rs2_rob_idx,
+    input logic store_no_mem,
     // input  logic [4:0] head_addr,
 
     //output ready instructions
@@ -39,8 +40,8 @@ import rv32i_types::*;
     assign default_reservation_station = '0;
 
     reservation_station_t       new_rs_entry;
-    logic [ROB_IDX_WIDTH-1:0]   rob_idx [DEPTH];
     reservation_station_t       stations[5];
+    
     logic cdb_update;
 
     assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
@@ -122,14 +123,11 @@ import rv32i_types::*;
                 mem : stations[3] <= new_rs_entry;
                 default : ;
             endcase
-
-            // if (dispatch_struct_in.op_type != none)  // ss: same functionality
-            //     stations[dispatch_struct_in.op_type] <= new_rs_entry;
         end
 
         if (cdb_update) begin : update_from_writeback
             for (integer i = 0; i < 4; i++) begin
-                if (!(dispatch_struct_in.valid && dispatch_struct_in.op_type == types_t'(i)) ) begin
+                if (!(dispatch_struct_in.valid && dispatch_struct_in.op_type == types_t'(i)) ) begin    // skip new entry
                     if (stations[i].rs1_ready == 1'b0) begin 
                         if(cdbus.alu_valid && (stations[i].rs1_addr == cdbus.alu_rd_addr) && (stations[i].rs1_rob_idx == cdbus.alu_rob_idx))begin
                             stations[i].rs1_data <= cdbus.alu_data; 
@@ -175,13 +173,13 @@ import rv32i_types::*;
                     else if  (cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
                         stations[i].status <= WAIT_STORE;
                     end 
-                    else if  ((stations[i].status == WAIT_STORE) && dmem_resp ) begin
+                    else if  ((stations[i].status == WAIT_STORE) && (dmem_resp || (store_no_mem)) ) begin
                         stations[i].status <= COMPLETE;
                     end
                 end
-                else begin
+                else begin  // new entry
                     if (new_rs_entry.rs1_ready == 0) begin 
-                        if(cdbus.alu_valid && (new_rs_entry.rs1_addr == cdbus.alu_rd_addr) && (new_rs_entry.rs1_rob_idx == cdbus.alu_rob_idx))begin
+                        if (cdbus.alu_valid && (new_rs_entry.rs1_addr == cdbus.alu_rd_addr) && (new_rs_entry.rs1_rob_idx == cdbus.alu_rob_idx))begin
                             stations[i].rs1_data <= cdbus.alu_data; 
                             stations[i].rs1_ready <= 1'b1;                         
                         end
@@ -210,7 +208,7 @@ import rv32i_types::*;
                         end
                     end
 
-                    if (cdbus.alu_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.alu_valid  ) begin
+                    if (cdbus.alu_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.alu_valid) begin
                         stations[i].status <= COMPLETE;                         // This complete will move on to the next instruction even if next instruction should be busy
                     end     
                     else if  (cdbus.mul_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.mul_valid ) begin
@@ -221,9 +219,10 @@ import rv32i_types::*;
                     end            
                     else if  (cdbus.mem_rob_idx == new_rs_entry.rd_rob_idx  && cdbus.mem_valid && (|new_rs_entry.mem_rmask) ) begin
                         stations[i].status <= COMPLETE;
-                    end else if  (cdbus.commit_rob_idx == new_rs_entry.rd_rob_idx && cdbus.regf_we && (|new_rs_entry.mem_wmask) ) begin
+                    end 
+                    else if  (cdbus.commit_rob_idx == new_rs_entry.rd_rob_idx && cdbus.regf_we && (|new_rs_entry.mem_wmask) ) begin
                         stations[i].status <= WAIT_STORE;
-                    end else if  ((new_rs_entry.status == WAIT_STORE) && dmem_resp ) begin
+                    end else if  ((new_rs_entry.status == WAIT_STORE) && (dmem_resp || (store_no_mem))) begin
                         stations[i].status <= COMPLETE;
                     end
                 end
@@ -232,36 +231,33 @@ import rv32i_types::*;
     end
 
     always_comb begin
+        integer_alu_available   = 1'b0;
+        mul_alu_available       = 1'b0;
+        br_alu_available        = 1'b0;
+        mem_available           = 1'b0;
+
         if ((stations[0].status == IDLE) || (stations[0].status == COMPLETE)) begin
             integer_alu_available = 1'b1;
-        end else begin
-            integer_alu_available = 1'b0;
         end
 
         if ((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
             mul_alu_available = 1'b1;
-        end else begin
-            mul_alu_available = 1'b0;
         end
 
         if ((stations[2].status == IDLE) || (stations[2].status == COMPLETE)) begin
             br_alu_available = 1'b1;
-        end else begin
-            br_alu_available = 1'b0;
         end
 
         if ((stations[3].status == IDLE) || (stations[3].status == COMPLETE)) begin
             mem_available = 1'b1;
-        end else begin
-            mem_available = 1'b0;
         end
     end
 
     always_comb begin
-        next_execute_alu = '0;
-        next_execute_mult_div = '0;
-        next_execute_branch = '0;
-        next_execute_mem = '0;
+        next_execute_alu        = '0;
+        next_execute_mult_div   = '0;
+        next_execute_branch     = '0;
+        next_execute_mem        = '0;
 
         if (stations[0].valid && stations[0].rs1_ready && stations[0].rs2_ready) begin
             next_execute_alu = stations[0];

@@ -27,6 +27,13 @@ package rv32i_types;
         none  = 3'b100
     } types_t;
 
+    typedef struct packed {
+        logic [31:0] addr;
+        logic [31:0] wdata;
+        logic [3:0]  wmask;
+        logic valid;
+    } store_buffer_entry; 
+
     typedef enum logic [1:0] {
         IDLE = 2'b00,
         BUSY = 2'b01,
@@ -108,14 +115,46 @@ package rv32i_types;
     } mem_ops;
 
 
-
     typedef struct packed {
         logic   [31:0]      inst;
         logic   [31:0]      pc;
         //logic   [31:0]      pc_next;
         logic   [63:0]      order;
     	logic         	    valid;
+        logic prediction;
     } if_id_stage_reg_t;
+
+
+    typedef enum logic [1:0] {
+        q0 = 2'b00, 
+        q1 = 2'b01, 
+        q2 = 2'b10,
+        q_none = 2'b11
+    } rv32i_opcode_c;
+    
+    typedef struct packed {
+        logic   [15:0]      inst;
+    	logic         	    valid;
+        rv32i_opcode_c      opcode;
+        logic   [11:0]      imm;        // shamt included
+
+        logic   [4:0]       rd_addr;
+        logic   [4:0]       rs1_addr;
+        logic   [4:0]       rs2_addr;
+
+        logic   [1:0]       funct2;
+        logic   [2:0]       funct3;     // might not need everything?
+        logic   [3:0]       funct4;
+        logic   [5:0]       funct6;
+
+        logic   [2:0]       rd_offset;  // might be able to directly translate into addr
+        logic   [2:0]       rs1_offset; 
+        logic   [2:0]       rs2_offset; 
+
+        logic use_rs1;
+        logic use_rs2;  // ?
+
+    } rvc_t;
 
     typedef struct packed {
         logic   [31:0]      inst;
@@ -153,12 +192,16 @@ package rv32i_types;
 
         logic use_rs1;
         logic use_rs2;
+        logic prediction;
+        //logic[31:0] a;
+        //logic[31:0] b;
 
     } id_dis_stage_reg_t;
     
     typedef struct packed {
         logic           valid;
         logic   [31:0]  pc;
+        logic   [63:0]  order;
         logic   [31:0]  inst;
         logic   [6:0]   opcode;
         logic   [4:0]   rd_addr;
@@ -192,6 +235,7 @@ package rv32i_types;
         logic [31:0]    pc_new;
 
         status_rs_t     status;
+        logic prediction;
     } reservation_station_t;
 
     typedef struct packed {
@@ -225,6 +269,7 @@ package rv32i_types;
         logic [3:0]  mem_wmask;
         logic [31:0] mem_rdata;
         logic [31:0] mem_wdata;
+        logic prediction;
     } rob_entry_t;
 
     typedef struct packed {
@@ -264,6 +309,7 @@ package rv32i_types;
         logic [3:0]  mem_wmask;
         logic [31:0] mem_rdata;
         logic [31:0] mem_wdata;
+        logic prediction;
     } to_writeback_t;
 
     typedef enum logic [2:0] {
@@ -329,6 +375,7 @@ package rv32i_types;
         logic [3:0]  mem_wmask;
         logic [31:0] mem_rdata;
         logic [31:0] mem_wdata;
+        logic prediction;
     } cdb;
 
     typedef union packed {

@@ -16,39 +16,61 @@ module prefetcher (
     output  logic           dfp_write,
     input   logic   [255:0] dfp_rdata,
     output  logic   [255:0] dfp_wdata,
-    input   logic           dfp_resp
+    input   logic           dfp_resp,
+    output logic ufp_resp_prefetch
 );
     logic[31:0] ufp_rdata_internal; 
     logic[255:0] ufp_rcache_line_internal; 
 
     logic ufp_resp_internal;
-    logic[31:0] ufp_addr_internal;
-    logic[3:0] ufp_rmask_internal;
+    logic[31:0] ufp_addr_internal, ufp_addr_internal_prev;
+    logic[3:0]  ufp_rmask_internal, ufp_rmask_internal_prev;
+ 
+    always_ff @(posedge clk/* or posedge rst*/) begin
+        if (rst) begin
+            ufp_addr_internal_prev  <= '0;
+            ufp_rmask_internal_prev <= '0;
+        end
+        else begin
+            ufp_addr_internal_prev  <= ufp_addr_internal;
+            ufp_rmask_internal_prev <= ufp_rmask_internal;
+        end
+    end
 
     logic second_fetch;
+    logic second_fetch_prev;
     always_ff @(posedge clk) begin
-        if(rst) second_fetch = 1'b0;
+        second_fetch_prev <= second_fetch;
+        if (rst) begin 
+            second_fetch <= 1'b0;
+        end
         if(ufp_resp_internal && (second_fetch == 1'b0)) begin
              second_fetch <= 1'b1;
         end else if (ufp_resp_internal) second_fetch <= 1'b0;
     end
 
     always_comb begin
-        if(second_fetch == 1) begin
-            ufp_resp = ufp_resp_internal;
-            ufp_addr_internal = ufp_addr + 32'd128;
+        ufp_addr_internal = ufp_addr_internal_prev;
+        ufp_rmask_internal = ufp_rmask_internal_prev;
+        ufp_rdata = '0;
+        ufp_rcache_line = '0;
+
+        if(second_fetch && (!second_fetch_prev)) begin
+            ufp_resp = 1'b0;
+            ufp_resp_prefetch = ufp_resp_internal;
+            ufp_addr_internal = ufp_addr + 32'd32;
             ufp_rmask_internal = 4'b1111;
-        end else begin
+        end else if (second_fetch) begin
+            ufp_resp_prefetch = ufp_resp_internal;
+            ufp_resp = 1'b0;
+        end else if (!second_fetch) begin
+            ufp_resp_prefetch = 1'b0;
             ufp_addr_internal = ufp_addr;
             ufp_rmask_internal = ufp_rmask;
             ufp_rdata = ufp_rdata_internal;
-            ufp_resp = 0;  
+            ufp_resp = ufp_resp_internal;
             ufp_rcache_line = ufp_rcache_line_internal;
         end
-        // ufp_addr_internal = ufp_addr;
-        // ufp_rmask_internal = ufp_rmask;
-        // ufp_rdata = ufp_rdata_internal;
-        // ufp_resp = ufp_resp_internal;
     end
 
     cache instruction_cache (

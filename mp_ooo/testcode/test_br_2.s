@@ -148,7 +148,7 @@ jal_backward_done:
     # Test 3: JALR with computed address
     # We'll use PC-relative addressing with AUIPC instead of loads
     auipc x9, 0          # Get current PC
-    addi x9, x9, 16      # Point to jalr_target1 (offset calculated at assembly)
+    addi x9, x9, 16      # Point to jalr_target1 (offset calculated at assembly) bug
     jalr x10, 0(x9)      # Jump to computed address
     addi x31, x31, 100   # Should be skipped
     
