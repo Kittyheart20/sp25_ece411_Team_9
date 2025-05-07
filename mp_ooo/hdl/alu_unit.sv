@@ -8,12 +8,12 @@ import rv32i_types::*;
 
     logic [31:0] aluout;
     logic [31:0] a, b;
-    logic [31:0] rs1_for, rs2_for;
+    /*logic [31:0] rs1_for, rs2_for;
 
     always_comb begin           
         rs1_for = next_execute.rs1_data;   
         rs2_for = next_execute.rs2_data;
-    end
+    end*/
 
     always_comb begin
         a = '0;
@@ -21,14 +21,14 @@ import rv32i_types::*;
 
         if (next_execute.valid) begin
             unique case (next_execute.alu_m1_sel)
-                rs1_out: a = rs1_for; 
+                rs1_out: a = next_execute.rs1_data; 
                 pc_out:	 a = next_execute.pc;
                 no_out:  a = '0;
                 default: a = '0;
             endcase
 
             unique case (next_execute.alu_m2_sel)
-                rs2_out: b = rs2_for;
+                rs2_out: b = next_execute.rs2_data;
                 imm_out: b = next_execute.imm_sext;
                 four_out: b = 32'h4;
                 default: b = '0;

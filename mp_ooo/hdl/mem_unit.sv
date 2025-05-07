@@ -27,8 +27,8 @@ import rv32i_types::*;
         assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
         assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
         
-        logic            store_done;
-        logic   [4:0]    next_store_rob_idx;
+        // logic            store_done;
+        // logic   [4:0]    next_store_rob_idx;
 
         logic   [31:0]   addr;
         logic   [3:0]    rmask;
@@ -46,9 +46,9 @@ import rv32i_types::*;
         store_buffer_entry data_i, data_o;
         store_buffer_entry data [DEPTH-1:0];
         logic[31:0]   prev_dmem_addr;
-        logic[31:0]   prev_dmem_rdata;
+        //logic[31:0]   prev_dmem_rdata;
 
-        logic[31:0]   last_pc_on_dmem;
+        //logic[31:0]   last_pc_on_dmem;
         logic was_read;
         logic dmem_addr_loaded;
         store_ring_buffer #(
@@ -81,7 +81,7 @@ import rv32i_types::*;
         addr = {next_addr[31:2], 2'd0};
         rmask = next_execute.mem_rmask << next_addr[1:0];
         wmask = next_execute.mem_wmask << next_addr[1:0];
-        wdata = next_execute.rs2_data;
+       // wdata = next_execute.rs2_data;
     end
     
     logic addr_in_buffer;
@@ -119,11 +119,11 @@ import rv32i_types::*;
             enqueue_i <= 1'b0;
             dequeue_i <= 1'b0;
             store_no_mem <= 1'b0;
-            last_pc_on_dmem <= '0;
+            //last_pc_on_dmem <= '0;
             prev_dmem_addr <= '0;
             was_read <= '0;
             dmem_addr_loaded <= '0;
-            prev_dmem_rdata <= '0;
+            //prev_dmem_rdata <= '0;
             prev_rd_rob_idx <= '0;
         end else begin
             prev_rd_rob_idx <= next_execute.rd_rob_idx;
@@ -132,12 +132,12 @@ import rv32i_types::*;
                 dmem_rmask <= '0;
                 dmem_wmask <= '0;
                 prev_dmem_addr <= dmem_addr;
-                last_pc_on_dmem <= next_execute.pc;
+                //last_pc_on_dmem <= next_execute.pc;
                 was_read <= |dmem_rmask;
                 dmem_addr_loaded <= '0;
-                if(|dmem_rmask) begin
+                /*if(|dmem_rmask) begin
                     prev_dmem_rdata <= dmem_rdata;
-                end
+                end*/
             end
             if (!(mem_stall) && (!cdbus.flush)) begin
                 if (curr_store) begin

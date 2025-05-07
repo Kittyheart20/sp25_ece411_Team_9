@@ -263,6 +263,7 @@ import rv32i_types::*;
 
 
     reservation_station alu_rs (
+        .is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[0]),
@@ -275,6 +276,7 @@ import rv32i_types::*;
 
     
     reservation_station mul_rs (
+        .is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[1]),
@@ -286,6 +288,7 @@ import rv32i_types::*;
     );
 
     reservation_station br_rs (
+        .is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[2]),
@@ -296,7 +299,8 @@ import rv32i_types::*;
         .store_no_mem(store_no_mem)
     );
 
-    reservation_station #(.MEMORY(1)) mem_rs (
+    reservation_station mem_rs (
+        .is_mem(1'b1),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[3]),

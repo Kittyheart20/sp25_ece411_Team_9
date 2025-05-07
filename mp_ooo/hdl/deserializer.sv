@@ -8,7 +8,7 @@ module deserializer (
     input   logic bmem_rvalid,
     input   logic[255:0]  dfp_wdata,
     input   logic dfp_write,
-    input logic   [31:0]  dfp_addr,
+    // input logic   [31:0]  dfp_addr,
     input  logic   [31:0]      bmem_addr,
 
 
@@ -22,11 +22,12 @@ module deserializer (
     logic [255:0] accumulator;
     logic [1:0] word_count;
     logic [2:0] write_count;  
-    logic[31:0] dfp_addr_prev;
-    logic[255:0] dfp_wdata_prev;
+    // logic[31:0] dfp_addr_prev;
+    // logic[255:0] dfp_wdata_prev;
 
     logic dfp_write_prev;
-    logic [31:0] expected_bmem_raddr, past_bmem_addr;
+    logic [31:0] past_bmem_addr;
+    /*logic [31:0] expected_bmem_raddr;
     always_comb begin
         expected_bmem_raddr = {dfp_addr[31:5], 5'b0}; // Base address
         case (word_count)
@@ -36,9 +37,9 @@ module deserializer (
             2'd3: expected_bmem_raddr = expected_bmem_raddr + 32'd24;
             default: expected_bmem_raddr = 32'bX; // Undefined for other counts
         endcase
-    end
+    end*/
 
-    logic   [31:0]  bmem_debug_addr;
+    /*logic   [31:0]  bmem_debug_addr;
     assign bmem_debug_addr = 32'hefffd7f0;
     logic bmem_debug_hit;
     assign bmem_debug_hit = (bmem_addr == bmem_debug_addr);
@@ -58,7 +59,7 @@ module deserializer (
         if(dfp_addr[31:9] == bmem_debug_tag) begin
             bmem_dfp_debug_tag_hit = 1'b1;
         end
-    end
+    end*/
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -67,15 +68,15 @@ module deserializer (
             write_count <= 3'd0;
             dfp_rdata   <= 256'd0;
             dfp_resp    <= 1'b0;
-            dfp_addr_prev <= 32'd0;
-            dfp_wdata_prev <= 256'd0;
+            // dfp_addr_prev <= 32'd0;
+            // dfp_wdata_prev <= 256'd0;
             dfp_write_prev <= 1'b0;
             past_bmem_addr <= '0;
         end else begin
             past_bmem_addr <= bmem_addr;
             dfp_write_prev <= dfp_write;
-            dfp_addr_prev <= dfp_addr;
-            dfp_wdata_prev <= dfp_wdata;
+            // dfp_addr_prev <= dfp_addr;
+            // dfp_wdata_prev <= dfp_wdata;
             dfp_resp <= 1'b0;
             if (bmem_rvalid && bmem_ready) begin
                 if (word_count == 2'd0 && ((bmem_raddr == bmem_addr) || bmem_raddr == past_bmem_addr)) begin

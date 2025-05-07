@@ -25,9 +25,9 @@ import rv32i_types::*;
         default_to_writeback = '0;
     end
 
-    logic   [31:0]  pc, pc_next, pc_wdata;
+    logic   [31:0]  pc, pc_next;
     logic   [63:0]  order;
-    logic           commit;
+    //logic           commit;
     logic           stall;
     logic           stall_except_empty;
     logic           alu_stall_unit, mult_stall_unit, br_stall_unit, mem_stall_unit;
@@ -45,11 +45,10 @@ import rv32i_types::*;
     
     if_id_stage_reg_t  decode_struct_in;
     id_dis_stage_reg_t decode_struct_out;
-    id_dis_stage_reg_t decode_struct_out_compressed;
+    //id_dis_stage_reg_t decode_struct_out_compressed;
     id_dis_stage_reg_t dispatch_struct_in;
     reservation_station_t dispatch_struct_out [NUM_FUNC_UNIT];
     reservation_station_t next_execute [NUM_FUNC_UNIT];
-    reservation_station_t next_execute_prev [NUM_FUNC_UNIT];
 
     to_writeback_t   execute_output [NUM_FUNC_UNIT];
     to_writeback_t   next_writeback [NUM_FUNC_UNIT]; 
@@ -131,7 +130,7 @@ import rv32i_types::*;
         .dfp_write  (dfp_write),
         .dfp_rdata  (dfp_rdata),
         // .dfp_raddr  (dfp_raddr),
-        .dfp_addr   (dfp_addr),
+        // .dfp_addr   (dfp_addr),
         .dfp_resp   (dfp_resp),
         // .dfp_read   (dfp_read),
         .bmem_wdata (bmem_wdata),
@@ -234,15 +233,13 @@ import rv32i_types::*;
     always_ff @(posedge clk) begin
         if (rst) begin
             mem_stall_prev <= 1'b0;
-            next_execute_prev <= '{NUM_FUNC_UNIT{default_reservation_station}};
         end else begin
             mem_stall_prev <= mem_stall;
-            next_execute_prev <= next_execute;
         end
     end
 
     logic inst_mem_stall;       // MEM STALL STARTS AT SAME TIME AS INST_MEM_STALL
-    logic [63:0] cycles_since_inst_mem_stall;
+    /*logic [63:0] cycles_since_inst_mem_stall;
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -252,7 +249,7 @@ import rv32i_types::*;
         end else begin
             cycles_since_inst_mem_stall <= '0;
         end
-    end
+    end*/
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -278,7 +275,7 @@ import rv32i_types::*;
     );
 
     logic [4:0] rs1_rob_idx, rs2_rob_idx;
-    logic       rs1_renamed, rs2_renamed;
+    //logic       rs1_renamed, rs2_renamed;
     logic       rs1_ready, rs2_ready;
     logic       regf_we;
 
@@ -296,12 +293,13 @@ import rv32i_types::*;
         .decode_struct_in   (decode_struct_in_early),
         .decode_struct_out  (decode_struct_out_early)
     );
-    logic is_compressed_inst;
+
+    /*logic is_compressed_inst;
     decode_compressed decode_compressed_stage (
         .decode_struct_in   (decode_struct_in),
         .decode_struct_out  (decode_struct_out_compressed),
         .is_compressed_inst(is_compressed_inst)
-    );
+    );*/
 
     logic [4:0] rs1_dis_idx, rs2_dis_idx;
     assign rs1_dis_idx = dispatch_struct_in.rs1_addr;
@@ -370,7 +368,7 @@ import rv32i_types::*;
         .store_no_mem(store_no_mem)
     );
 
-    logic mul_ready;
+    // logic mul_ready;
     
     alu_unit alu_inst (
         .next_execute(next_execute[0]),
@@ -417,7 +415,7 @@ import rv32i_types::*;
         .prediction(prediction)
     );
 
-    logic[64:0] number_of_flushes;
+    /*logic[64:0] number_of_flushes;
     logic[64:0] number_of_branches;
 
     always_ff  @(posedge clk) begin 
@@ -432,7 +430,7 @@ import rv32i_types::*;
                 number_of_branches <= number_of_branches + 1;
             end
         end
-    end
+    end*/
 
 
     
@@ -468,24 +466,7 @@ import rv32i_types::*;
     logic flush_stalling;
     logic [63:0] m_order;
 
-    logic inst_use_linebuffer, mem_use_linebuffer;
-    assign inst_use_linebuffer = (pc != '0) && (pc[31:5] == last_instr_addr[31:5]);
-    assign mem_use_linebuffer = 1'b0;
-
-    logic debug_c1;
-    logic debug_c2;
-    logic[31:0] pc_last_enqueued;
-    always_ff @(posedge clk) begin
-        if(rst) begin
-            pc_last_enqueued <= '0;
-        end else begin
-            if(enqueue_i) begin
-                pc_last_enqueued <= data_i[63:32];
-            end
-        end
-    end
-
-    logic gselect_help_flag;
+    //logic gselect_help_flag;
     always_ff @(posedge clk) begin : fetch
         if (rst) begin
             pc          <= 32'haaaaa000;
@@ -494,14 +475,13 @@ import rv32i_types::*;
             data_i      <= '0;
             bmem_read   <= 1'b0;
             bmem_addr      <= 32'h0;
-            commit <= 1'b0;
+            //commit <= 1'b0;
             enqueue_i <= 1'b0;    
             bmem_flag <= 1'b0;   
             flush_stalling <= '0;
-            debug_c2 <= 1'b0; debug_c1 <= 1'b0;
-            gselect_help_flag <= 1'b0;
+            //gselect_help_flag <= 1'b0;
         end else begin
-            if (commit)     commit <= 1'b0;
+            //if (commit)     commit <= 1'b0;
             if (enqueue_i)  enqueue_i <= 1'b0;
             if (bmem_read)  bmem_read <= 1'b0;
 
@@ -544,14 +524,11 @@ import rv32i_types::*;
                 if (ufp_resp) begin
                     data_i <= {prediction && prediction_followed, order, pc, ufp_rdata}; 
                     if (!full_o) begin
-                        debug_c1 <= 1'b1;
-                        debug_c2 <= 1'b0;
-
                         ufp_rmask <= '0;
                         enqueue_i <= 1'b1;
                         pc <= pc_next;
                         order <= order + 'd1;
-                        commit <= 1'b1;
+                        //commit <= 1'b1;
                     end
                 /*end else if (gselect_taken && (decode_struct_out_early.pc != pc) && (!gselect_help_flag)) begin
                     pc <= pc_next;
@@ -560,13 +537,10 @@ import rv32i_types::*;
                     ufp_rmask <= '0;
                     data_i <= {prediction && prediction_followed, order, pc, last_instr_data[32*pc[4:2] +: 32]};
                     if (!full_o && (!stall_except_empty)/*&& !stall_except_empty*/) begin
-                        debug_c2 <= 1'b1;
-                        debug_c1 <= 1'b0;
-
                         enqueue_i <= 1'b1;
                         pc <= pc_next;
                         order <= order + 'd1;
-                        commit <= 1'b1;
+                        //commit <= 1'b1;
                     end
                 end else if (ufp_rmask == 4'd0) begin
                     ufp_addr <= pc;
@@ -648,16 +622,6 @@ import rv32i_types::*;
         if (dmem_rmask[0])  dmem_rdata[7:0] = ufp_rdata_mem[7:0];
 
         dmem_resp = ufp_resp_mem;
-        
-        if (|dmem_rmask && mem_use_linebuffer) begin
-            ufp_addr_mem = '0;
-            ufp_rmask_mem = '0;
-            ufp_wmask_mem = '0;
-            ufp_wdata_mem = '0;
-            
-            dmem_rdata = last_dmem_data[32*dmem_addr[4:2] +: 32];
-            dmem_resp = 1'b1;
-        end
     end
 
     always_comb begin : prep_decode_in
@@ -679,8 +643,6 @@ import rv32i_types::*;
         decode_struct_in_early.order = data_i_comb[127:64];  
   
     end   
-
-    logic[31:0]  ufp_wdata_mem_latched;
 
     always_comb begin : update_line_buffer
         instr_enable = 1'b0;
@@ -708,14 +670,6 @@ import rv32i_types::*;
             curr_dmem_addr = dmem_addr;
             curr_dmem_data = ufp_rcache_line_mem;
             dmem_enable = 1'b1;            
-        end
-    end
-
-    always_ff @(posedge clk) begin
-        if (rst) begin
-            ufp_wdata_mem_latched <= '0;
-        end else begin
-            ufp_wdata_mem_latched <= ufp_wdata_mem;
         end
     end
 
@@ -752,22 +706,6 @@ import rv32i_types::*;
             next_writeback = '{NUM_FUNC_UNIT{default_to_writeback}};
         end
         else begin
-            // dispatch_struct_in <= decode_struct_out;
-
-            // if (dispatch_struct_out[0].valid)
-            //     next_execute[0] = dispatch_struct_out[0];
-            // //else next_execute[0] = next_execute_prev[0];
-            // if (dispatch_struct_out[1].valid)
-            //     next_execute[1] = dispatch_struct_out[1];
-            // //else next_execute[1] = next_execute_prev[1];
-
-            // if (dispatch_struct_out[2].valid)
-            //     next_execute[2] = dispatch_struct_out[2];
-           //else next_execute[2] = next_execute_prev[2];
-
-            // if (!mem_stall && dispatch_struct_out[3].valid)
-                // next_execute[3] = dispatch_struct_out[3];
-           // else next_execute[3] = next_execute_prev[3];
 
             for (integer i = 0; i < 4; i++) begin
                 if (execute_output[i].valid)
@@ -872,17 +810,17 @@ import rv32i_types::*;
     end
 
     logic stall_prev;
-    logic stall_till_new_resp;
-    logic[4:0] stall_counter;
+    //logic stall_till_new_resp;
+    //logic[4:0] stall_counter;
     always_ff @(posedge clk) begin
         if (rst) begin
             stall_prev <= 1'b0;
-            stall_till_new_resp <= 1'b0;
-            stall_counter <= '0;
+            //stall_till_new_resp <= 1'b0;
+            //stall_counter <= '0;
         end
         else begin
-            if(cdbus.flush) begin
-                stall_till_new_resp <= 1'b1;
+            /*if(cdbus.flush) begin
+                //stall_till_new_resp <= 1'b1;
                 if((pc_next[31:5] == last_instr_addr[31:5])) begin
                     stall_counter <= 5'd1;
                 end else begin
@@ -897,8 +835,8 @@ import rv32i_types::*;
                 stall_counter <= stall_counter + 5'd1;
             end
             if(stall_counter == 5) begin
-                stall_till_new_resp <= 1'b0;
-            end
+                //stall_till_new_resp <= 1'b0;
+            end*/
             
             stall_prev <= stall;
         end
