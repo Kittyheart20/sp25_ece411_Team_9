@@ -25,7 +25,7 @@ import rv32i_types::*;
         default_to_writeback = '0;
     end
 
-    logic   [31:0]  pc, pc_next;
+    logic   [31:0]  pc, pc_next, pc_next_prev;
     logic   [63:0]  order;
     //logic           commit;
     logic           stall;
@@ -567,37 +567,38 @@ import rv32i_types::*;
     end
 
     logic [WIDTH-1:0] data_i_comb;
-    logic nclk;
-    assign nclk = ~clk;
-    always_ff @(posedge nclk)  begin 
+    //logic nclk;
+    //assign nclk = ~clk;
+    always_comb  begin 
+        data_i_comb = '0;
         if (rst) begin
-            data_i_comb      <= '0;
+            data_i_comb      = '0;
         end else begin
 
             if(cdbus.flush) begin 
-                data_i_comb <= data_i;
+                data_i_comb = data_i;
                 if (dfp_resp) begin 
                 end
                 if (ufp_rmask > '0) begin
                 end else begin
-                    data_i_comb <= {1'b0, m_order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
+                    data_i_comb = {1'b0, m_order, pc_next_prev, last_instr_data[32*pc[4:2] +: 32]};
                end
             end else if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // ss: dmem read
-                data_i_comb <= data_i;       
+                data_i_comb = data_i;       
             end 
             else if (ufp_resp && (flush_stalling == '1)) begin
-                data_i_comb <= {1'b0, m_order, pc_next, last_instr_data[32*pc[4:2] +: 32]}; 
+                data_i_comb = {1'b0, m_order, pc_next_prev, last_instr_data[32*pc[4:2] +: 32]}; 
             end
             else begin
                 if (ufp_resp) begin
-                    data_i_comb <= {1'b0, order, pc, ufp_rdata}; 
+                    data_i_comb = {1'b0, order, pc, ufp_rdata}; 
                 /*end else if (gselect_taken && (decode_struct_out_early.pc != pc) && (!gselect_help_flag)) begin
                     pc <= pc_next;
                     gselect_help_flag <= 1'b1;*/
                 end else if (pc[31:5] == last_instr_addr[31:5] && ~&ufp_rmask) begin    // ~& is bitwise NAND
-                    data_i_comb <= {1'b0, order, pc, last_instr_data[32*pc[4:2] +: 32]};
+                    data_i_comb = {1'b0, order, pc, last_instr_data[32*pc[4:2] +: 32]};
                 end else if (ufp_rmask == 4'd0) begin
-                    data_i_comb <= data_i;                  
+                    data_i_comb = data_i;                  
                 end 
 
             end
@@ -817,8 +818,10 @@ import rv32i_types::*;
             stall_prev <= 1'b0;
             //stall_till_new_resp <= 1'b0;
             //stall_counter <= '0;
+            pc_next_prev <= '0;
         end
         else begin
+            pc_next_prev <= pc_next;
             /*if(cdbus.flush) begin
                 //stall_till_new_resp <= 1'b1;
                 if((pc_next[31:5] == last_instr_addr[31:5])) begin
