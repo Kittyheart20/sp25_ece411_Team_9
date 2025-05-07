@@ -69,7 +69,7 @@ import rv32i_types::*;
             rob_table[head].valid <= 1'b0;
             
             for (integer unsigned i = 1; i < 32; i++) begin
-                if ($unsigned(i) < count) rob_table[(head+i)%32] <= '0;
+                if (i < count) rob_table[(head+i)%32] <= '0;
             end
         end
         else begin

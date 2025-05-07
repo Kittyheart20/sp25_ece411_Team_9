@@ -151,8 +151,8 @@ import rv32i_types::*;
         least_order = 64'hFFFFFFFFFFFFFFFF; 
 
         if (tail < head)
-            {dummy, count} = $unsigned({1'b0, tail}) - $unsigned({1'b0, head});
-            //{dummy, count} = {{1'b1, tail} - {1'b0, head}};
+            {dummy, count} = {{1'b1, tail} - {1'b0, head}};
+            //{dummy, count} = $unsigned({1'b0, tail}) - $unsigned({1'b0, head});
         
         if (is_mem) begin
             if ((stations[tail].status == IDLE) || (stations[tail].status == COMPLETE)) begin
