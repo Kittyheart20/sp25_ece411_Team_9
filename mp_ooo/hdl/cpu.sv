@@ -36,6 +36,7 @@ import rv32i_types::*;
     logic           rs1_rdy, rs2_rdy;
     logic mem_stall;
     logic mem_stall_prev;
+    logic flush_registered;
 
     logic mul_alu_available, int_alu_available, br_alu_available, mem_available;
     logic gselect_taken;
@@ -499,7 +500,7 @@ import rv32i_types::*;
                     order <= m_order;
                     ufp_rmask <= '1; 
                     ufp_addr <= pc_next; 
-               end
+               end            
             end else if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // critical path
                 if (bmem_flag == 1'd0) begin
                     bmem_addr  <= dfp_addr;
@@ -731,6 +732,25 @@ import rv32i_types::*;
     logic[31:0] pc_plus_4;
     logic[31:0] imm_plus_pc;
     logic[31:0] rob_pc_plus_4;
+    logic[31:0] flush_pc_registered;
+    always_ff @(posedge clk) begin 
+        if (rst) begin
+            flush_registered <= '0;
+            flush_pc_registered <= '0;
+        end else begin
+        if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
+            if(rob_entry_o.br_en != rob_entry_o.prediction) begin
+                if(rob_entry_o.br_en == 0) begin
+                    flush_pc_registered <= rob_pc_plus_4;
+                    flush_registered <= '1;
+                end else begin
+                    flush_pc_registered <= rob_entry_o.pc_new;
+                    flush_registered <= '1;
+                end
+            end else flush_registered <= '0;
+        end else flush_registered <= '0;
+        end
+    end
     always_comb begin : update_rs_we_cdbus
         rob_pc_plus_4 = {rob_entry_o.pc [31:2] + 1'b1, rob_entry_o.pc[1:0]};;
         cdbus = '0;
@@ -789,7 +809,7 @@ import rv32i_types::*;
             cdbus.mem_wdata = next_writeback[3].mem_wdata;
         end
         // commit - critical path
-        if (rob_entry_o.valid && rob_entry_o.status == done) begin
+        if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
             cdbus.commit_data = rob_entry_o.rd_data;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;
             cdbus.commit_rob_idx = rob_entry_o.rd_rob_idx;
@@ -805,16 +825,11 @@ import rv32i_types::*;
             //     pc_next = rob_entry_o.pc_new;
             //     cdbus.flush = '1;
             // end 
-            if(rob_entry_o.br_en != rob_entry_o.prediction) begin
-                if(rob_entry_o.br_en == 0) begin
-                    pc_next = rob_pc_plus_4;
-                    cdbus.flush = '1;
-                end else begin
-                    pc_next = rob_entry_o.pc_new;
-                    cdbus.flush = '1;
-                end
-            end
         end
+            if(flush_registered) begin
+                pc_next = flush_pc_registered;
+                cdbus.flush = '1;
+            end
     end
 
     logic stall_prev;
