@@ -148,6 +148,10 @@ import rv32i_types::*;
                             overflow_alert <= 1'b0;
                         end   
                     end
+                    if (!(stations[head].valid) && count > (PTR_WIDTH+1)'(0)) begin
+                        head <= head + PTR_WIDTH'(1);
+                        overflow_alert <= 1'b0;
+                    end
                 end
                 else if (PTR_WIDTH'(i)==head) begin
                     if (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.alu_rob_idx == stations[i].rd_rob_idx && cdbus.alu_valid) begin
@@ -186,11 +190,6 @@ import rv32i_types::*;
                         overflow_alert <= 1'b0;
                     end
                 end
-            end
-
-            if (!(stations[head].valid) && count > (PTR_WIDTH+1)'(0)) begin
-                head <= head + PTR_WIDTH'(1);
-                overflow_alert <= 1'b0;
             end
         end
     end
@@ -236,7 +235,7 @@ import rv32i_types::*;
 
     end
 
-    assign rs_available = (count != (PTR_WIDTH+1)'(DEPTH));
+    assign rs_available = (count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
     assign available_idx = tail;
 
     // logic dummy;
