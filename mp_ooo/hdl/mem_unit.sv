@@ -154,7 +154,7 @@ import rv32i_types::*;
                         store_no_mem <= 1'b0;
                         dmem_addr_loaded <= 1'b1;
                     end else begin
-                        store_no_mem <= 1'b1;
+                        store_no_mem <= 1'b1;   // full_o && addr_in_buffer or !full_o or addr_in_buffer
                     end
                     // dmem_addr <= rob_entry_o.mem_addr;
                     // dmem_rmask <= '0;
@@ -169,10 +169,10 @@ import rv32i_types::*;
                     mem_stall <= '1;
                     dmem_addr_loaded <= 1'b1;
                 end
-                end else begin 
-                    enqueue_i <= 1'b0;
-                    dequeue_i <= 1'b0;
-                    store_no_mem <= 1'b0;
+            end else begin 
+                enqueue_i <= 1'b0;
+                dequeue_i <= 1'b0;
+                store_no_mem <= 1'b0;
             end
         end
     end

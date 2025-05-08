@@ -4,15 +4,15 @@ import rv32i_types::*;
     parameter DEPTH = 8,
     parameter ROB_IDX_WIDTH = 5
 )(
-    input  logic        is_mem,
+    // input  logic        is_mem,
     input  logic        clk,
     input  logic        rst,
     input  reservation_station_t new_rs_entry,
 
-    input  logic        store_no_mem,
+    // input  logic        store_no_mem,
     
     input  cdb          cdbus,
-    input               dmem_resp,
+    // input               dmem_resp,
 
     output logic rs_available,  // queue is not full and execute unit is not busy
     output reservation_station_t next_execute
@@ -39,8 +39,7 @@ import rv32i_types::*;
         end
         else begin
             if (new_rs_entry.valid && rs_available) begin : new_rs_entry_to_station
-                if (!is_mem)    stations[tail] <= new_rs_entry; 
-                else            stations[tail] <= new_rs_entry;
+                stations[tail] <= new_rs_entry; 
                 tail <= tail + PTR_WIDTH'(1);
 
                 if (tail == head-PTR_WIDTH'(1))
@@ -80,7 +79,7 @@ import rv32i_types::*;
                         end
                     end
                 end
-                if (!is_mem) begin
+                // if (!is_mem) begin
                     if (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready) begin
                         if (cdbus.alu_rob_idx == stations[i].rd_rob_idx && cdbus.alu_valid) begin
                             stations[i].status <= COMPLETE;
@@ -115,75 +114,76 @@ import rv32i_types::*;
                                 overflow_alert <= 1'b0;
                             end
                         end            
-                        else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
-                            stations[i].status <= COMPLETE;
-                            stations[i].valid <= 1'b0;
-                            if (PTR_WIDTH'(i)==head) begin
-                                head <= next_head_idx;
-                                overflow_alert <= 1'b0;
-                            end else if (PTR_WIDTH'(i)==tail) begin
-                                tail <= tail - PTR_WIDTH'(1);
-                                overflow_alert <= 1'b0;
-                            end
-                        end                     
-                        else if  (stations[i].valid && cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
-                            stations[i].status <= WAIT_STORE;
-                            stations[i].valid <= 1'b0;
-                        end // skip here
+                        // else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
+                        //     stations[i].status <= COMPLETE;
+                        //     stations[i].valid <= 1'b0;
+                        //     if (PTR_WIDTH'(i)==head) begin
+                        //         head <= next_head_idx;
+                        //         overflow_alert <= 1'b0;
+                        //     end else if (PTR_WIDTH'(i)==tail) begin
+                        //         tail <= tail - PTR_WIDTH'(1);
+                        //         overflow_alert <= 1'b0;
+                        //     end
+                        // end                     
+                        // else if  (stations[i].valid && cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
+                        //     stations[i].status <= WAIT_STORE;
+                        //     stations[i].valid <= 1'b0;
+                        // end // skip here
                     end
-                    else if  ((stations[i].status == WAIT_STORE) && (dmem_resp || store_no_mem)) begin
-                        stations[i].status <= COMPLETE;
-                        stations[i].valid <= 1'b0;
-                        if (PTR_WIDTH'(i)==head) begin
-                            head <= next_head_idx;
-                            overflow_alert <= 1'b0;
-                        end else if (PTR_WIDTH'(i)==tail) begin
-                            tail <= tail - PTR_WIDTH'(1);
-                            overflow_alert <= 1'b0;
-                        end
-                    end
+                    // else if  ((stations[i].status == WAIT_STORE) && (dmem_resp || store_no_mem)) begin
+                    //     stations[i].status <= COMPLETE;
+                    //     stations[i].valid <= 1'b0;
+                    //     if (PTR_WIDTH'(i)==head) begin
+                    //         head <= next_head_idx;
+                    //         overflow_alert <= 1'b0;
+                    //     end else if (PTR_WIDTH'(i)==tail) begin
+                    //         tail <= tail - PTR_WIDTH'(1);
+                    //         overflow_alert <= 1'b0;
+                    //     end
+                    // end
                     if (!(stations[head].valid) && count > (PTR_WIDTH+1)'(0)) begin
                         head <= head + PTR_WIDTH'(1);
                         overflow_alert <= 1'b0;
                     end
-                end
-                else if (PTR_WIDTH'(i)==head) begin
-                    if (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.alu_rob_idx == stations[i].rd_rob_idx && cdbus.alu_valid) begin
-                        stations[i].status <= COMPLETE;
-                        stations[i].valid <= 1'b0;
-                        head <= head + PTR_WIDTH'(1);
-                        overflow_alert <= 1'b0;
-                        //executing_stall <= '0;
-                    end
-                    else if  (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.mul_rob_idx == stations[i].rd_rob_idx && cdbus.mul_valid) begin
-                        stations[i].status <= COMPLETE;  
-                        stations[i].valid <= 1'b0;  
-                        head <= head + PTR_WIDTH'(1);
-                        overflow_alert <= 1'b0;
-                    end      
-                    else if  (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.br_rob_idx == stations[i].rd_rob_idx && cdbus.br_valid) begin
-                        stations[i].status <= COMPLETE;   
-                        stations[i].valid <= 1'b0;
-                        head <= head + PTR_WIDTH'(1);
-                        overflow_alert <= 1'b0;
-                    end            
-                    else if  (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.mem_rob_idx == stations[i].rd_rob_idx && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
-                        stations[i].status <= COMPLETE;
-                        stations[i].valid <= 1'b0;
-                        head <= head + PTR_WIDTH'(1);
-                        overflow_alert <= 1'b0;
-                    end 
-                    else if  (stations[i].valid && cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
-                        stations[i].status <= WAIT_STORE;
-                        stations[i].valid <= 1'b0;
-                    end 
-                    else if  ((stations[i].status == WAIT_STORE) && (dmem_resp || store_no_mem) ) begin
-                        stations[i].status <= COMPLETE;
-                        stations[i].valid <= 1'b0;
-                        head <= head + PTR_WIDTH'(1);
-                        overflow_alert <= 1'b0;
-                    end
-                end
+               // end
+                // else if (PTR_WIDTH'(i)==head) begin
+                    // if (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.alu_rob_idx == stations[i].rd_rob_idx && cdbus.alu_valid) begin
+                    //     stations[i].status <= COMPLETE;
+                    //     stations[i].valid <= 1'b0;
+                    //     head <= head + PTR_WIDTH'(1);
+                    //     overflow_alert <= 1'b0;
+                    //     //executing_stall <= '0;
+                    // end
+                    // else if  (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.mul_rob_idx == stations[i].rd_rob_idx && cdbus.mul_valid) begin
+                    //     stations[i].status <= COMPLETE;  
+                    //     stations[i].valid <= 1'b0;  
+                    //     head <= head + PTR_WIDTH'(1);
+                    //     overflow_alert <= 1'b0;
+                    // end      
+                    // else if  (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.br_rob_idx == stations[i].rd_rob_idx && cdbus.br_valid) begin
+                    //     stations[i].status <= COMPLETE;   
+                    //     stations[i].valid <= 1'b0;
+                    //     head <= head + PTR_WIDTH'(1);
+                    //     overflow_alert <= 1'b0;
+                    // end            
+                    // else 
+                //     if  (stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && cdbus.mem_rob_idx == stations[i].rd_rob_idx && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
+                //         stations[i].status <= COMPLETE;
+                //         stations[i].valid <= 1'b0;
+                //         head <= head + PTR_WIDTH'(1);
+                //         overflow_alert <= 1'b0;
+                //     end 
+                //     else if  (stations[i].valid && cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
+                //         stations[i].status <= WAIT_STORE;
+                //         stations[i].valid <= 1'b0;
+                //     end 
+                //     else if  ((stations[i].status == WAIT_STORE) && (dmem_resp || store_no_mem) ) begin
+                //         stations[i].status <= COMPLETE;
+                //         stations[i].valid <= 1'b0;
+                //         head <= head + PTR_WIDTH'(1);
+                //         overflow_alert <= 1'b0;
+                //     end
+                // end
             end
         end
     end
@@ -211,11 +211,12 @@ import rv32i_types::*;
         j = 'x;
         next_head_idx = head + PTR_WIDTH'(1);
         
-        if (is_mem) begin
-            if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready) begin
-                next_execute = stations[head];
-            end
-        end else if (!cdbus.flush) begin
+        // if (is_mem) begin
+        //     if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready) begin
+        //         next_execute = stations[head];
+        //     end
+        // end else 
+        if (!cdbus.flush) begin
             for (integer unsigned i = 0; i < DEPTH; i++) begin
                 if ((PTR_WIDTH+1)'(i) == count)
                     break;
