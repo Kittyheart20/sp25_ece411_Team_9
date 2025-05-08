@@ -18,6 +18,8 @@ import rv32i_types::*;
     localparam DEPTH = 32;
 
     rob_entry_t rob_table [DEPTH];
+    rob_entry_t rob_table_comb [DEPTH];
+
     rob_entry_t rob_entry_i;
 
     logic [4:0]  head, tail;
@@ -50,8 +52,7 @@ import rv32i_types::*;
 
     rob_entry_t empty_rob_entry;
     assign empty_rob_entry = '0;
-
-    always_ff @(posedge clk) begin 
+    always_ff @(posedge clk) begin
         if (rst) begin
             head <= '0;
             tail <= '0;
@@ -64,89 +65,26 @@ import rv32i_types::*;
             tail <= head + 5'd1;
             tail_addr <= tail;
             count <= '0;
-
-            rob_table[head].status <= empty;
-            rob_table[head].valid <= 1'b0;
-            
-            for (integer unsigned i = 1; i < 32; i++) begin
-                if (i < count) rob_table[(head+i)%32] <= '0;
-            end
+            rob_table <= rob_table_comb;
         end
         else begin
-            // Check if rd is being written back to & update it
-            // Writeback:
-            // set status=done, update rd_data with write result
-            // if (update_i) begin
-            //     rob_table[rob_addr].status <= done;
-            //     rob_table[rob_addr].rd_data <= rob_entry_i.rd_data;
-            // end
-
-            for (integer unsigned i = 0; i < DEPTH; i++) begin  // Writeback rd & status update
-                if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx) && rob_table[i].valid) begin
-                    rob_table[i].status <= done;
-                    rob_table[i].rd_data <= cdbus.alu_data;
-                    rob_table[i].rd_valid <= 1'b1;
-                end                  
-                if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx) && rob_table[i].valid) begin
-                    rob_table[i].status <= done;
-                    rob_table[i].rd_data <= cdbus.mul_data;
-                    rob_table[i].rd_valid <= 1'b1;
-                end                
-                if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx) && rob_table[i].valid) begin
-                    rob_table[i].status <= done;
-                    rob_table[i].rd_data <= cdbus.mem_data;
-                    rob_table[i].rd_valid <= 1'b1;
-
-                    rob_table[i].mem_addr <= cdbus.mem_addr;
-                    rob_table[i].mem_rmask <= cdbus.mem_rmask;
-                    rob_table[i].mem_wmask <= cdbus.mem_wmask;
-                    rob_table[i].mem_rdata <= cdbus.mem_rdata;
-                    rob_table[i].mem_wdata <= cdbus.mem_wdata;
-                end
-                if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx) && rob_table[i].valid) begin
-                    rob_table[i].status <= done;
-                    rob_table[i].rd_data <= cdbus.br_data;
-                    rob_table[i].rd_valid <= 1'b1;
-                    rob_table[i].br_en <= cdbus.br_en;
-                    rob_table[i].pc_new <= cdbus.pc_new;
-                    rob_table[i].prediction <= cdbus.prediction;
-                end
-            end
-        
-            // Commmit: dequeue == 1'b1
-            // output head rd_data to update regfile
-            // v=0, head ++
-            // if branch mispredicted: flush all inst after it
-            // if (remove) begin
-            //     // rob_table[head].valid <= '0;
-            //     // head <= (head == DEPTH-1) ? '0 : head + 1'b1;
-            // end
-            // Commmit: dequeue == 1'b1
-            // output head rd_data to update regfile
-            // v=0, head ++
-            // if branch mispredicted: flush all inst after it
+            rob_table <= rob_table_comb;
             if (remove) begin
-                rob_table[head].valid <= '0;
                 head <= head + 5'd1;
             end
-            // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
-            //     rob_table[head].status <= empty;
+            // if (rob_table_comb[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
+            //     rob_table_comb[head].status <= empty;
             // end
             
-            if (rob_table[head].status == done) begin   // critical path
-                rob_table[head].status <= empty;
-                // rob_table[head].valid <= '0;
+            if (rob_table_comb[head].status == done) begin   // critical path
+                // rob_table_comb[head].valid <= '0;
                 // head <= head + 5'd1;
             end
 
 
-            // Rename: enqueue == 1'b1
-            // set v=1, status = wait
-            // fill in type, rd_data, and br_pred if necessary
-            // tail ++    
+   
             
             if (insert) begin
-                rob_table[tail] <= rob_entry_i;
                 tail_addr <= tail;
                 tail <= tail + 5'd1;
             end
@@ -159,10 +97,86 @@ import rv32i_types::*;
             endcase
 
             // Update rs1 and rs2 when next execute arrives
+        end
+   end
+    always_comb begin 
+        rob_table_comb = rob_table;
+        if (rst) begin
+
+            rob_table_comb = '{DEPTH{empty_rob_entry}};
+        end
+        else if (cdbus.flush) begin
+ 
+
+            rob_table_comb[head].status = empty;
+            rob_table_comb[head].valid = 1'b0;
+            
+            for (integer unsigned i = 1; i < 32; i++) begin
+                if (i < count) rob_table_comb[(head+i)%32] = '0;
+            end
+        end
+        else begin
+   
+
+            for (integer unsigned i = 0; i < DEPTH; i++) begin  // Writeback rd & status update
+                if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx) && rob_table[i].valid) begin
+                    rob_table_comb[i].status = done;
+                    rob_table_comb[i].rd_data = cdbus.alu_data;
+                    rob_table_comb[i].rd_valid = 1'b1;
+                end                  
+                if (cdbus.mul_valid && (rob_table[i].rd_addr == cdbus.mul_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mul_rob_idx) && rob_table[i].valid) begin
+                    rob_table_comb[i].status = done;
+                    rob_table_comb[i].rd_data = cdbus.mul_data;
+                    rob_table_comb[i].rd_valid = 1'b1;
+                end                
+                if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx) && rob_table[i].valid) begin
+                    rob_table_comb[i].status = done;
+                    rob_table_comb[i].rd_data = cdbus.mem_data;
+                    rob_table_comb[i].rd_valid = 1'b1;
+
+                    rob_table_comb[i].mem_addr = cdbus.mem_addr;
+                    rob_table_comb[i].mem_rmask = cdbus.mem_rmask;
+                    rob_table_comb[i].mem_wmask = cdbus.mem_wmask;
+                    rob_table_comb[i].mem_rdata = cdbus.mem_rdata;
+                    rob_table_comb[i].mem_wdata = cdbus.mem_wdata;
+                end
+                if (cdbus.br_valid && (rob_table[i].rd_addr == cdbus.br_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.br_rob_idx) && rob_table[i].valid) begin
+                    rob_table_comb[i].status = done;
+                    rob_table_comb[i].rd_data = cdbus.br_data;
+                    rob_table_comb[i].rd_valid = 1'b1;
+                    rob_table_comb[i].br_en = cdbus.br_en;
+                    rob_table_comb[i].pc_new = cdbus.pc_new;
+                    rob_table_comb[i].prediction = cdbus.prediction;
+                end
+            end
+        
+
+            if (remove) begin
+                rob_table_comb[head].valid = '0;
+            end
+ 
+            
+            if (rob_table[head].status == done) begin   // critical path
+                rob_table_comb[head].status = empty;
+                // rob_table_comb[head].valid = '0;
+                // head = head + 5'd1;
+            end
+
+
+            // Rename: enqueue == 1'b1
+            // set v=1, status = wait
+            // fill in type, rd_data, and br_pred if necessary
+            // tail ++    
+            
+            if (insert) begin
+                rob_table_comb[tail] = rob_entry_i;
+ 
+            end
+            
             for (integer i = 0; i < 4; i++) begin
                 if (next_execute[i].valid && rob_table[next_execute[i].rd_rob_idx].status==rob_wait) begin  // add this in deeper_rsv too
-                    rob_table[next_execute[i].rd_rob_idx].rs1_data <= next_execute[i].rs1_data;
-                    rob_table[next_execute[i].rd_rob_idx].rs2_data <= next_execute[i].rs2_data;
+                    rob_table_comb[next_execute[i].rd_rob_idx].rs1_data = next_execute[i].rs1_data;
+                    rob_table_comb[next_execute[i].rd_rob_idx].rs2_data = next_execute[i].rs2_data;
                 end
             end
         end
