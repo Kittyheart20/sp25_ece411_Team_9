@@ -46,20 +46,20 @@ import rv32i_types::*;
             st_overflow_alert <= 1'b0;
         end
         else begin
-            if (new_rs_entry.regf_we) begin
-                if (new_rs_entry.valid && rs_available) begin : new_rs_entry_to_station
-                    st_queue[st_tail] <= new_rs_entry;
-                    st_tail <= st_tail + PTR_WIDTH'(1);
-                    if (st_tail == st_tail-PTR_WIDTH'(1))
-                        st_overflow_alert <= 1'b1;
-                end 
-            end else begin                
+            if (new_rs_entry.regf_we) begin               
                 if (new_rs_entry.valid && rs_available) begin
                     ld_queue[ld_tail] <= new_rs_entry;
                     ld_tail <= ld_tail + PTR_WIDTH'(1);
                     if (ld_tail == ld_tail-PTR_WIDTH'(1))
                         ld_overflow_alert <= 1'b1;
                 end 
+            end else begin
+                if (new_rs_entry.valid && rs_available) begin : new_rs_entry_to_station
+                    st_queue[st_tail] <= new_rs_entry;
+                    st_tail <= st_tail + PTR_WIDTH'(1);
+                    if (st_tail == st_tail-PTR_WIDTH'(1))
+                        st_overflow_alert <= 1'b1;
+                end  
             end
 
             for (integer unsigned i = 0; i < DEPTH; i++) begin
@@ -239,9 +239,9 @@ import rv32i_types::*;
         // rs_available is for inserting the new_entry
         rs_available = 1'b1;
         if (new_rs_entry.regf_we)
-            rs_available = (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
-        else
             rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
+        else
+            rs_available = (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
         // rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH))) || (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
 
     //    rs_available = 1'b1;
