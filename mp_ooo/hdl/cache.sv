@@ -38,20 +38,20 @@ module cache (
     
     cache_state_t state, next_state;
 
-    cache_state_t prev_state;
-    always_ff @(posedge clk) begin
-        if (rst) begin
-            prev_state <= IDLE;
-        end
-        else begin
-            prev_state <= state;  
-        end
-    end
+    // cache_state_t prev_state;
+    // always_ff @(posedge clk) begin
+    //     if (rst) begin
+    //         prev_state <= IDLE;
+    //     end
+    //     else begin
+    //         prev_state <= state;  
+    //     end
+    // end
     
     
     logic [3:0] prev_rmask, prev_wmask;
     logic [31:0] prev_addr;
-    logic new_request;
+  //  logic new_request;
     
     
     logic load_tag [WAY_COUNT];
@@ -63,7 +63,7 @@ module cache (
     logic [1:0] victim_way;
     logic hit;
     logic dirty_victim;
-    logic [255:0] data_word_mask;
+    //logic [255:0] data_word_mask;
     
     
     logic [2:0] plru_bits;
@@ -77,7 +77,7 @@ module cache (
     
     
     logic [255:0] data_write [WAY_COUNT];
-    logic [31:0] mask_offset; 
+    // logic [31:0] mask_offset; 
     logic [31:0] write_offset; 
     logic [4:0] addr_offset;
 
@@ -88,8 +88,8 @@ module cache (
     logic [31:0] ufp_addr_prev;
     logic [3:0] ufp_rmask_prev, ufp_wmask_prev;
     logic dfp_resp_prev;
-    logic [255:0] dfp_rdata_prev;
-    logic first_trans;
+    // logic [255:0] dfp_rdata_prev;
+    //logic first_trans;
 
     assign addr_tag = ufp_addr_prev[31:9];
     assign addr_set = ufp_addr_prev[8:5];
@@ -100,11 +100,11 @@ module cache (
     
     logic [TAG_BITS-1:0] addr_tag_instant;
     logic [SET_BITS-1:0] addr_set_instant;
-        logic [4:0] addr_offset_instant;
+        // logic [4:0] addr_offset_instant;
 
     assign addr_tag_instant = ufp_addr[31:9];
     assign addr_set_instant = ufp_addr[8:5];
-    assign addr_offset_instant = ufp_addr[4:0];
+    // assign addr_offset_instant = ufp_addr[4:0];
 
     logic data_written_cache;
     assign data_written_cache = ~((|ufp_rmask) | (|ufp_wmask));
@@ -194,10 +194,10 @@ module cache (
     );
     
     
-    always_comb begin
-        new_request = ((ufp_rmask != prev_rmask) || (ufp_wmask != prev_wmask) || 
-                      (ufp_addr != prev_addr)) || first_trans;
-    end
+    // always_comb begin
+    //     new_request = ((ufp_rmask != prev_rmask) || (ufp_wmask != prev_wmask) || 
+    //                   (ufp_addr != prev_addr)) || first_trans;
+    // end
     
     
     always_ff @(posedge clk) begin
@@ -289,19 +289,19 @@ module cache (
     end
     
     
-    always_comb begin
+    // always_comb begin
         
-        data_word_mask = 256'b0;
-        mask_offset = 32'b0; 
-        if (|ufp_wmask) begin
-            mask_offset = addr_offset[4:2] * 32; 
+    //     data_word_mask = 256'b0;
+    //     mask_offset = 32'b0; 
+    //     if (|ufp_wmask) begin
+    //         mask_offset = addr_offset[4:2] * 32; 
             
-            if (ufp_wmask[0]) data_word_mask[mask_offset +: 8] = 8'hFF;
-            if (ufp_wmask[1]) data_word_mask[mask_offset + 8 +: 8] = 8'hFF;
-            if (ufp_wmask[2]) data_word_mask[mask_offset + 16 +: 8] = 8'hFF;
-            if (ufp_wmask[3]) data_word_mask[mask_offset + 24 +: 8] = 8'hFF;
-        end
-    end
+    //         if (ufp_wmask[0]) data_word_mask[mask_offset +: 8] = 8'hFF;
+    //         if (ufp_wmask[1]) data_word_mask[mask_offset + 8 +: 8] = 8'hFF;
+    //         if (ufp_wmask[2]) data_word_mask[mask_offset + 16 +: 8] = 8'hFF;
+    //         if (ufp_wmask[3]) data_word_mask[mask_offset + 24 +: 8] = 8'hFF;
+    //     end
+    // end
     
     
     always_comb begin
@@ -501,8 +501,8 @@ module cache (
             ufp_rmask_prev <= 4'b0;
             ufp_wmask_prev <= 4'b0;
             dfp_resp_prev <= 1'b0;
-            dfp_rdata_prev <= 256'b0;
-            first_trans <= 1'b1;
+            // dfp_rdata_prev <= 256'b0;
+          //  first_trans <= 1'b1;
             dfp_rdata_stored <= 256'b0;
         end
         else begin
@@ -512,10 +512,10 @@ module cache (
                         ufp_rmask_prev <= ufp_rmask;
                         ufp_wmask_prev <= ufp_wmask;
                         dfp_resp_prev <= dfp_resp;
-                        dfp_rdata_prev <= dfp_rdata;
+                        // dfp_rdata_prev <= dfp_rdata;
                     end
             end
-            first_trans <= first_trans && (state != COMPARE);
+           // first_trans <= first_trans && (state != COMPARE);
             if(dfp_resp && (state == WRITEBACK || state == ALLOCATE)) begin
                  dfp_rdata_stored <= dfp_rdata;
             end

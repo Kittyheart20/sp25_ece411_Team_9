@@ -4,16 +4,13 @@ import rv32i_types::*;
     input logic clk,
     input logic rst,
     input id_dis_stage_reg_t dispatch_struct_in,
-    // output logic [4:0] current_rd_rob_idx,
     output  rob_entry_t rob_entry_o,
 
-    input   logic       enqueue_i,  // Do we need this? We can just use dispatch_struct_in.valid
-    // input   logic       update_i,
+    input   logic       enqueue_i,  // = dispatch_struct_in.valid
     input   logic       dequeue_i,
     input   cdb         cdbus,
+    input   reservation_station_t next_execute[4],
 
-
-    // output  logic [4:0] head_addr,
     output  logic [4:0] tail_addr,
     output  logic       full_o, // if full we need to stall
     output  rob_entry_t rob_table_o [32]
@@ -25,23 +22,19 @@ import rv32i_types::*;
 
     logic [4:0]  head, tail;
     logic [31:0] count; 
-    logic        empty_o;//, full_o;
-    // logic debug;
+    logic        empty_o;
     
     assign empty_o = (count == 32'd0);
     assign full_o = (count == DEPTH);
     assign rob_entry_o = rob_table[head];
-    // assign current_rd_rob_idx = tail_addr;
     
-    logic rob_update_mul, rob_update_alu;
     logic insert, remove;
 
-    assign insert = (dispatch_struct_in.valid && enqueue_i && (!full_o || dequeue_i));
+    assign insert = (enqueue_i && (!full_o || dequeue_i));
     assign remove = dequeue_i && !empty_o;
 
     always_comb begin
         rob_entry_i = '0;
-        //rob_entry_i = dispatch_struct_in;
         rob_entry_i.valid = dispatch_struct_in.valid;
         rob_entry_i.pc = dispatch_struct_in.pc;
         rob_entry_i.inst = dispatch_struct_in.inst;
@@ -55,20 +48,30 @@ import rv32i_types::*;
         rob_entry_i.regf_we = dispatch_struct_in.regf_we;
     end
 
-    logic [2:0] debug;
     rob_entry_t empty_rob_entry;
     assign empty_rob_entry = '0;
 
-    always_ff @(posedge clk) begin  // causes a double cycle in dispatch? rob_entry_o needs to be updated at the same cycle it is allocated in
-        if (rst || cdbus.flush) begin
+    always_ff @(posedge clk) begin 
+        if (rst) begin
             head <= '0;
             tail <= '0;
             tail_addr <= '0;
             count <= '0;
-            rob_table <= '{DEPTH{empty_rob_entry}}; // ss: initialize rob_table with 0s
-            debug <= '0;
+            rob_table <= '{DEPTH{empty_rob_entry}};
         end
-        //else if (dispatch_struct_in.valid) begin
+        else if (cdbus.flush) begin
+            head <= head + 5'd1;
+            tail <= head + 5'd1;
+            tail_addr <= tail;
+            count <= '0;
+
+            rob_table[head].status <= empty;
+            rob_table[head].valid <= 1'b0;
+            
+            for (integer unsigned i = 1; i < 32; i++) begin
+                if (i < count) rob_table[(head+i)%32] <= '0;
+            end
+        end
         else begin
             // Check if rd is being written back to & update it
             // Writeback:
@@ -90,7 +93,6 @@ import rv32i_types::*;
                     rob_table[i].rd_valid <= 1'b1;
                 end                
                 if (cdbus.mem_valid && (rob_table[i].rd_addr == cdbus.mem_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.mem_rob_idx) && rob_table[i].valid) begin
-                    debug <= '1;
                     rob_table[i].status <= done;
                     rob_table[i].rd_data <= cdbus.mem_data;
                     rob_table[i].rd_valid <= 1'b1;
@@ -107,37 +109,10 @@ import rv32i_types::*;
                     rob_table[i].rd_valid <= 1'b1;
                     rob_table[i].br_en <= cdbus.br_en;
                     rob_table[i].pc_new <= cdbus.pc_new;
+                    rob_table[i].prediction <= cdbus.prediction;
                 end
             end
         
-            // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
-            //     rob_table[head].status <= empty;
-            // end
-            
-            if (rob_table[head].status == done) begin
-                rob_table[head].status <= donex2;
-                rob_table[head].valid <= '0;
-            end else if (rob_table[head].status == donex2) begin
-                rob_table[head].status <= empty;
-                rob_table[head].valid <= '0;
-                // head <= (head == DEPTH-1) ? '0 : head + 5'd1;
-                head <= head + 5'd1;
-            end else if (rob_table[head].status == empty) begin
-                // head <= (head == DEPTH-1) ? '0 : head + 5'd1;
-                //head <= head + 5'd1;
-            end
-            // Rename: enqueue == 1'b1
-            // set v=1, status = wait
-            // fill in type, rd_data, and br_pred if necessary
-            // tail ++    
-            
-            if (insert) begin
-                rob_table[tail] <= rob_entry_i;
-                tail_addr <= tail;
-                // tail <= (tail == /*'1'*/DEPTH-1) ? '0 : tail + 1'b1;     // DEPTH-1 = 31 = 5'b11111;
-                tail <= tail + 5'd1;
-            end
-            
             // Commmit: dequeue == 1'b1
             // output head rd_data to update regfile
             // v=0, head ++
@@ -146,19 +121,53 @@ import rv32i_types::*;
             //     // rob_table[head].valid <= '0;
             //     // head <= (head == DEPTH-1) ? '0 : head + 1'b1;
             // end
+            // Commmit: dequeue == 1'b1
+            // output head rd_data to update regfile
+            // v=0, head ++
+            // if branch mispredicted: flush all inst after it
+            if (remove) begin
+                rob_table[head].valid <= '0;
+                head <= head + 5'd1;
+            end
+            // if (rob_table[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
+            //     rob_table[head].status <= empty;
+            // end
             
+            if (rob_table[head].status == done) begin   // critical path
+                rob_table[head].status <= empty;
+                // rob_table[head].valid <= '0;
+                // head <= head + 5'd1;
+            end
+
+
+            // Rename: enqueue == 1'b1
+            // set v=1, status = wait
+            // fill in type, rd_data, and br_pred if necessary
+            // tail ++    
+            
+            if (insert) begin
+                rob_table[tail] <= rob_entry_i;
+                tail_addr <= tail;
+                tail <= tail + 5'd1;
+            end
+            
+
             case ({insert, remove})
                 2'b10: count <= count + 1'b1; 
                 2'b01: count <= count - 1'b1; 
                 default: count <= count;      
             endcase
 
-        //end
+            // Update rs1 and rs2 when next execute arrives
+            for (integer i = 0; i < 4; i++) begin
+                if (next_execute[i].valid && rob_table[next_execute[i].rd_rob_idx].status==rob_wait) begin  // add this in deeper_rsv too
+                    rob_table[next_execute[i].rd_rob_idx].rs1_data <= next_execute[i].rs1_data;
+                    rob_table[next_execute[i].rd_rob_idx].rs2_data <= next_execute[i].rs2_data;
+                end
+            end
         end
    end
 
-    // assign head_addr = head;
     assign rob_table_o = rob_table;
-    // assign tail_addr = tail;
 
 endmodule

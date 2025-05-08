@@ -93,9 +93,9 @@ import rv32i_types::*;
     mult_ops mult_op_running;
     logic [31:0] prev_pc;
     logic [2:0]  module_idx;
-    
+    logic [4:0]  prev_rd_rob_idx;
     assign div_overflow_s = (a_div_s == 32'h80000000) && (b_div_s == 32'hFFFFFFFF);
-    assign new_inst = next_execute.valid && (prev_pc != next_execute.pc);
+    assign new_inst = next_execute.valid && (prev_pc != next_execute.pc || prev_rd_rob_idx != next_execute.rd_rob_idx);
 
     DW_mult_inst #(32, 32, 1) multiply_signed (
         .clk(clk), .rst(rst),
@@ -152,7 +152,7 @@ import rv32i_types::*;
             start <= '{default: 1'b0};
         end else begin
             prev_pc <= next_execute.pc;
-
+            prev_rd_rob_idx <= next_execute.rd_rob_idx;
             unique case (next_execute.status)
                 BUSY: begin
                     if (new_inst) begin
@@ -222,6 +222,9 @@ import rv32i_types::*;
                         execute_output.valid <= 1'b1; 
                     end
                 end 
+                IDLE: begin
+                    execute_output.valid <= 1'b0;                  
+                end
                 COMPLETE: begin
                     execute_output.valid <= 1'b0;                  
                 end

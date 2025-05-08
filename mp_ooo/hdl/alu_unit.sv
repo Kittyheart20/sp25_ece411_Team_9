@@ -1,7 +1,6 @@
 module alu_unit 
 import rv32i_types::*;
 (
-    // input  logic            clk,
     // input  logic            rst,
     input  reservation_station_t next_execute,
     output to_writeback_t   execute_output
@@ -9,12 +8,12 @@ import rv32i_types::*;
 
     logic [31:0] aluout;
     logic [31:0] a, b;
-    logic [31:0] rs1_for, rs2_for;
+    /*logic [31:0] rs1_for, rs2_for;
 
     always_comb begin           
         rs1_for = next_execute.rs1_data;   
         rs2_for = next_execute.rs2_data;
-    end
+    end*/
 
     always_comb begin
         a = '0;
@@ -22,14 +21,14 @@ import rv32i_types::*;
 
         if (next_execute.valid) begin
             unique case (next_execute.alu_m1_sel)
-                rs1_out: a = rs1_for; 
+                rs1_out: a = next_execute.rs1_data; 
                 pc_out:	 a = next_execute.pc;
                 no_out:  a = '0;
                 default: a = '0;
             endcase
 
             unique case (next_execute.alu_m2_sel)
-                rs2_out: b = rs2_for;
+                rs2_out: b = next_execute.rs2_data;
                 imm_out: b = next_execute.imm_sext;
                 four_out: b = 32'h4;
                 default: b = '0;
@@ -59,9 +58,8 @@ import rv32i_types::*;
 
 
     
-    always_comb begin
+    always_comb begin 
         execute_output = '0;
-	    execute_output.valid = 1'b0;
         
         if (next_execute.valid) begin
             execute_output.valid = next_execute.valid;
@@ -75,6 +73,9 @@ import rv32i_types::*;
             execute_output.rd_rob_idx = next_execute.rd_rob_idx;
             execute_output.rd_data = aluout;
             execute_output.regf_we = next_execute.regf_we;
+        end else begin
+            execute_output = '0;
+	        execute_output.valid = 1'b0;
         end
     end
 

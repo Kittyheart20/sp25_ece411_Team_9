@@ -1,7 +1,6 @@
 module br_unit // and jumps
     import rv32i_types::*;
     (
-        // input  logic            clk,
         // input  logic            rst,
         input  reservation_station_t next_execute,
         output to_writeback_t   execute_output
@@ -65,7 +64,7 @@ module br_unit // and jumps
     end
     
 
-    always_comb begin
+    always_comb begin 
         execute_output = '0;
 	    execute_output.valid = 1'b0;
         
@@ -73,6 +72,7 @@ module br_unit // and jumps
             execute_output.valid = next_execute.valid;
             execute_output.pc = next_execute.pc;
             execute_output.inst = next_execute.inst;
+            execute_output.prediction = next_execute.prediction;
             // if (br_en) begin
             //     ex_mem_reg_next.pc_next = pc_branch;
             // end
@@ -93,6 +93,9 @@ module br_unit // and jumps
                 execute_output.pc_new = pc_new;
             else 
                 execute_output.pc_new = next_execute.pc_new;
+        end else begin
+            execute_output = '0;
+	        // execute_output.valid <= 1'b0;
         end
     end
 
