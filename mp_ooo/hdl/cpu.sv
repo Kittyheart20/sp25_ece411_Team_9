@@ -54,7 +54,7 @@ import rv32i_types::*;
     to_writeback_t   next_writeback [NUM_FUNC_UNIT]; 
 
     logic [31:0] rs1_data, rs2_data;
-    logic [4:0] current_rd_rob_idx;
+    logic [3:0] current_rd_rob_idx;
 
     // Cache
     logic   [31:0]  ufp_addr;
@@ -294,7 +294,7 @@ import rv32i_types::*;
         .decode_struct_out  (decode_struct_out_early)
     );
 
-    /*logic is_compressed_inst;
+    /*logic is_compressed_inst;+ 
     decode_compressed decode_compressed_stage (
         .decode_struct_in   (decode_struct_in),
         .decode_struct_out  (decode_struct_out_compressed),
@@ -319,7 +319,7 @@ import rv32i_types::*;
     );
     
 
-    rob_entry_t rob_table_o [32];
+    rob_entry_t rob_table_o [16];
 
     rob rob_inst (
         .clk        (clk),
@@ -355,7 +355,7 @@ import rv32i_types::*;
         .cdbus(cdbus),
         .dmem_resp(dmem_resp),
 
-        .rs1_rob_idx(rs1_rob_idx),
+        .rs1_rob_idx(rs1_rob_idx), 
         .rs2_rob_idx(rs2_rob_idx),
         .integer_alu_available(int_alu_available),
         .mul_alu_available(mul_alu_available),
@@ -728,19 +728,26 @@ import rv32i_types::*;
             gselect_taken_prev <= gselect_taken;
         end
     end
-
+    logic[31:0] pc_plus_4;
+    logic[31:0] imm_plus_pc;
+    logic[31:0] rob_pc_plus_4;
     always_comb begin : update_rs_we_cdbus
+        rob_pc_plus_4 = {rob_entry_o.pc [31:2] + 1'b1, rob_entry_o.pc[1:0]};;
         cdbus = '0;
-        pc_next = pc + 32'd4;
+        pc_plus_4 = {pc[31:2] + 1'b1, pc[1:0]};
+        pc_next = pc_plus_4;
         prediction_followed = '0;
         gselect_taken = '0;
-        if(decode_struct_out_early.opcode == op_b_jal || decode_struct_out_early.opcode == op_b_br) begin
-            if(prediction) begin
-                prediction_followed = '1;
-                pc_next = decode_struct_out_early.imm + decode_struct_out_early.pc;
-                gselect_taken = '1;
-                if(pc == pc_next) begin
-                    pc_next = pc + 32'd4;
+        imm_plus_pc = decode_struct_out_early.imm + decode_struct_out_early.pc;
+        if(!cdbus.flush) begin
+            if(decode_struct_out_early.opcode == op_b_jal || decode_struct_out_early.opcode == op_b_br) begin
+                if(prediction) begin
+                    prediction_followed = '1;
+                    pc_next = imm_plus_pc;
+                    gselect_taken = '1;
+                    if(pc == pc_next) begin
+                        pc_next = pc_plus_4;
+                    end
                 end
             end
         end
@@ -800,7 +807,7 @@ import rv32i_types::*;
             // end 
             if(rob_entry_o.br_en != rob_entry_o.prediction) begin
                 if(rob_entry_o.br_en == 0) begin
-                    pc_next = rob_entry_o.pc + 32'd4;
+                    pc_next = rob_pc_plus_4;
                     cdbus.flush = '1;
                 end else begin
                     pc_next = rob_entry_o.pc_new;

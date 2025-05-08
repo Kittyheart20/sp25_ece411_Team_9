@@ -18,7 +18,7 @@ import rv32i_types::*;
     
     input cdb cdbus,
     input logic dmem_resp,
-    input rob_entry_t rob_table [32],
+    input rob_entry_t rob_table [16],
 
     input  logic [4:0] rs1_rob_idx,
     input  logic [4:0] rs2_rob_idx,
@@ -97,7 +97,7 @@ import rv32i_types::*;
 
 
         // Get rs1 rs2 data from ROB (Done w writeback, before commit)
-        for (integer i = 0; i < 32; i++) begin
+        for (integer i = 0; i < 16; i++) begin
             if ((rob_table[i].rd_valid) && (rob_table[i].valid)) begin
                 if ((!rs1_ready) && (rob_table[i].rd_addr == new_rs_entry.rs1_addr) && (rob_table[i].rd_rob_idx == new_rs_entry.rs1_rob_idx)) begin
                     new_rs_entry.rs1_data = rob_table[i].rd_data;

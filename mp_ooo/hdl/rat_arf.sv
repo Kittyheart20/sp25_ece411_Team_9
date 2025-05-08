@@ -1,7 +1,7 @@
 module rat_arf 
 import rv32i_types::*;
 #(
-    parameter ROB_IDX_WIDTH = 5,
+    parameter ROB_IDX_WIDTH = 4,
     parameter TAG_WIDTH     = 3
 )
 (

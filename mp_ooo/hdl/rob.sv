@@ -11,18 +11,18 @@ import rv32i_types::*;
     input   cdb         cdbus,
     input   reservation_station_t next_execute[4],
 
-    output  logic [4:0] tail_addr,
+    output  logic [3:0] tail_addr,
     output  logic       full_o, // if full we need to stall
-    output  rob_entry_t rob_table_o [32]
+    output  rob_entry_t rob_table_o [16]
 );
-    localparam DEPTH = 32;
+    localparam DEPTH = 16;
 
     rob_entry_t rob_table [DEPTH];
     rob_entry_t rob_table_comb [DEPTH];
 
     rob_entry_t rob_entry_i;
 
-    logic [4:0]  head, tail;
+    logic [3:0]  head, tail;
     logic [31:0] count; 
     logic        empty_o;
     
@@ -112,7 +112,7 @@ import rv32i_types::*;
             rob_table_comb[head].valid = 1'b0;
             
             for (integer unsigned i = 1; i < 32; i++) begin
-                if (i < count) rob_table_comb[(head+i)%32] = '0;
+                if (i < count) rob_table_comb[(head+i)%16] = '0;
             end
         end
         else begin

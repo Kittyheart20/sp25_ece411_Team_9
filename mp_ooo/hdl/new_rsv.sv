@@ -1,7 +1,7 @@
 module reservation_station
 import rv32i_types::*;
 # (
-    parameter DEPTH = 8,
+    parameter DEPTH = 2,
     parameter ROB_IDX_WIDTH = 5
 )(
     input  logic        is_mem,
