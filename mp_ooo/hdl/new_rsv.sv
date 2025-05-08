@@ -21,19 +21,14 @@ import rv32i_types::*;
     
     reservation_station_t default_reservation_station;
     reservation_station_t stations[DEPTH];
-    logic [PTR_WIDTH-1:0] head, tail; 
+    logic [PTR_WIDTH-1:0] head, tail, next_head_idx; 
     logic [PTR_WIDTH:0]   count;
     logic cdb_update;
-    //logic executed;
-    //logic executing_stall;
-    logic [PTR_WIDTH-1:0] available_idx, next_idx;
     logic valid [DEPTH];
-    logic [63:0] least_order;
-    logic chosen_execute;
     logic overflow_alert;
 
-    assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
     assign default_reservation_station = '0;
+    assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
 
     always_ff @(posedge clk) begin
         if (rst || cdbus.flush) begin
@@ -44,7 +39,7 @@ import rv32i_types::*;
         end
         else begin
             if (new_rs_entry.valid && rs_available) begin : new_rs_entry_to_station
-                if (!is_mem)    stations[available_idx] <= new_rs_entry; 
+                if (!is_mem)    stations[tail] <= new_rs_entry; 
                 else            stations[tail] <= new_rs_entry;
                 tail <= tail + PTR_WIDTH'(1);
 
@@ -92,61 +87,65 @@ import rv32i_types::*;
                             stations[i].valid <= 1'b0;
                             if (PTR_WIDTH'(i)==head) begin
                                 head <= head + PTR_WIDTH'(1);
+                                // head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
-                                head <= tail - PTR_WIDTH'(1);
+                                tail <= tail - PTR_WIDTH'(1);
                                 overflow_alert <= 1'b0;
-                            end 
-                            //executing_stall <= '0;
+                            end
                         end
                         else if  (cdbus.mul_rob_idx == stations[i].rd_rob_idx && cdbus.mul_valid) begin
                             stations[i].status <= COMPLETE;  
                             stations[i].valid <= 1'b0;  
                             if (PTR_WIDTH'(i)==head) begin
                                 head <= head + PTR_WIDTH'(1);
+                                // head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
-                                head <= tail - PTR_WIDTH'(1);
+                                tail <= tail - PTR_WIDTH'(1);
                                 overflow_alert <= 1'b0;
-                            end       
+                            end   
                         end      
                         else if  (cdbus.br_rob_idx == stations[i].rd_rob_idx && cdbus.br_valid) begin
                             stations[i].status <= COMPLETE;   
                             stations[i].valid <= 1'b0;
                             if (PTR_WIDTH'(i)==head) begin
                                 head <= head + PTR_WIDTH'(1);
+                                // head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
-                                head <= tail - PTR_WIDTH'(1);
+                                tail <= tail - PTR_WIDTH'(1);
                                 overflow_alert <= 1'b0;
-                            end    
+                            end
                         end            
                         else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
                             stations[i].status <= COMPLETE;
                             stations[i].valid <= 1'b0;
                             if (PTR_WIDTH'(i)==head) begin
                                 head <= head + PTR_WIDTH'(1);
+                                // head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
-                                head <= tail - PTR_WIDTH'(1);
+                                tail <= tail - PTR_WIDTH'(1);
                                 overflow_alert <= 1'b0;
-                            end   
+                            end
                         end                     
                         else if  (stations[i].valid && cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
                             stations[i].status <= WAIT_STORE;
                             stations[i].valid <= 1'b0;
-                        end 
+                        end // skip here
                     end
                     else if  ((stations[i].status == WAIT_STORE) && (dmem_resp || store_no_mem)) begin
                         stations[i].status <= COMPLETE;
                         stations[i].valid <= 1'b0;
                         if (PTR_WIDTH'(i)==head) begin
                             head <= head + PTR_WIDTH'(1);
+                            // head <= next_head_idx;
                             overflow_alert <= 1'b0;
                         end else if (PTR_WIDTH'(i)==tail) begin
-                            head <= tail - PTR_WIDTH'(1);
+                            tail <= tail - PTR_WIDTH'(1);
                             overflow_alert <= 1'b0;
-                        end   
+                        end
                     end
                     if (!(stations[head].valid) && count > (PTR_WIDTH+1)'(0)) begin
                         head <= head + PTR_WIDTH'(1);
@@ -215,6 +214,7 @@ import rv32i_types::*;
 
         next_execute = '0;
         j = 'x;
+        next_head_idx = head + PTR_WIDTH'(1);
         
         if (is_mem) begin
             if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready) begin
@@ -231,60 +231,21 @@ import rv32i_types::*;
                     break;
                 end
             end
+
+            // for (integer unsigned i = 2; i<DEPTH; i++) begin
+            //     if ((PTR_WIDTH+1)'(i) >= count)
+            //         break;
+
+            //     j = head + PTR_WIDTH'(i);
+            //     if (stations[j].valid || i == count-1) begin
+            //         next_head_idx = j;
+            //         break;
+            //     end
+            // end
         end
 
     end
 
     assign rs_available = (count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
-    assign available_idx = tail;
-
-    // logic dummy;
-    // always_comb begin : update_count
-    //     count = tail - head;        
-    //     rs_available = 1'b0;
-    //     next_execute = '0;
-    //     //executed = '0;
-    //     chosen_execute = '0;
-    //     available_idx = '0;
-    //     next_idx = '0;
-    //     least_order = 64'hFFFFFFFFFFFFFFFF; 
-
-    //     if (tail < head)
-    //         {dummy, count} = {{1'b1, tail} - {1'b0, head}};
-        
-    //     if (is_mem) begin
-    //         if ((stations[tail].status == IDLE) || (stations[tail].status == COMPLETE)) begin
-    //             available_idx = tail;
-    //             rs_available = 1'b1;
-    //         end
-
-    //         if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready/* && (!executing_stall || !(|stations[i].mem_wmask))*/) begin
-    //             next_execute = stations[head];
-    //             //executed = 1'b1;
-    //         end
-    //     end else if (!cdbus.flush) begin
-    //         for (integer unsigned i = 0; i < DEPTH; i++) begin
-    //             if ((stations[i].status == IDLE) || (stations[i].status == COMPLETE) && !rs_available) begin
-    //                 rs_available = 1'b1;
-    //                 available_idx = PTR_WIDTH'(i);
-    //             end
-    //             if (valid[i] && stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && (stations[i].order < least_order)) begin
-    //                 least_order = stations[i].order;
-    //                 next_idx = PTR_WIDTH'(i);
-    //                 chosen_execute = '1;
-    //             end
-    //         end
-
-    //         if (chosen_execute)
-    //             next_execute = stations[next_idx];
-            
-    //         // for (integer i = 0; i < DEPTH; i++) begin
-    //         //     if (valid[i] && stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && chosen_execute/* && (!executing_stall || !(|stations[i].mem_wmask))*/) begin
-    //         //         next_execute = stations[i];
-    //         //         executed = 1'b1;
-    //         //     end
-    //         // end            
-    //     end
-    // end
     
 endmodule
