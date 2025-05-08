@@ -42,9 +42,8 @@ import rv32i_types::*;
     reservation_station_t       station_input[4];
 
     
-    logic cdb_update;
-
-    assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
+    // logic cdb_update;
+    // assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
     
     always_comb begin : fill_new_rs_entry
         new_rs_entry.valid = dispatch_struct_in.valid;

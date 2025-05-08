@@ -51,7 +51,7 @@ import rv32i_types::*;
                 alu_op_and: aluout = a &   b;
 		        alu_op_slt: aluout = ($signed(a) < $signed(b)) ? 32'b1 : 32'b0;
                 alu_op_sltu: aluout = (a < b) ? 32'b1 : 32'b0;
-                default   : aluout = '0;
+                default   : /*aluout = '0*/;
             endcase
         end
     end
@@ -73,10 +73,11 @@ import rv32i_types::*;
             execute_output.rd_rob_idx = next_execute.rd_rob_idx;
             execute_output.rd_data = aluout;
             execute_output.regf_we = next_execute.regf_we;
-        end else begin
-            execute_output = '0;
-	        execute_output.valid = 1'b0;
-        end
+        end 
+        // else begin
+        //     execute_output = '0;
+	    //     execute_output.valid = 1'b0;
+        // end
     end
 
 endmodule
