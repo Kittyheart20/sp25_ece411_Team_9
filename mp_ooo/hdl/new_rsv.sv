@@ -86,8 +86,7 @@ import rv32i_types::*;
                             stations[i].status <= COMPLETE;
                             stations[i].valid <= 1'b0;
                             if (PTR_WIDTH'(i)==head) begin
-                                head <= head + PTR_WIDTH'(1);
-                                // head <= next_head_idx;
+                                head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
                                 tail <= tail - PTR_WIDTH'(1);
@@ -98,8 +97,7 @@ import rv32i_types::*;
                             stations[i].status <= COMPLETE;  
                             stations[i].valid <= 1'b0;  
                             if (PTR_WIDTH'(i)==head) begin
-                                head <= head + PTR_WIDTH'(1);
-                                // head <= next_head_idx;
+                                head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
                                 tail <= tail - PTR_WIDTH'(1);
@@ -110,8 +108,7 @@ import rv32i_types::*;
                             stations[i].status <= COMPLETE;   
                             stations[i].valid <= 1'b0;
                             if (PTR_WIDTH'(i)==head) begin
-                                head <= head + PTR_WIDTH'(1);
-                                // head <= next_head_idx;
+                                head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
                                 tail <= tail - PTR_WIDTH'(1);
@@ -122,8 +119,7 @@ import rv32i_types::*;
                             stations[i].status <= COMPLETE;
                             stations[i].valid <= 1'b0;
                             if (PTR_WIDTH'(i)==head) begin
-                                head <= head + PTR_WIDTH'(1);
-                                // head <= next_head_idx;
+                                head <= next_head_idx;
                                 overflow_alert <= 1'b0;
                             end else if (PTR_WIDTH'(i)==tail) begin
                                 tail <= tail - PTR_WIDTH'(1);
@@ -139,8 +135,7 @@ import rv32i_types::*;
                         stations[i].status <= COMPLETE;
                         stations[i].valid <= 1'b0;
                         if (PTR_WIDTH'(i)==head) begin
-                            head <= head + PTR_WIDTH'(1);
-                            // head <= next_head_idx;
+                            head <= next_head_idx;
                             overflow_alert <= 1'b0;
                         end else if (PTR_WIDTH'(i)==tail) begin
                             tail <= tail - PTR_WIDTH'(1);
@@ -232,16 +227,19 @@ import rv32i_types::*;
                 end
             end
 
-            // for (integer unsigned i = 2; i<DEPTH; i++) begin
-            //     if ((PTR_WIDTH+1)'(i) >= count)
-            //         break;
+            for (integer unsigned i = 1; i<DEPTH; i++) begin
+                j = head + PTR_WIDTH'(i);
 
-            //     j = head + PTR_WIDTH'(i);
-            //     if (stations[j].valid || i == count-1) begin
-            //         next_head_idx = j;
-            //         break;
-            //     end
-            // end
+                if ((PTR_WIDTH+1)'(i) == count) begin
+                    next_head_idx = j;
+                    break;
+                end
+
+                if (stations[j].valid) begin
+                    next_head_idx = j;
+                    break;
+                end
+            end
         end
 
     end
