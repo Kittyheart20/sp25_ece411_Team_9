@@ -36,7 +36,7 @@ module tournament_predictor #(
         .prediction(prediction_perceptron)
     );
 
-    parameter SEL_BITS = 4; 
+    localparam SEL_BITS = 4; 
     localparam SEL_ENTRIES = 2**SEL_W;
     logic [SEL_BITS-1:0] selector_table [0:SEL_ENTRIES-1];
     logic [SEL_W-1:0] sel_idx_predict, sel_idx_update;
