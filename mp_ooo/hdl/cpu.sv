@@ -21,7 +21,6 @@ import rv32i_types::*;
 
     always_comb begin: default_values
         default_reservation_station = '0;
-
         default_to_writeback = '0;
     end
 
@@ -734,6 +733,7 @@ import rv32i_types::*;
     logic[31:0] imm_plus_pc;
     logic[31:0] rob_pc_plus_4;
     logic[31:0] flush_pc_registered;
+
     always_ff @(posedge clk) begin 
         if (rst) begin
             flush_registered <= '0;
@@ -752,6 +752,7 @@ import rv32i_types::*;
         end else flush_registered <= '0;
         end
     end
+
     always_comb begin : update_rs_we_cdbus
         rob_pc_plus_4 = {rob_entry_o.pc [31:2] + 1'b1, rob_entry_o.pc[1:0]};;
         cdbus = '0;
@@ -834,36 +835,13 @@ import rv32i_types::*;
     end
 
     logic stall_prev;
-    //logic stall_till_new_resp;
-    //logic[4:0] stall_counter;
     always_ff @(posedge clk) begin
         if (rst) begin
             stall_prev <= 1'b0;
-            //stall_till_new_resp <= 1'b0;
-            //stall_counter <= '0;
             pc_next_prev <= '0;
         end
         else begin
             pc_next_prev <= pc_next;
-            /*if(cdbus.flush) begin
-                //stall_till_new_resp <= 1'b1;
-                if((pc_next[31:5] == last_instr_addr[31:5])) begin
-                    stall_counter <= 5'd1;
-                end else begin
-                stall_counter <= '0;
-                end
-            end else if(dfp_resp) begin
-                // stall_till_new_resp <= 1'b0;
-                stall_counter <= stall_counter + 5'd1;
-            end
-            else if (stall_counter > 0) begin
-                // stall_till_new_resp <= 1'b0;
-                stall_counter <= stall_counter + 5'd1;
-            end
-            if(stall_counter == 5) begin
-                //stall_till_new_resp <= 1'b0;
-            end*/
-            
             stall_prev <= stall;
         end
     end
@@ -879,10 +857,6 @@ import rv32i_types::*;
         mem_stall_unit  = !mem_available     && (decode_struct_out.op_type == mem || decode_struct_out.op_type == none);
 
         if (empty_o || full_o || rob_full_o) stall = 1'b1;
-        // else if (stall_prev == 0) begin 
-        //     stall = 1'b1;
-        //     stall_except_empty = 1'b1;
-        // end
         else if (alu_stall_unit | mult_stall_unit | br_stall_unit | mem_stall_unit) begin
             stall = 1'b1;
             stall_except_empty = 1'b1;
@@ -895,14 +869,14 @@ import rv32i_types::*;
             rsv_stall = 1'b1;
             stall_except_empty = 1'b1;
         end 
-        else if (dispatch_struct_in.valid && ( ( (dispatch_struct_in.op_type == alu && decode_struct_out.op_type == alu)) 
-                    || ( (dispatch_struct_in.op_type == mul && decode_struct_out.op_type == mul))  
-                    || ((dispatch_struct_in.op_type == mem  && decode_struct_out.op_type == mem))
-                    || (  (dispatch_struct_in.op_type == br && decode_struct_out.op_type == br)) ))  begin
-             if (stall_prev == 0) begin 
+        else if (dispatch_struct_in.valid && ( ((dispatch_struct_in.op_type == alu && decode_struct_out.op_type == alu)) 
+                || ((dispatch_struct_in.op_type == mul && decode_struct_out.op_type == mul))  
+                || ((dispatch_struct_in.op_type == mem  && decode_struct_out.op_type == mem))
+                || ((dispatch_struct_in.op_type == br && decode_struct_out.op_type == br)) ))  begin
+            if (stall_prev == 0) begin 
                 stall = 1'b1;
                 stall_except_empty = 1'b1;
-             end
+            end
         end
         
 

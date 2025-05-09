@@ -228,16 +228,7 @@ import rv32i_types::*;
     end
 
     always_comb begin
-        // rs_available = (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
-
-        // if (new_rs_entry.regf_we)
-        //     rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
         rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH))) && (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
-
-    //    rs_available = 1'b1;
-    //    if (!st_queue[st_tail].valid || !ld_queue[ld_tail].valid)
-    //        rs_available = 1'b0;
-
     end
     
 endmodule
