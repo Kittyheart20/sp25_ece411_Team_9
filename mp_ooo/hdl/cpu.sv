@@ -406,7 +406,7 @@ import rv32i_types::*;
     );
 
     logic prediction;
-     gselect_predictor gselect (
+     tournament_predictor gselect (
         .clk(clk),
         .rst(rst),
         .pc_to_predict(decode_struct_out_early.pc),  
