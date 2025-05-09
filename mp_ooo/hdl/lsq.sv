@@ -155,7 +155,6 @@ import rv32i_types::*;
             end 
             else if  ((st_queue[st_head].status == WAIT_STORE) && (dmem_resp || store_no_mem)) begin
                 st_queue[st_head].status <= COMPLETE;
-                st_queue[st_head].valid <= 1'b0;  // may be removed?
                 st_head <= st_head + PTR_WIDTH'(1);;
                 st_overflow_alert <= 1'b0;
             end
@@ -229,19 +228,16 @@ import rv32i_types::*;
     end
 
     always_comb begin
-        // rs_available is for inserting the new_entry
-        rs_available = 1'b1;
-        if (new_rs_entry.regf_we)
-            rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
-        else
-            rs_available = (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
-        // rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH))) || (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
+        // rs_available = (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
+
+        // if (new_rs_entry.regf_we)
+        //     rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
+        rs_available = (ld_count != (PTR_WIDTH+1)'($unsigned(DEPTH))) && (st_count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
 
     //    rs_available = 1'b1;
     //    if (!st_queue[st_tail].valid || !ld_queue[ld_tail].valid)
     //        rs_available = 1'b0;
 
     end
-    //assign rs_available = (count != (PTR_WIDTH+1)'($unsigned(DEPTH)));
     
 endmodule
