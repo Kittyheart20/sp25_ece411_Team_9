@@ -143,15 +143,15 @@ import rv32i_types::*;
     always_comb begin
         station_input = '{4{default_reservation_station}};
         
-        if (dispatch_struct_in.valid) begin : new_rs_entry_to_station
-            case (dispatch_struct_in.op_type)
-                alu : station_input[0] = new_rs_entry;
-                mul : station_input[1] = new_rs_entry;
-                br  : station_input[2] = new_rs_entry;
-                mem : station_input[3] = new_rs_entry;
-                default : ;
-            endcase
-        end
+        // if (dispatch_struct_in.valid) begin : new_rs_entry_to_station
+        case (dispatch_struct_in.op_type)
+            alu : station_input[0] = new_rs_entry;
+            mul : station_input[1] = new_rs_entry;
+            br  : station_input[2] = new_rs_entry;
+            mem : station_input[3] = new_rs_entry;
+            default : ;
+        endcase
+        // end
     end
 
 
