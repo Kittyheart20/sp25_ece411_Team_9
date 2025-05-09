@@ -671,6 +671,7 @@ import rv32i_types::*;
         else begin
             if (!rsv_stall)
                 dispatch_struct_in <= decode_struct_out;
+            // dispatch_struct_in.valid <= !rsv_stall;
             // dispatch_struct_in.valid <= !stall;
             
             //dispatch_struct_in.prediction <= prediction && prediction_followed;

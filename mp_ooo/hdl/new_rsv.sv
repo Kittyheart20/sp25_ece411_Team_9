@@ -43,7 +43,7 @@ import rv32i_types::*;
                 tail <= tail + PTR_WIDTH'(1);
 
                 if (tail == head-PTR_WIDTH'(1))
-                    overflow_alert <= 1'b1;
+                    overflow_alert <= 1'b1; 
             end 
 
             // Update existing stations with the cdbus

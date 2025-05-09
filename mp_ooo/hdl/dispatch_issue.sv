@@ -38,8 +38,12 @@ import rv32i_types::*;
     reservation_station_t default_reservation_station;
     assign default_reservation_station = '0;
 
+    reservation_station_t       rs_entry;
     reservation_station_t       new_rs_entry;
     reservation_station_t       station_input[4];
+
+    logic use_new_rs_entry;
+    logic inserted;
     
     always_comb begin : fill_new_rs_entry
         new_rs_entry.valid = dispatch_struct_in.valid;
@@ -139,19 +143,44 @@ import rv32i_types::*;
         end
     end
 
+    assign use_new_rs_entry = (dispatch_struct_in.valid && dispatch_struct_in.order != rs_entry.order);
+
+    always_ff @(posedge clk) begin : set_rs_entry
+        if (rst) begin
+            rs_entry <= '1;
+            inserted <= 1'b1;
+        end
+        else begin
+            if (dispatch_struct_in.valid) begin
+                if (use_new_rs_entry) begin
+                    rs_entry <= new_rs_entry;
+                    inserted <= 1'b0;
+                end                   
+            end
+
+            unique case (dispatch_struct_in.op_type)
+                alu : if (integer_alu_available) inserted <= 1'b1;
+                mul : if (mul_alu_available)     inserted <= 1'b1;
+                br  : if (br_alu_available)      inserted <= 1'b1;
+                mem : if (mem_available)     inserted <= 1'b1;
+                default : ;
+            endcase   
+        end
+    end
 
     always_comb begin
         station_input = '{4{default_reservation_station}};
         
         // if (dispatch_struct_in.valid) begin : new_rs_entry_to_station
-        case (dispatch_struct_in.op_type)
-            alu : station_input[0] = new_rs_entry;
-            mul : station_input[1] = new_rs_entry;
-            br  : station_input[2] = new_rs_entry;
-            mem : station_input[3] = new_rs_entry;
-            default : ;
-        endcase
-        // end
+        if (!inserted || use_new_rs_entry) begin
+            case (dispatch_struct_in.op_type)
+                alu : station_input[0] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                mul : station_input[1] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                br  : station_input[2] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                mem : station_input[3] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                default : ;
+            endcase
+        end
     end
 
 
