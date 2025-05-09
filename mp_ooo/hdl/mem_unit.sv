@@ -23,58 +23,61 @@ import rv32i_types::*;
     logic [31:0] next_addr;
     assign next_addr = next_execute.rs1_data + next_execute.imm_sext;
 
-        logic is_load, is_store, curr_store;
-        assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
-        assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
-        
-        // logic            store_done;
-        // logic   [4:0]    next_store_rob_idx;
+    logic is_load, is_store, curr_store;
+    assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
+    assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
+    
+    // logic            store_done;
+    // logic   [4:0]    next_store_rob_idx;
 
-        logic   [31:0]   addr;
-        logic   [3:0]    rmask;
-        logic   [3:0]    wmask;
-        logic   [31:0]   wdata;
+    logic   [31:0]   addr;
+    logic   [3:0]    rmask;
+    logic   [3:0]    wmask;
+    logic   [31:0]   wdata;
 
-        logic   [31:0]  prev_pc;
-        logic           new_inst;
+    logic   [31:0]  prev_pc;
+    logic           new_inst;
 
-        localparam WIDTH = 64;  // order + inst addr + data    
-        localparam DEPTH = 10;
+    localparam WIDTH = 64;  // order + inst addr + data    
+    localparam DEPTH = 10;
 
-        logic full_o, empty_o;
-        logic enqueue_i, dequeue_i;
-        store_buffer_entry data_i, data_o;
-        store_buffer_entry data [DEPTH-1:0];
-        logic[31:0]   prev_dmem_addr;
-        //logic[31:0]   prev_dmem_rdata;
+    logic full_o, empty_o;
+    logic enqueue_i, dequeue_i;
+    store_buffer_entry data_i, data_o;
+    store_buffer_entry data [DEPTH-1:0];
+    logic[31:0]   prev_dmem_addr;
+    //logic[31:0]   prev_dmem_rdata;
 
-        //logic[31:0]   last_pc_on_dmem;
-        logic was_read;
-        logic dmem_addr_loaded;
-        store_ring_buffer #(
-            .DEPTH      (DEPTH)
-        ) store_buffer (
-            .clk        (clk),
-            .rst        (rst),
-            .flush      (1'b0),
-            .data_i     (data_i),
-            .enqueue_i  (enqueue_i),
-            .full_o     (full_o),
-            .data_o     (data_o),
-            .dequeue_i  (dequeue_i),
-            .empty_o    (empty_o),
-            .data(data)
-        );
+    //logic[31:0]   last_pc_on_dmem;
+    logic was_read;
+    logic dmem_addr_loaded;
+    logic mem_stall_local;
+
+    store_ring_buffer #(
+        .DEPTH      (DEPTH)
+    ) store_buffer (
+        .clk        (clk),
+        .rst        (rst),
+        .flush      (1'b0),
+        .data_i     (data_i),
+        .enqueue_i  (enqueue_i),
+        .full_o     (full_o),
+        .data_o     (data_o),
+        .dequeue_i  (dequeue_i),
+        .empty_o    (empty_o),
+        .data(data)
+    );
 
     always_ff @(posedge clk) begin
         if (rst)
             prev_pc <= '0;
-        else if (!mem_stall && !curr_store)
+        else if (!mem_stall_local && !curr_store)
             prev_pc <= next_execute.pc;
     end
     logic [4:0]  prev_rd_rob_idx;
 
-    assign new_inst = (prev_pc != next_execute.pc || prev_rd_rob_idx != next_execute.rd_rob_idx);
+    assign new_inst = (prev_pc != next_execute.pc || prev_rd_rob_idx != next_execute.rd_rob_idx) && (next_execute != '0);
+    assign mem_stall = mem_stall_local | new_inst;
 
     always_comb begin 
         curr_store = rob_entry_o.valid && (rob_entry_o.status == done) && (|rob_entry_o.mem_wmask);
@@ -99,7 +102,7 @@ import rv32i_types::*;
                 matching_entry = data[i];
             end
         end
-        if (!(mem_stall) && (!cdbus.flush)) begin
+        if (!(mem_stall_local) && (!cdbus.flush)) begin
             if (curr_store && (!rst)) begin
                 entry_to_queue.addr = rob_entry_o.mem_addr; 
                 entry_to_queue.wdata = rob_entry_o.mem_wdata;
@@ -115,7 +118,7 @@ import rv32i_types::*;
             dmem_rmask <= '0;
             dmem_wmask <= '0;
             dmem_wdata <= '0;
-            mem_stall <= '0;
+            mem_stall_local <= '0;
             enqueue_i <= 1'b0;
             dequeue_i <= 1'b0;
             store_no_mem <= 1'b0;
@@ -128,7 +131,7 @@ import rv32i_types::*;
         end else begin
             prev_rd_rob_idx <= next_execute.rd_rob_idx;
             if (dmem_resp) begin
-                mem_stall <= '0;
+                mem_stall_local <= '0;
                 dmem_rmask <= '0;
                 dmem_wmask <= '0;
                 prev_dmem_addr <= dmem_addr;
@@ -139,7 +142,8 @@ import rv32i_types::*;
                     prev_dmem_rdata <= dmem_rdata;
                 end*/
             end
-            if (!(mem_stall) && (!cdbus.flush)) begin
+
+            if (!(mem_stall_local) && (!cdbus.flush)) begin
                 if (curr_store) begin
                     data_i <= entry_to_queue; 
                     enqueue_i <= 1'b1;
@@ -150,29 +154,29 @@ import rv32i_types::*;
                         dmem_rmask <= '0;
                         dmem_wmask <= data_o.wmask;
                         dmem_wdata <= data_o.wdata;
-                        mem_stall <= '1;
+                        mem_stall_local <= '1;
                         store_no_mem <= 1'b0;
                         dmem_addr_loaded <= 1'b1;
                     end else begin
-                        store_no_mem <= 1'b1;
+                        store_no_mem <= 1'b1;   // full_o && addr_in_buffer or !full_o or addr_in_buffer
                     end
                     // dmem_addr <= rob_entry_o.mem_addr;
                     // dmem_rmask <= '0;
                     // dmem_wmask <= rob_entry_o.mem_wmask;
                     // dmem_wdata <= rob_entry_o.mem_wdata;
-                    // mem_stall <= '1;
+                    // mem_stall_local <= '1;
                 end else if (is_load && next_execute.valid && new_inst && (!(addr_in_buffer && matching_entry.wmask == 4'b1111))) begin
                     dmem_addr <= {next_addr[31:2], 2'd0};
                     dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
                     dmem_wmask <= '0;
                     dmem_wdata <= '0;
-                    mem_stall <= '1;
+                    mem_stall_local <= '1;
                     dmem_addr_loaded <= 1'b1;
                 end
-                end else begin 
-                    enqueue_i <= 1'b0;
-                    dequeue_i <= 1'b0;
-                    store_no_mem <= 1'b0;
+            end else begin 
+                enqueue_i <= 1'b0;
+                dequeue_i <= 1'b0;
+                store_no_mem <= 1'b0;
             end
         end
     end
@@ -207,7 +211,7 @@ import rv32i_types::*;
                 end
             end
             
-            if(is_load && (addr_in_buffer && matching_entry.wmask == 4'b1111)) begin
+            if (is_load && (addr_in_buffer && matching_entry.wmask == 4'b1111)) begin
                 execute_output.valid = 1'b1;
                 execute_output.regf_we = 1'b1;
                 execute_output.pc = next_execute.pc;

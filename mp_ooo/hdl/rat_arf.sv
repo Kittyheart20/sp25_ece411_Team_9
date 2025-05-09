@@ -33,7 +33,7 @@ import rv32i_types::*;
     // assign rs1_rob_idx = rat_arf_table[rs1_addr].rob_idx;
     // assign rs2_rob_idx = rat_arf_table[rs2_addr].rob_idx;
 
-    logic [4:0]   ready_count [32]; // Counter array
+    // logic [4:0]   ready_count [32]; // Counter array
 
     always_comb begin               // reading rs1 & rs2
         rs1_rdy = rat_arf_table[rs1_addr].ready;
@@ -47,13 +47,13 @@ import rv32i_types::*;
             for (integer i = 0; i < 32; i++) begin
                 rat_arf_table[i] <= '0;
                 rat_arf_table[i].ready <= '1;
-                ready_count[i] <= '0;
+                // ready_count[i] <= '0;
                 // second_valid <= 1'b0;
             end
         end else if(cdbus.flush) begin
             for (integer i = 0; i < 32; i++) begin
                 rat_arf_table[i].ready <= '1;
-                ready_count[i] <= '0;
+                // ready_count[i] <= '0;
             end
             if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
                 rat_arf_table[cdbus.commit_rd_addr].data <= cdbus.commit_data;
@@ -68,30 +68,31 @@ import rv32i_types::*;
             
             if (cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)) begin       // Filling in rd data
                 rat_arf_table[cdbus.commit_rd_addr].data <= cdbus.commit_data;
-                rat_arf_table[cdbus.commit_rd_addr].ready <= 1'b1 && (ready_count[cdbus.commit_rd_addr] < 5'd2);
-                ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 5'd1;
+
+                if (rat_arf_table[cdbus.commit_rd_addr].rob_idx == cdbus.commit_rob_idx)
+                    rat_arf_table[cdbus.commit_rd_addr].ready <= 1'b1 /*&& (ready_count[cdbus.commit_rd_addr] < 5'd2)*/;
+                // ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 5'd1;
             end
 
             if (dispatch_struct_in.valid && (rd_addr != 5'd0)/* && dispatch_struct_in.regf_we*/) begin           // Creating a new entry   
                 rat_arf_table[rd_addr].ready <= 1'b0;
                 rat_arf_table[rd_addr].rob_idx <= rd_rob_idx;
-                ready_count[rd_addr] <= ready_count[rd_addr] + 5'd1;
+                // ready_count[rd_addr] <= ready_count[rd_addr] + 5'd1;
             end
             
-            case ({dispatch_struct_in.valid && (rd_addr != 5'd0), cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)})
-                2'b10: ready_count[rd_addr] <= ready_count[rd_addr] + 1'b1; 
-                2'b01: ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 1'b1; 
-                2'b11: begin
-                    if(cdbus.commit_rd_addr == rd_addr) begin
-                        ready_count <= ready_count;
-                    end else begin
-                        ready_count[rd_addr] <= ready_count[rd_addr] + 1'b1; 
-                        ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 1'b1; 
-                    end
-                end
-                default: ready_count <= ready_count;   
-
-            endcase
+            // case ({dispatch_struct_in.valid && (rd_addr != 5'd0), cdbus.regf_we && (cdbus.commit_rd_addr != 5'd0)})
+            //     2'b10: ready_count[rd_addr] <= ready_count[rd_addr] + 1'b1; 
+            //     2'b01: ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 1'b1; 
+            //     2'b11: begin
+            //         if(cdbus.commit_rd_addr == rd_addr) begin
+            //             ready_count <= ready_count;
+            //         end else begin
+            //             ready_count[rd_addr] <= ready_count[rd_addr] + 1'b1; 
+            //             ready_count[cdbus.commit_rd_addr] <= ready_count[cdbus.commit_rd_addr] - 1'b1; 
+            //         end
+            //     end
+            //     default: ready_count <= ready_count;   
+            // endcase
         end
 
     end

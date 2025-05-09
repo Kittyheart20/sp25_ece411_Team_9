@@ -20,7 +20,7 @@ module br_unit // and jumps
         rd_new = '0;
         pc_new = '0;
 
-    if (next_execute.valid) begin
+        if (next_execute.valid) begin
             unique case(next_execute.opcode)
                 op_b_jal: begin
                     a = next_execute.pc;
@@ -49,13 +49,14 @@ module br_unit // and jumps
                         branch_f3_bge : br_en = unsigned'(signed'(next_execute.rs1_data) >= signed'(next_execute.rs2_data));
                         branch_f3_bltu: br_en = (next_execute.rs1_data <  next_execute.rs2_data);
                         branch_f3_bgeu: br_en = (next_execute.rs1_data >= next_execute.rs2_data);
-                        default       : br_en = 1'b0;
+                        default       : /*br_en = 1'b0*/;
                     endcase
                 end
-                default: begin
-                    a = '0;
-                    b = '0;
-                end
+                default: ;
+                // begin
+                //     a = '0;
+                //     b = '0;
+                // end
             endcase
 
             if (br_en)
@@ -66,7 +67,7 @@ module br_unit // and jumps
 
     always_comb begin 
         execute_output = '0;
-	    execute_output.valid = 1'b0;
+	    // execute_output.valid = 1'b0;
         
         if (next_execute.valid) begin
             execute_output.valid = next_execute.valid;
@@ -89,14 +90,16 @@ module br_unit // and jumps
             execute_output.rd_data = rd_new;
             execute_output.regf_we = next_execute.regf_we;
             execute_output.br_en = br_en;
+            
             if (br_en)
                 execute_output.pc_new = pc_new;
             else 
                 execute_output.pc_new = next_execute.pc_new;
-        end else begin
-            execute_output = '0;
-	        // execute_output.valid <= 1'b0;
-        end
+        end 
+        // else begin
+        //     execute_output = '0;
+	    //     // execute_output.valid <= 1'b0;
+        // end
     end
 
 endmodule

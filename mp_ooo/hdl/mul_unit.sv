@@ -17,7 +17,8 @@ module DW_mult_inst #(
         .a_width(A_width), 
         .b_width(B_width),
         .tc_mode(tc_mode),
-        .early_start(1)
+        .num_cyc(8),
+        .early_start(0)
     ) mult_seq_isnt (
         .clk(clk),
         .rst_n(~rst),
@@ -50,7 +51,8 @@ module DW_div_inst #(
         .a_width(width), 
         .b_width(width),
         .tc_mode(tc_mode),
-        .early_start(1)
+        .num_cyc(8),
+        .early_start(0)
     ) div_seq_isnt (
         .clk(clk),
         .rst_n(~rst),

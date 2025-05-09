@@ -8,7 +8,6 @@ import rv32i_types::*;
     input  logic        rst,
     // New Entry Input
     input  id_dis_stage_reg_t dispatch_struct_in,
-    input  logic [4:0]  current_rd_rob_idx,
 
     // Updating register values
     input logic [31:0]  rs1_data_in,
@@ -20,6 +19,7 @@ import rv32i_types::*;
     input logic dmem_resp,
     input rob_entry_t rob_table [32],
 
+    input  logic [4:0] current_rd_rob_idx,
     input  logic [4:0] rs1_rob_idx,
     input  logic [4:0] rs2_rob_idx,
     input  logic store_no_mem,
@@ -38,13 +38,12 @@ import rv32i_types::*;
     reservation_station_t default_reservation_station;
     assign default_reservation_station = '0;
 
+    reservation_station_t       rs_entry;
     reservation_station_t       new_rs_entry;
     reservation_station_t       station_input[4];
 
-    
-    logic cdb_update;
-
-    assign cdb_update = (cdbus.alu_valid || cdbus.mul_valid || cdbus.br_valid || cdbus.mem_valid || cdbus.regf_we);
+    logic use_new_rs_entry;
+    logic inserted;
     
     always_comb begin : fill_new_rs_entry
         new_rs_entry.valid = dispatch_struct_in.valid;
@@ -144,163 +143,100 @@ import rv32i_types::*;
         end
     end
 
+    assign use_new_rs_entry = (dispatch_struct_in.valid && dispatch_struct_in.order != rs_entry.order);
+
+    always_ff @(posedge clk) begin : set_rs_entry
+        if (rst || cdbus.flush) begin
+            rs_entry <= '1;
+            inserted <= 1'b1;
+        end
+        else begin
+            if (dispatch_struct_in.valid) begin
+                if (use_new_rs_entry) begin
+                    rs_entry <= new_rs_entry;
+                    inserted <= 1'b0;
+                end     
+                else begin
+                    rs_entry <= new_rs_entry;
+                    
+                    rs_entry.rd_rob_idx <= rs_entry.rd_rob_idx;
+                    rs_entry.rs1_rob_idx <= rs_entry.rs1_rob_idx;
+                    rs_entry.rs2_rob_idx <= rs_entry.rs2_rob_idx;
+                    if (rs_entry.rs1_ready) begin
+                        rs_entry.rs1_ready <= rs_entry.rs1_ready;
+                        rs_entry.rs1_data <= rs_entry.rs1_data;
+                    end 
+                    if (rs_entry.rs2_ready) begin
+                        rs_entry.rs2_ready <= rs_entry.rs2_ready;
+                        rs_entry.rs2_data <= rs_entry.rs2_data;
+                    end 
+                end             
+            end
+
+            unique case (dispatch_struct_in.op_type)
+                alu : if (integer_alu_available) inserted <= 1'b1;
+                mul : if (mul_alu_available)     inserted <= 1'b1;
+                br  : if (br_alu_available)      inserted <= 1'b1;
+                mem : if (mem_available)         inserted <= 1'b1;
+                default : ;
+            endcase   
+        end
+    end
 
     always_comb begin
-
-        // if (rst || cdbus.flush) begin
-        //     station_input <= '{4{default_reservation_station}};
-        // end
         station_input = '{4{default_reservation_station}};
-        // else 
-        if (dispatch_struct_in.valid) begin : new_rs_entry_to_station
+        
+        // if (dispatch_struct_in.valid) begin : new_rs_entry_to_station
+        if (!inserted || use_new_rs_entry) begin
             case (dispatch_struct_in.op_type)
-                alu : station_input[0] = new_rs_entry;
-                mul : station_input[1] = new_rs_entry;
-                br  : station_input[2] = new_rs_entry;
-                mem : station_input[3] = new_rs_entry;
+                alu : station_input[0] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                mul : station_input[1] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                br  : station_input[2] = use_new_rs_entry ? new_rs_entry : rs_entry;
+                mem : station_input[3] = use_new_rs_entry ? new_rs_entry : rs_entry;
                 default : ;
             endcase
         end
-
-    //     if (cdb_update) begin : update_from_writeback
-    //         for (integer i = 0; i < 4; i++) begin
-    //             if (!(dispatch_struct_in.valid && dispatch_struct_in.op_type == types_t'(i)) ) begin
-    //                 if (stations[i].rs1_ready == 1'b0) begin 
-    //                     if(cdbus.alu_valid && (stations[i].rs1_addr == cdbus.alu_rd_addr) && (stations[i].rs1_rob_idx == cdbus.alu_rob_idx))begin
-    //                         stations[i].rs1_data <= cdbus.alu_data; 
-    //                         stations[i].rs1_ready <= 1'b1;                         
-    //                     end
-    //                     else if (cdbus.mul_valid && (stations[i].rs1_addr == cdbus.mul_rd_addr) && (stations[i].rs1_rob_idx == cdbus.mul_rob_idx))begin
-    //                         stations[i].rs1_data <= cdbus.mul_data; 
-    //                         stations[i].rs1_ready <= 1'b1;                         
-    //                     end
-    //                     else if (cdbus.mem_valid && (stations[i].rs1_addr == cdbus.mem_rd_addr) && (stations[i].rs1_rob_idx == cdbus.mem_rob_idx))begin
-    //                         stations[i].rs1_data <= cdbus.mem_data; 
-    //                         stations[i].rs1_ready <= 1'b1;                         
-    //                     end
-    //                 end 
-                    
-    //                 if (stations[i].rs2_ready == 1'b0) begin
-    //                     if(cdbus.alu_valid && (stations[i].rs2_addr == cdbus.alu_rd_addr) && (stations[i].rs2_rob_idx == cdbus.alu_rob_idx)) begin
-    //                         stations[i].rs2_data <= cdbus.alu_data; 
-    //                         stations[i].rs2_ready <= 1'b1;                         
-    //                     end
-    //                     else if (cdbus.mul_valid && (stations[i].rs2_addr == cdbus.mul_rd_addr) && (stations[i].rs2_rob_idx == cdbus.mul_rob_idx))begin 
-    //                         stations[i].rs2_data <= cdbus.mul_data; 
-    //                         stations[i].rs2_ready <= 1'b1;                         
-    //                     end
-    //                     else if (cdbus.mem_valid && (stations[i].rs2_addr == cdbus.mem_rd_addr) && (stations[i].rs2_rob_idx == cdbus.mem_rob_idx))begin
-    //                         stations[i].rs2_data <= cdbus.mem_data; 
-    //                         stations[i].rs2_ready <= 1'b1;                         
-    //                     end
-    //                 end
-
-    //                 if (cdbus.alu_rob_idx == stations[i].rd_rob_idx  && cdbus.alu_valid) begin
-    //                     stations[i].status <= COMPLETE;
-    //                 end     
-    //                 else if  (cdbus.mul_rob_idx == stations[i].rd_rob_idx  && cdbus.mul_valid) begin
-    //                     stations[i].status <= COMPLETE;                         
-    //                 end      
-    //                 else if  (cdbus.br_rob_idx == stations[i].rd_rob_idx  && cdbus.br_valid) begin
-    //                     stations[i].status <= COMPLETE;                
-    //                 end            
-    //                 else if  (cdbus.mem_rob_idx == stations[i].rd_rob_idx  && cdbus.mem_valid && (|stations[i].mem_rmask) ) begin
-    //                     stations[i].status <= COMPLETE;
-    //                 end 
-    //                 else if  (cdbus.commit_rob_idx == stations[i].rd_rob_idx && cdbus.regf_we && (|stations[i].mem_wmask) ) begin
-    //                     stations[i].status <= WAIT_STORE;
-    //                 end 
-    //                 else if  ((stations[i].status == WAIT_STORE) && dmem_resp ) begin
-    //                     stations[i].status <= COMPLETE;
-    //                 end
-    //             end
-    //         end
-    //     end
     end
-
-    // always_comb begin
-    //     integer_alu_available   = 1'b0;
-    //     mul_alu_available       = 1'b0;
-    //     br_alu_available        = 1'b0;
-    //     mem_available           = 1'b0;
-
-    //     if ((stations[0].status == IDLE) || (stations[0].status == COMPLETE)) begin
-    //         integer_alu_available = 1'b1;
-    //     end
-
-    //     if ((stations[1].status == IDLE) || (stations[1].status == COMPLETE)) begin
-    //         mul_alu_available = 1'b1;
-    //     end
-
-    //     if ((stations[2].status == IDLE) || (stations[2].status == COMPLETE)) begin
-    //         br_alu_available = 1'b1;
-    //     end
-
-    //     if ((stations[3].status == IDLE) || (stations[3].status == COMPLETE)) begin
-    //         mem_available = 1'b1;
-    //     end
-    // end
-
-    // always_comb begin
-    //     next_execute_alu        = '0;
-    //     next_execute_mult_div   = '0;
-    //     next_execute_branch     = '0;
-    //     next_execute_mem        = '0;
-
-    //     if (stations[0].valid && stations[0].rs1_ready && stations[0].rs2_ready) begin
-    //         next_execute_alu = stations[0];
-    //     end
-    //     if (stations[1].valid && stations[1].rs1_ready && stations[1].rs2_ready) begin
-    //         next_execute_mult_div = stations[1];
-    //     end
-    //     if (stations[2].valid && stations[2].rs1_ready && stations[2].rs2_ready) begin
-    //         next_execute_branch = stations[2];
-    //     end
-    //     if (stations[3].valid && stations[3].rs1_ready && stations[3].rs2_ready) begin
-    //         next_execute_mem = stations[3];
-    //     end
-    // end
 
 
     reservation_station alu_rs (
-        .is_mem(1'b0),
+        //.is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[0]),
         .cdbus(cdbus),
-        .dmem_resp(dmem_resp),
+        // .dmem_resp(dmem_resp),
         .rs_available(integer_alu_available),
-        .next_execute(next_execute_alu),
-        .store_no_mem(store_no_mem)
+        .next_execute(next_execute_alu)
+        // .store_no_mem(store_no_mem)
     );
 
     
     reservation_station mul_rs (
-        .is_mem(1'b0),
+        //.is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[1]),
         .cdbus(cdbus),
-        .dmem_resp(dmem_resp),
+        // .dmem_resp(dmem_resp),
         .rs_available(mul_alu_available),
-        .next_execute(next_execute_mult_div),
-        .store_no_mem(store_no_mem)
+        .next_execute(next_execute_mult_div)
+        // .store_no_mem(store_no_mem)
     );
 
     reservation_station br_rs (
-        .is_mem(1'b0),
+        //.is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[2]),
         .cdbus(cdbus),
-        .dmem_resp(dmem_resp),
+        // .dmem_resp(dmem_resp),
         .rs_available(br_alu_available),
-        .next_execute(next_execute_branch),
-        .store_no_mem(store_no_mem)
+        .next_execute(next_execute_branch)
+        // .store_no_mem(store_no_mem)
     );
 
-    reservation_station mem_rs (
-        .is_mem(1'b1),
+    split_lsq mem_rs (
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[3]),
