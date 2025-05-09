@@ -190,8 +190,9 @@ import rv32i_types::*;
 
     end
 
-
-    always_ff @(negedge clk) begin  
+    logic nclk;
+    assign nclk = ~clk;
+    always_ff @(posedge nclk) begin  
         if (is_mem) begin
             if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready/* && (!executing_stall || !(|stations[i].mem_wmask))*/) begin
                 next_execute <= stations[head];

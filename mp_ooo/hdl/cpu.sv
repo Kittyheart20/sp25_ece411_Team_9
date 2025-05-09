@@ -717,7 +717,7 @@ import rv32i_types::*;
                 else
                     next_writeback[i] = '0;
             end
-            next_execute = next_execute_prev;
+            next_execute[3] = next_execute_prev[3];
             next_execute[0] = dispatch_struct_out[0];
             next_execute[1] = dispatch_struct_out[1];
             next_execute[2] = dispatch_struct_out[2];
