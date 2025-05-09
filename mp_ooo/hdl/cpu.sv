@@ -49,7 +49,6 @@ import rv32i_types::*;
     id_dis_stage_reg_t dispatch_struct_in;
     reservation_station_t dispatch_struct_out [NUM_FUNC_UNIT];
     reservation_station_t next_execute [NUM_FUNC_UNIT];
-    reservation_station_t next_execute_prev [NUM_FUNC_UNIT];
 
     to_writeback_t   execute_output [NUM_FUNC_UNIT];
     to_writeback_t   next_writeback [NUM_FUNC_UNIT]; 
@@ -406,7 +405,7 @@ import rv32i_types::*;
     );
 
     logic prediction;
-     tournament_predictor gselect (
+     gselect_predictor gselect (
         .clk(clk),
         .rst(rst),
         .pc_to_predict(decode_struct_out_early.pc),  
@@ -677,20 +676,18 @@ import rv32i_types::*;
 
     always_ff @(posedge clk) begin : update_dispatch_str
         if (rst || cdbus.flush) begin
-           dispatch_struct_in <= '0;
-            // next_execute <= '{NUM_FUNC_UNIT{default_reservation_station}};
+            dispatch_struct_in <= '0;
+            next_execute <= '{NUM_FUNC_UNIT{default_reservation_station}};
             // next_writeback <= '{NUM_FUNC_UNIT{default_to_writeback}};
-            next_execute_prev <= '{NUM_FUNC_UNIT{default_reservation_station}};
         end
         else begin
-           dispatch_struct_in <= decode_struct_out;
-           next_execute_prev <= next_execute;
+            dispatch_struct_in <= decode_struct_out;
             //dispatch_struct_in.prediction <= prediction && prediction_followed;
-            // next_execute[0] <= dispatch_struct_out[0];
-            // next_execute[1] <= dispatch_struct_out[1];
-            // next_execute[2] <= dispatch_struct_out[2];
-            // if (!mem_stall)
-            //     next_execute[3] <= dispatch_struct_out[3];
+            next_execute[0] <= dispatch_struct_out[0];
+            next_execute[1] <= dispatch_struct_out[1];
+            next_execute[2] <= dispatch_struct_out[2];
+            if (!mem_stall)
+                next_execute[3] <= dispatch_struct_out[3];
 
             // next_writeback <= execute_output;
 
@@ -706,7 +703,7 @@ import rv32i_types::*;
     always_comb begin
         if (rst || cdbus.flush) begin
             // dispatch_struct_in <= '0;
-            next_execute = '{NUM_FUNC_UNIT{default_reservation_station}};
+            // next_execute = '{NUM_FUNC_UNIT{default_reservation_station}};
             next_writeback = '{NUM_FUNC_UNIT{default_to_writeback}};
         end
         else begin
@@ -717,31 +714,20 @@ import rv32i_types::*;
                 else
                     next_writeback[i] = '0;
             end
-            next_execute[3] = next_execute_prev[3];
-            next_execute[0] = dispatch_struct_out[0];
-            next_execute[1] = dispatch_struct_out[1];
-            next_execute[2] = dispatch_struct_out[2];
-            if (!mem_stall)
-             next_execute[3] = dispatch_struct_out[3];
             // next_writeback = execute_output;
         end
     end
 
     to_writeback_t   next_writeback_prev [NUM_FUNC_UNIT]; 
-    to_writeback_t   next_writeback_prev_prev [NUM_FUNC_UNIT]; 
-
     always_ff @(posedge clk) begin 
         if (rst) begin
             next_writeback_prev <= '{NUM_FUNC_UNIT{default_to_writeback}};
-            next_writeback_prev_prev <= '{NUM_FUNC_UNIT{default_to_writeback}};;
             gselect_taken_prev <= '0;
         end else begin
             next_writeback_prev <= next_writeback;
-            next_writeback_prev_prev <= next_writeback_prev;
             gselect_taken_prev <= gselect_taken;
         end
     end
-
 
     always_comb begin : update_rs_we_cdbus
         cdbus = '0;

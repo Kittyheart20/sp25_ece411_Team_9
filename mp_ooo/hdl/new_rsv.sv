@@ -143,7 +143,7 @@ import rv32i_types::*;
     always_comb begin : update_count
         count = tail - head;        
         rs_available = 1'b0;
-    //    next_execute = '0;
+        next_execute = '0;
         //executed = '0;
         chosen_execute = '0;
         available_idx = '0;
@@ -161,7 +161,7 @@ import rv32i_types::*;
             end
 
             if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready/* && (!executing_stall || !(|stations[i].mem_wmask))*/) begin
-         //       next_execute = stations[head];
+                next_execute = stations[head];
                 //executed = 1'b1;
             end
         end else if (!cdbus.flush) begin
@@ -177,8 +177,8 @@ import rv32i_types::*;
                 end
             end
 
-          //  if (chosen_execute)
-              //  next_execute = stations[next_idx];
+            if (chosen_execute)
+                next_execute = stations[next_idx];
             
             // for (integer i = 0; i < DEPTH; i++) begin
             //     if (valid[i] && stations[i].valid && stations[i].rs1_ready && stations[i].rs2_ready && chosen_execute/* && (!executing_stall || !(|stations[i].mem_wmask))*/) begin
@@ -189,21 +189,5 @@ import rv32i_types::*;
         end
 
     end
-
-    logic nclk;
-    assign nclk = ~clk;
-    always_ff @(posedge nclk) begin  
-        if (is_mem) begin
-            if (stations[head].valid && stations[head].rs1_ready && stations[head].rs2_ready/* && (!executing_stall || !(|stations[i].mem_wmask))*/) begin
-                next_execute <= stations[head];
-                //executed = 1'b1;
-            end else next_execute <=  '0;
-        end else if (!cdbus.flush) begin
-
-            if (chosen_execute)
-                next_execute <= stations[next_idx];
-            else next_execute <=  '0;
-        end else next_execute <=  '0;
-    end
-
+    
 endmodule

@@ -196,6 +196,10 @@ import rv32i_types::*;
             if(addr_in_buffer) begin
                 merged_load_data = (matching_entry.wdata & wmask_expanded)
                                 | (dmem_rdata         & ~wmask_expanded);
+                if(!dmem_resp && was_read && (prev_dmem_addr == dmem_addr) && dmem_addr_loaded) begin
+                //    merged_load_data = (matching_entry.wdata & wmask_expanded)
+                //                    | (prev_dmem_rdata         & ~wmask_expanded);
+                end
             end else begin
                 merged_load_data = dmem_rdata;
                 if(!dmem_resp && was_read && (prev_dmem_addr == dmem_addr) && dmem_addr_loaded) begin
