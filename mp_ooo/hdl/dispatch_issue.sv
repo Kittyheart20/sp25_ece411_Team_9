@@ -155,7 +155,12 @@ import rv32i_types::*;
                 if (use_new_rs_entry) begin
                     rs_entry <= new_rs_entry;
                     inserted <= 1'b0;
-                end                   
+                end     
+                else begin
+                    rs_entry <= new_rs_entry;
+                    rs_entry.rs1_rob_idx <= rs_entry.rs1_rob_idx;
+                    rs_entry.rs2_rob_idx <= rs_entry.rs2_rob_idx;
+                end             
             end
 
             unique case (dispatch_struct_in.op_type)
