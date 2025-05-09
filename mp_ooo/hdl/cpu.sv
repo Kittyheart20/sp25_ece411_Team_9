@@ -405,35 +405,7 @@ import rv32i_types::*;
         .store_no_mem(store_no_mem)
     );
 
-    logic prediction_perceptron;
-    logic prediction_geselect;
     logic prediction;
-    // always_comb begin
-    //     if(decode_struct_out_early.pc[8:4] == '0) begin
-    //         prediction = prediction_perceptron;
-    //     end else begin
-    //         prediction = prediction_geselect;
-    //     end
-    // end
-    perceptron_predictor perceptron (
-        .clk(clk),
-        .rst(rst),
-        .pc_to_predict(decode_struct_out_early.pc),  
-        .pc_to_update(rob_entry_o.pc),            
-        .branch_taken(rob_entry_o.br_en),
-        .is_branch(rob_entry_o.op_type == br && (rob_entry_o.status == done)),
-        .prediction(prediction_perceptron)
-    );
-
-    gselect_predictor gselect (
-        .clk(clk),
-        .rst(rst),
-        .pc_to_predict(decode_struct_out_early.pc),  
-        .pc_to_update(rob_entry_o.pc),            
-        .branch_taken(rob_entry_o.br_en),
-        .is_branch(rob_entry_o.op_type == br && (rob_entry_o.status == done)),
-        .prediction(prediction_geselect)
-    );
 
     tournament_predictor hybrid (
         .clk(clk),
@@ -444,27 +416,6 @@ import rv32i_types::*;
         .is_branch(rob_entry_o.op_type == br && (rob_entry_o.status == done)),
         .prediction(prediction)
     );
-
-
-
-    /*logic[64:0] number_of_flushes;
-    logic[64:0] number_of_branches;
-
-    always_ff  @(posedge clk) begin 
-        if (rst) begin
-            number_of_flushes <= '0;
-            number_of_branches <= '0;
-        end else  begin
-            if (cdbus.flush) begin
-                number_of_flushes <= number_of_flushes + 1;
-            end
-            if(decode_struct_out.op_type == br && decode_struct_out.valid) begin
-                number_of_branches <= number_of_branches + 1;
-            end
-        end
-    end*/
-
-
     
     always_comb begin
         dfp_resp_inst = '0;
@@ -517,7 +468,7 @@ import rv32i_types::*;
             if (enqueue_i)  enqueue_i <= 1'b0;
             if (bmem_read)  bmem_read <= 1'b0;
 
-            if(cdbus.flush) begin 
+            if (cdbus.flush) begin 
                 pc <= pc_next; 
                 bmem_read <= 1'b0;
                 if (dfp_resp) begin 
@@ -529,8 +480,10 @@ import rv32i_types::*;
                 else begin
                     data_i <= {prediction && prediction_followed, m_order, pc_next, last_instr_data[32*pc[4:2] +: 32]};
                     order <= m_order;
-                    ufp_rmask <= '1; 
-                    ufp_addr <= pc_next; 
+                    if (pc_next[31:5] != last_instr_addr[31:5]) begin
+                        ufp_rmask <= '1; 
+                        ufp_addr <= pc_next;                         
+                    end
                end            
             end else if (dfp_read_mem && (rob_entry_o.rd_rob_idx == next_execute[3].rd_rob_idx)) begin     // critical path
                 if (bmem_flag == 1'd0) begin
@@ -691,8 +644,10 @@ import rv32i_types::*;
             instr_enable = 1'b1;      
         end
         if (cdbus.flush) begin
-            curr_instr_addr = pc;
-            curr_instr_data = '0;
+            if (pc[31:5] != last_instr_addr[31:5]) begin
+                curr_instr_addr = pc;
+                curr_instr_data = '0;
+            end
             instr_enable = 1'b1;            
         end else if (ufp_resp_mem && mem_stall && |dmem_wmask) begin
             curr_dmem_addr = dmem_addr;
@@ -940,11 +895,6 @@ import rv32i_types::*;
     logic   [3:0]   monitor_mem_wmask;
     logic   [31:0]  monitor_mem_rdata;
     logic   [31:0]  monitor_mem_wdata;
-
-    // always_ff @(posedge cdbus.regf_we) begin        // we are taking the rob from the last 
-    //     if (cdbus.commit_rd_addr == 15)
-    //         ("instr: %h, data: %h", cdbus.inst, cdbus.commit_data);
-    // end
 
     assign monitor_valid     = cdbus.regf_we;
     assign monitor_order     = m_order; 

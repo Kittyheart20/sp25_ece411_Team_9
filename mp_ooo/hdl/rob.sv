@@ -36,6 +36,7 @@ import rv32i_types::*;
     assign remove = dequeue_i && !empty_o;
 
     always_comb begin
+        rob_entry_i = '0;
         if (dispatch_struct_in.valid) begin
             rob_entry_i.valid = dispatch_struct_in.valid;
             rob_entry_i.pc = dispatch_struct_in.pc;
@@ -48,8 +49,7 @@ import rv32i_types::*;
             rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
             rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
             rob_entry_i.regf_we = dispatch_struct_in.regf_we;
-        end else 
-            rob_entry_i = '0;
+        end
     end
 
     rob_entry_t empty_rob_entry;
