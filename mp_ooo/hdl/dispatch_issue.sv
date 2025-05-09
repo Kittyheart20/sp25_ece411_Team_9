@@ -160,6 +160,14 @@ import rv32i_types::*;
                     rs_entry <= new_rs_entry;
                     rs_entry.rs1_rob_idx <= rs_entry.rs1_rob_idx;
                     rs_entry.rs2_rob_idx <= rs_entry.rs2_rob_idx;
+                    if (rs_entry.rs1_ready) begin
+                        rs_entry.rs1_ready <= rs_entry.rs1_ready;
+                        rs_entry.rs1_data <= rs_entry.rs1_data;
+                    end 
+                    if (rs_entry.rs2_ready) begin
+                        rs_entry.rs2_ready <= rs_entry.rs2_ready;
+                        rs_entry.rs2_data <= rs_entry.rs2_data;
+                    end 
                 end             
             end
 
