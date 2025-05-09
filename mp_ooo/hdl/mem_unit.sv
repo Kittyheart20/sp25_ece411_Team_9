@@ -39,7 +39,7 @@ import rv32i_types::*;
         logic           new_inst;
 
         localparam WIDTH = 64;  // order + inst addr + data    
-        localparam DEPTH = 10;
+        localparam DEPTH = 100;
 
         logic full_o, empty_o;
         logic enqueue_i, dequeue_i;

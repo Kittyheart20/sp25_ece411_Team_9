@@ -56,10 +56,10 @@ module tournament_predictor #(
                 selector_table[i] <= '0; 
         end else if (is_branch) begin
             if (prediction_gselect != prediction_perceptron) begin
-                if (prediction_gselect == branch_taken && selector_table[sel_idx_update] != 2'b00)
-                    selector_table[sel_idx_update] <= selector_table[sel_idx_update] - 1;
+                if (prediction_gselect == branch_taken && selector_table[sel_idx_update] != 4'd00)
+                    selector_table[sel_idx_update] <= selector_table[sel_idx_update] - 4'd1;
                 else if (prediction_perceptron == branch_taken && selector_table[sel_idx_update] != {SEL_BITS{1'b1}})
-                    selector_table[sel_idx_update] <= selector_table[sel_idx_update] + 1;
+                    selector_table[sel_idx_update] <= selector_table[sel_idx_update] + 4'd1;
             end
         end
     end
