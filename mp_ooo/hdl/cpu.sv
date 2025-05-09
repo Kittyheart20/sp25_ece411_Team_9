@@ -404,8 +404,37 @@ import rv32i_types::*;
         .store_no_mem(store_no_mem)
     );
 
+    logic prediction_perceptron;
+    logic prediction_geselect;
     logic prediction;
-     gselect_predictor gselect (
+    // always_comb begin
+    //     if(decode_struct_out_early.pc[8:4] == '0) begin
+    //         prediction = prediction_perceptron;
+    //     end else begin
+    //         prediction = prediction_geselect;
+    //     end
+    // end
+    perceptron_predictor perceptron (
+        .clk(clk),
+        .rst(rst),
+        .pc_to_predict(decode_struct_out_early.pc),  
+        .pc_to_update(rob_entry_o.pc),            
+        .branch_taken(rob_entry_o.br_en),
+        .is_branch(rob_entry_o.op_type == br && (rob_entry_o.status == done)),
+        .prediction(prediction_perceptron)
+    );
+
+    gselect_predictor gselect (
+        .clk(clk),
+        .rst(rst),
+        .pc_to_predict(decode_struct_out_early.pc),  
+        .pc_to_update(rob_entry_o.pc),            
+        .branch_taken(rob_entry_o.br_en),
+        .is_branch(rob_entry_o.op_type == br && (rob_entry_o.status == done)),
+        .prediction(prediction_geselect)
+    );
+
+    tournament_predictor hybrid (
         .clk(clk),
         .rst(rst),
         .pc_to_predict(decode_struct_out_early.pc),  
@@ -414,6 +443,8 @@ import rv32i_types::*;
         .is_branch(rob_entry_o.op_type == br && (rob_entry_o.status == done)),
         .prediction(prediction)
     );
+
+
 
     /*logic[64:0] number_of_flushes;
     logic[64:0] number_of_branches;
