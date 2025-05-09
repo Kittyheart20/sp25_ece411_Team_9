@@ -235,7 +235,7 @@ package rv32i_types;
         logic [31:0]    pc_new;
 
         status_rs_t     status;
-        logic prediction;
+        logic           prediction;
     } reservation_station_t;
 
     typedef struct packed {

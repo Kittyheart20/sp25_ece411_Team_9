@@ -8,7 +8,6 @@ import rv32i_types::*;
     input  logic        rst,
     // New Entry Input
     input  id_dis_stage_reg_t dispatch_struct_in,
-    input  logic [4:0]  current_rd_rob_idx,
 
     // Updating register values
     input logic [31:0]  rs1_data_in,
@@ -20,6 +19,7 @@ import rv32i_types::*;
     input logic dmem_resp,
     input rob_entry_t rob_table [32],
 
+    input  logic [4:0] current_rd_rob_idx,
     input  logic [4:0] rs1_rob_idx,
     input  logic [4:0] rs2_rob_idx,
     input  logic store_no_mem,
@@ -158,6 +158,8 @@ import rv32i_types::*;
                 end     
                 else begin
                     rs_entry <= new_rs_entry;
+                    
+                    rs_entry.rd_rob_idx <= rs_entry.rd_rob_idx;
                     rs_entry.rs1_rob_idx <= rs_entry.rs1_rob_idx;
                     rs_entry.rs2_rob_idx <= rs_entry.rs2_rob_idx;
                     if (rs_entry.rs1_ready) begin
