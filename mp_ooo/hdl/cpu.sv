@@ -703,20 +703,6 @@ import rv32i_types::*;
         end
     end
 
-    always_ff @(negedge clk) begin  
-        if (rst || cdbus.flush) begin
-           //  next_execute <= '{NUM_FUNC_UNIT{default_reservation_station}};
-           
-        end
-        else begin
-            // next_execute[0] <= dispatch_struct_out[0];
-            // next_execute[1] <= dispatch_struct_out[1];
-            // next_execute[2] <= dispatch_struct_out[2];
-            // if (!mem_stall)
-            //     next_execute[3] <= dispatch_struct_out[3];
-        end
-    end
-
     always_comb begin
         if (rst || cdbus.flush) begin
             // dispatch_struct_in <= '0;
@@ -793,7 +779,7 @@ import rv32i_types::*;
             cdbus.br_data = next_writeback[2].rd_data;
             cdbus.br_rd_addr = next_writeback[2].rd_addr;
             cdbus.br_rob_idx = next_writeback[2].rd_rob_idx;
-            cdbus.br_valid = next_writeback[2].valid && (next_writeback[2] != next_writeback_prev_prev[2]);
+            cdbus.br_valid = next_writeback[2].valid && (next_writeback[2] != next_writeback_prev[2]);
             cdbus.br_en = next_writeback[2].br_en;
             cdbus.pc_new = next_writeback[2].pc_new;
             cdbus.prediction = next_writeback[2].prediction;
@@ -802,7 +788,7 @@ import rv32i_types::*;
             cdbus.mem_data = next_writeback[3].rd_data;
             cdbus.mem_rd_addr = next_writeback[3].rd_addr;
             cdbus.mem_rob_idx = next_writeback[3].rd_rob_idx;
-            cdbus.mem_valid = next_writeback[3].valid && (next_writeback[3] != next_writeback_prev_prev[3]);
+            cdbus.mem_valid = next_writeback[3].valid && (next_writeback[3] != next_writeback_prev[3]);
             cdbus.mem_addr = next_writeback[3].mem_addr;
             cdbus.mem_rmask = next_writeback[3].mem_rmask;
             cdbus.mem_wmask = next_writeback[3].mem_wmask;
