@@ -200,7 +200,7 @@ import rv32i_types::*;
         end else if (!cdbus.flush) begin
 
             if (chosen_execute)
-                next_execute = stations[next_idx];
+                next_execute <= stations[next_idx];
             else next_execute <=  '0;
         end else next_execute <=  '0;
     end
