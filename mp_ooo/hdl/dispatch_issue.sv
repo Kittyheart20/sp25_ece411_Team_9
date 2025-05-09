@@ -146,7 +146,7 @@ import rv32i_types::*;
     assign use_new_rs_entry = (dispatch_struct_in.valid && dispatch_struct_in.order != rs_entry.order);
 
     always_ff @(posedge clk) begin : set_rs_entry
-        if (rst) begin
+        if (rst || cdbus.flush) begin
             rs_entry <= '1;
             inserted <= 1'b1;
         end
