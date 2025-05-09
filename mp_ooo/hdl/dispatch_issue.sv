@@ -175,7 +175,7 @@ import rv32i_types::*;
                 alu : if (integer_alu_available) inserted <= 1'b1;
                 mul : if (mul_alu_available)     inserted <= 1'b1;
                 br  : if (br_alu_available)      inserted <= 1'b1;
-                mem : if (mem_available)     inserted <= 1'b1;
+                mem : if (mem_available)         inserted <= 1'b1;
                 default : ;
             endcase   
         end

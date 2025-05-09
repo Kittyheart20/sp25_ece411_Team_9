@@ -62,6 +62,10 @@ import rv32i_types::*;
                             stations[i].rs1_data <= cdbus.mem_data; 
                             stations[i].rs1_ready <= 1'b1;                         
                         end
+                        else if (cdbus.regf_we && (stations[i].rs1_addr == cdbus.commit_rd_addr) && (stations[i].rs1_rob_idx == cdbus.commit_rob_idx)) begin
+                            stations[i].rs1_data <= cdbus.commit_data; 
+                            stations[i].rs1_ready <= 1'b1;  
+                        end 
                     end 
                     
                     if (((stations[i].rs2_ready == 1'b0) && (stations[i].rs2_addr != '0))) begin
@@ -77,6 +81,10 @@ import rv32i_types::*;
                             stations[i].rs2_data <= cdbus.mem_data; 
                             stations[i].rs2_ready <= 1'b1;                         
                         end
+                        else if (cdbus.regf_we && (stations[i].rs2_addr == cdbus.commit_rd_addr) && (stations[i].rs2_rob_idx == cdbus.commit_rob_idx)) begin
+                            stations[i].rs2_data <= cdbus.commit_data; 
+                            stations[i].rs2_ready <= 1'b1;  
+                        end 
                     end
                 end
                 // if (!is_mem) begin
@@ -217,17 +225,6 @@ import rv32i_types::*;
         //     end
         // end else 
         if (!cdbus.flush) begin
-            for (integer unsigned i = 0; i < DEPTH; i++) begin
-                if ((PTR_WIDTH+1)'(i) == count)
-                    break;
-
-                j = head + PTR_WIDTH'(i);
-                if (valid[j] && stations[j].valid && stations[j].rs1_ready && stations[j].rs2_ready) begin
-                    next_execute = stations[j];
-                    break;
-                end
-            end
-
             for (integer unsigned i = 1; i<DEPTH; i++) begin
                 j = head + PTR_WIDTH'(i);
 
@@ -241,6 +238,18 @@ import rv32i_types::*;
                     break;
                 end
             end
+            
+            for (integer unsigned i = 0; i < DEPTH; i++) begin
+                if ((PTR_WIDTH+1)'(i) == count)
+                    break;
+
+                j = head + PTR_WIDTH'(i);
+                if (valid[j] && stations[j].valid && stations[j].rs1_ready && stations[j].rs2_ready) begin
+                    next_execute = stations[j];
+                    break;
+                end
+            end
+
         end
 
     end

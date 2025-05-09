@@ -730,17 +730,17 @@ import rv32i_types::*;
             flush_registered <= '0;
             flush_pc_registered <= '0;
         end else begin
-        if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
-            if(rob_entry_o.br_en != rob_entry_o.prediction) begin
-                if(rob_entry_o.br_en == 0) begin
-                    flush_pc_registered <= rob_pc_plus_4;
-                    flush_registered <= '1;
-                end else begin
-                    flush_pc_registered <= rob_entry_o.pc_new;
-                    flush_registered <= '1;
-                end
+            if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
+                if(rob_entry_o.br_en != rob_entry_o.prediction) begin
+                    if(rob_entry_o.br_en == 0) begin
+                        flush_pc_registered <= rob_pc_plus_4;
+                        flush_registered <= '1;
+                    end else begin
+                        flush_pc_registered <= rob_entry_o.pc_new;
+                        flush_registered <= '1;
+                    end
+                end else flush_registered <= '0;
             end else flush_registered <= '0;
-        end else flush_registered <= '0;
         end
     end
 
