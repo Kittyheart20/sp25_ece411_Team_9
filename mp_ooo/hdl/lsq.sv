@@ -145,19 +145,19 @@ import rv32i_types::*;
                             st_queue[i].rs2_ready <= 1'b1;                         
                         end
                     end      
-
-                    // Mark store queue entry as wait_store/complete
-                    if  (st_queue[i].valid && cdbus.commit_rob_idx == st_queue[i].rd_rob_idx && cdbus.regf_we && (|st_queue[i].mem_wmask) ) begin
-                        st_queue[i].status <= WAIT_STORE;
-                        st_queue[i].valid <= 1'b0;
-                    end 
-                    else if  ((st_queue[i].status == WAIT_STORE) && (dmem_resp || store_no_mem)) begin
-                        st_queue[i].status <= COMPLETE;
-                        st_queue[i].valid <= 1'b0;  // may be removed?
-                        st_head <= st_head + PTR_WIDTH'(1);;
-                        st_overflow_alert <= 1'b0;
-                    end
                 end
+            end
+
+            // Mark store queue entry as wait_store/complete
+            if  (st_queue[st_head].valid && cdbus.commit_rob_idx == st_queue[st_head].rd_rob_idx && cdbus.regf_we && (|st_queue[st_head].mem_wmask) ) begin
+                st_queue[st_head].status <= WAIT_STORE;
+                st_queue[st_head].valid <= 1'b0;
+            end 
+            else if  ((st_queue[st_head].status == WAIT_STORE) && (dmem_resp || store_no_mem)) begin
+                st_queue[st_head].status <= COMPLETE;
+                st_queue[st_head].valid <= 1'b0;  // may be removed?
+                st_head <= st_head + PTR_WIDTH'(1);;
+                st_overflow_alert <= 1'b0;
             end
         end
     end 
