@@ -332,7 +332,8 @@ import rv32i_types::*;
         .dequeue_i  (cdbus.regf_we),
         .cdbus      (cdbus),
         .next_execute(next_execute),
-        .tail_addr  (current_rd_rob_idx)
+        .tail_addr  (current_rd_rob_idx),
+        .full_o(rob_full_o)
     );
     
     logic   rsv_rs1_ready, rsv_rs2_ready;
@@ -877,7 +878,7 @@ import rv32i_types::*;
         br_stall_unit   = !br_alu_available  && (decode_struct_out.op_type == br  || decode_struct_out.op_type == none);
         mem_stall_unit  = !mem_available     && (decode_struct_out.op_type == mem || decode_struct_out.op_type == none);
 
-        if (empty_o || full_o) stall = 1'b1;
+        if (empty_o || full_o || rob_full_o) stall = 1'b1;
         // else if (stall_prev == 0) begin 
         //     stall = 1'b1;
         //     stall_except_empty = 1'b1;
@@ -905,7 +906,7 @@ import rv32i_types::*;
         end
         
 
-        if (full_o) stall_except_empty = 1'b1;
+        if (full_o || rob_full_o) stall_except_empty = 1'b1;
 
     end
 

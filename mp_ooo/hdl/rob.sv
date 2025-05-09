@@ -36,18 +36,20 @@ import rv32i_types::*;
     assign remove = dequeue_i && !empty_o;
 
     always_comb begin
-        rob_entry_i = '0;
-        rob_entry_i.valid = dispatch_struct_in.valid;
-        rob_entry_i.pc = dispatch_struct_in.pc;
-        rob_entry_i.inst = dispatch_struct_in.inst;
-        rob_entry_i.status = rob_wait;
-        rob_entry_i.op_type = dispatch_struct_in.op_type;
-        rob_entry_i.rd_addr = dispatch_struct_in.rd_addr;
-        rob_entry_i.rd_rob_idx = tail;
-        rob_entry_i.rd_valid = 1'b0;
-        rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
-        rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
-        rob_entry_i.regf_we = dispatch_struct_in.regf_we;
+        if (dispatch_struct_in.valid) begin
+            rob_entry_i.valid = dispatch_struct_in.valid;
+            rob_entry_i.pc = dispatch_struct_in.pc;
+            rob_entry_i.inst = dispatch_struct_in.inst;
+            rob_entry_i.status = rob_wait;
+            rob_entry_i.op_type = dispatch_struct_in.op_type;
+            rob_entry_i.rd_addr = dispatch_struct_in.rd_addr;
+            rob_entry_i.rd_rob_idx = tail;
+            rob_entry_i.rd_valid = 1'b0;
+            rob_entry_i.rs1_addr = dispatch_struct_in.rs1_addr;
+            rob_entry_i.rs2_addr = dispatch_struct_in.rs2_addr;
+            rob_entry_i.regf_we = dispatch_struct_in.regf_we;
+        end else 
+            rob_entry_i = '0;
     end
 
     rob_entry_t empty_rob_entry;
