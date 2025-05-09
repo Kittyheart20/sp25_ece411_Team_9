@@ -50,14 +50,14 @@ import rv32i_types::*;
                 if (new_rs_entry.valid && rs_available) begin
                     ld_queue[ld_tail] <= new_rs_entry;
                     ld_tail <= ld_tail + PTR_WIDTH'(1);
-                    if (ld_tail == ld_tail-PTR_WIDTH'(1))
+                    if (ld_tail == ld_head-PTR_WIDTH'(1))
                         ld_overflow_alert <= 1'b1;
                 end 
             end else begin
                 if (new_rs_entry.valid && rs_available) begin : new_rs_entry_to_station
                     st_queue[st_tail] <= new_rs_entry;
                     st_tail <= st_tail + PTR_WIDTH'(1);
-                    if (st_tail == st_tail-PTR_WIDTH'(1))
+                    if (st_tail == st_head-PTR_WIDTH'(1))
                         st_overflow_alert <= 1'b1;
                 end  
             end
@@ -179,7 +179,6 @@ import rv32i_types::*;
         j = 'x;
         
         if (!cdbus.flush) begin
-
             if (st_count == (PTR_WIDTH+1)'(0)) begin    // if no stores pending
                 // find any first available load instruction
                 for (integer unsigned i = 0; i < DEPTH; i++) begin  // execute the next load ooo 
@@ -193,8 +192,9 @@ import rv32i_types::*;
                     end
                 end
             end else begin
-                if (st_queue[st_head].valid && st_queue[st_head].rs1_ready && st_queue[st_head].rs2_ready && (ld_queue[ld_head].order > st_queue[st_head].order)) begin
-                    next_execute = st_queue[st_head];
+                if (ld_count == (PTR_WIDTH+1)'(0) || st_queue[st_head].order < ld_queue[ld_head].order) begin
+                    if (st_queue[st_head].valid && st_queue[st_head].rs1_ready && st_queue[st_head].rs2_ready)
+                        next_execute = st_queue[st_head];
                 end else begin
                     for (integer unsigned i = 0; i < DEPTH; i++) begin
                         if ((PTR_WIDTH+1)'(i) == ld_count)
@@ -210,44 +210,6 @@ import rv32i_types::*;
                     end
                 end
             end
-            // find the first available store instruction
-            // if (st_queue[st_head].valid && st_queue[st_head].rs1_ready && st_queue[st_head].rs2_ready && (ld_queue[ld_head].order > st_queue[st_head].order)) begin
-            //     next_execute = st_queue[st_head];
-            // end
-            // else begin
-            // // overwrite next_execute with load instructions
-            // // if (ld_queue[ld_head].valid && ld_queue[ld_head].rs1_ready && ld_queue[ld_head].rs2_ready) begin
-            //     // if (ld_queue[ld_head].order < st_queue[st_head].order) begin
-            //         //next_execute = ld_queue[ld_head];
-
-            //     if (st_count == (PTR_WIDTH+1)'(0)) begin    // if no stores pending
-            //         // find any first available load instruction
-            //         for (integer unsigned i = 0; i < DEPTH; i++) begin  // execute the next load ooo 
-            //             if ((PTR_WIDTH+1)'(i) == ld_count)
-            //                 break;
-
-            //             j = ld_head + PTR_WIDTH'(i);
-            //             if (ld_head[j] && ld_queue[j].valid && ld_queue[j].rs1_ready && ld_queue[j].rs2_ready) begin
-            //                 next_execute = ld_queue[j];
-            //                 break;
-            //             end
-            //         end
-            //     end else begin
-            //         // find first load instruction available less than st_count head's order
-            //         for (integer unsigned i = 0; i < DEPTH; i++) begin
-            //             if ((PTR_WIDTH+1)'(i) == ld_count)
-            //                 break;
-                            
-            //             j = ld_head + PTR_WIDTH'(i);
-            //             if (ld_queue[j].order < st_queue[st_head].order) begin
-            //                 if (ld_head[j] && ld_queue[j].valid && ld_queue[j].rs1_ready && ld_queue[j].rs2_ready) begin
-            //                     next_execute = ld_queue[j];
-            //                     break;
-            //                 end
-            //             end else break;
-            //         end
-            //     end
-            // end
 
             // find next head candidate
             for (integer unsigned i = 1; i<DEPTH; i++) begin
