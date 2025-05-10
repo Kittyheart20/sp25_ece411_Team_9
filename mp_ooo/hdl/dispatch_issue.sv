@@ -198,7 +198,7 @@ import rv32i_types::*;
     end
 
 
-    reservation_station alu_rs (
+    reservation_station #(.DEPTH(8)) alu_rs (
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[0]),
