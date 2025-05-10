@@ -720,47 +720,43 @@ import rv32i_types::*;
             gselect_taken_prev <= gselect_taken;
         end
     end
-    logic[31:0] pc_plus_4;
-    logic[31:0] imm_plus_pc;
-    logic[31:0] rob_pc_plus_4;
-    logic[31:0] flush_pc_registered;
+    // logic[31:0] pc_plus_4;
+    // logic[31:0] imm_plus_pc;
+    // logic[31:0] rob_pc_plus_4;
+    // logic[31:0] flush_pc_registered;
 
-    always_ff @(posedge clk) begin 
-        if (rst) begin
-            flush_registered <= '0;
-            flush_pc_registered <= '0;
-        end else begin
-            if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
-                if(rob_entry_o.br_en != rob_entry_o.prediction) begin
-                    if(rob_entry_o.br_en == 0) begin
-                        flush_pc_registered <= rob_pc_plus_4;
-                        flush_registered <= '1;
-                    end else begin
-                        flush_pc_registered <= rob_entry_o.pc_new;
-                        flush_registered <= '1;
-                    end
-                end else flush_registered <= '0;
-            end else flush_registered <= '0;
-        end
-    end
+    // always_ff @(posedge clk) begin 
+    //     if (rst) begin
+    //         flush_registered <= '0;
+    //         flush_pc_registered <= '0;
+    //     end else begin
+    //         if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
+    //             if(rob_entry_o.br_en != rob_entry_o.prediction) begin
+    //                 if(rob_entry_o.br_en == 0) begin
+    //                     flush_pc_registered <= rob_pc_plus_4;
+    //                     flush_registered <= '1;
+    //                 end else begin
+    //                     flush_pc_registered <= rob_entry_o.pc_new;
+    //                     flush_registered <= '1;
+    //                 end
+    //             end else flush_registered <= '0;
+    //         end else flush_registered <= '0;
+    //     end
+    // end
 
+ 
     always_comb begin : update_rs_we_cdbus
-        rob_pc_plus_4 = {rob_entry_o.pc [31:2] + 1'b1, rob_entry_o.pc[1:0]};;
         cdbus = '0;
-        pc_plus_4 = {pc[31:2] + 1'b1, pc[1:0]};
-        pc_next = pc_plus_4;
+        pc_next = pc + 32'd4;
         prediction_followed = '0;
         gselect_taken = '0;
-        imm_plus_pc = decode_struct_out_early.imm + decode_struct_out_early.pc;
-        if(!cdbus.flush) begin
-            if(decode_struct_out_early.opcode == op_b_jal || decode_struct_out_early.opcode == op_b_br) begin
-                if(prediction) begin
-                    prediction_followed = '1;
-                    pc_next = imm_plus_pc;
-                    gselect_taken = '1;
-                    if(pc == pc_next) begin
-                        pc_next = pc_plus_4;
-                    end
+        if(decode_struct_out_early.opcode == op_b_jal || decode_struct_out_early.opcode == op_b_br) begin
+            if(prediction) begin
+                prediction_followed = '1;
+                pc_next = decode_struct_out_early.imm + decode_struct_out_early.pc;
+                gselect_taken = '1;
+                if(pc == pc_next) begin
+                    pc_next = pc + 32'd4;
                 end
             end
         end
@@ -769,19 +765,19 @@ import rv32i_types::*;
         end 
 
         // broadcast writeback
-        // if (next_writeback[0].valid) begin 
+        if (next_writeback[0].valid) begin 
             cdbus.alu_data = next_writeback[0].rd_data;
             cdbus.alu_rd_addr = next_writeback[0].rd_addr;
             cdbus.alu_rob_idx = next_writeback[0].rd_rob_idx;
             cdbus.alu_valid = next_writeback[0].valid;
-        // end 
-        // if (next_writeback[1].valid) begin 
+        end 
+        if (next_writeback[1].valid) begin 
             cdbus.mul_data = next_writeback[1].rd_data;
             cdbus.mul_rd_addr = next_writeback[1].rd_addr;
             cdbus.mul_rob_idx = next_writeback[1].rd_rob_idx;
             cdbus.mul_valid = next_writeback[1].valid;
-        // end
-        // if (next_writeback[2].valid) begin 
+        end
+        if (next_writeback[2].valid) begin 
             cdbus.br_data = next_writeback[2].rd_data;
             cdbus.br_rd_addr = next_writeback[2].rd_addr;
             cdbus.br_rob_idx = next_writeback[2].rd_rob_idx;
@@ -789,8 +785,8 @@ import rv32i_types::*;
             cdbus.br_en = next_writeback[2].br_en;
             cdbus.pc_new = next_writeback[2].pc_new;
             cdbus.prediction = next_writeback[2].prediction;
-        // end 
-        // if (next_writeback[3].valid) begin 
+        end 
+        if (next_writeback[3].valid) begin 
             cdbus.mem_data = next_writeback[3].rd_data;
             cdbus.mem_rd_addr = next_writeback[3].rd_addr;
             cdbus.mem_rob_idx = next_writeback[3].rd_rob_idx;
@@ -800,12 +796,13 @@ import rv32i_types::*;
             cdbus.mem_wmask = next_writeback[3].mem_wmask;
             cdbus.mem_rdata = next_writeback[3].mem_rdata;
             cdbus.mem_wdata = next_writeback[3].mem_wdata;
-        // end
+        end
         // commit - critical path
-        if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
+        if (rob_entry_o.valid && rob_entry_o.status == done) begin
             cdbus.commit_data = rob_entry_o.rd_data;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;
             cdbus.commit_rob_idx = rob_entry_o.rd_rob_idx;
+            // cdbus.regf_we = rob_entry_o.regf_we;
             cdbus.regf_we = 1'b1;
             cdbus.rs1_addr = rob_entry_o.rs1_addr;
             cdbus.rs2_addr = rob_entry_o.rs2_addr;
@@ -813,11 +810,20 @@ import rv32i_types::*;
             cdbus.rs2_data = rob_entry_o.rs2_data; 
             cdbus.pc = rob_entry_o.pc;
             cdbus.inst = rob_entry_o.inst;
-        end
-            if(flush_registered) begin
-                pc_next = flush_pc_registered;
-                cdbus.flush = '1;
+            // if(rob_entry_o.br_en) begin
+            //     pc_next = rob_entry_o.pc_new;
+            //     cdbus.flush = '1;
+            // end 
+            if(rob_entry_o.br_en != rob_entry_o.prediction) begin
+                if(rob_entry_o.br_en == 0) begin
+                    pc_next = rob_entry_o.pc + 32'd4;
+                    cdbus.flush = '1;
+                end else begin
+                    pc_next = rob_entry_o.pc_new;
+                    cdbus.flush = '1;
+                end
             end
+        end
     end
 
     logic stall_prev;
@@ -850,23 +856,12 @@ import rv32i_types::*;
         if (empty_o || full_o || rob_full_o) stall = 1'b1;
         if (alu_stall_unit | mult_stall_unit | br_stall_unit | mem_stall_unit) begin
             stall = 1'b1;
-            // stall_except_empty = 1'b1;
             rsv_stall = 1'b1;
         end 
         else if (dispatch_struct_in.valid && (alu_stall_unit_dis | mult_stall_unit_dis | br_stall_unit_dis | mem_stall_unit_dis))  begin
             stall = 1'b1;    
             rsv_stall = 1'b1;
-            // stall_except_empty = 1'b1;
         end 
-        // else if (dispatch_struct_in.valid && ( ((dispatch_struct_in.op_type == alu && decode_struct_out.op_type == alu)) 
-        //         || ((dispatch_struct_in.op_type == mul && decode_struct_out.op_type == mul))  
-        //         || ((dispatch_struct_in.op_type == mem  && decode_struct_out.op_type == mem))
-        //         || ((dispatch_struct_in.op_type == br && decode_struct_out.op_type == br)) ))  begin
-        //     if (stall_prev == 0) begin 
-        //         stall = 1'b1;
-        //         // stall_except_empty = 1'b1;
-        //     end
-        // end
         
 
         stall_except_empty = !empty_o & stall;
