@@ -12,7 +12,7 @@ import rv32i_types::*;
     input   reservation_station_t next_execute[4],
 
     output  logic [4:0] tail_addr,
-    output  logic       full_o, // if full we need to stall
+    output  logic       full_o,
     output  rob_entry_t rob_table_o [32]
 );
     localparam DEPTH = 32;
@@ -74,17 +74,12 @@ import rv32i_types::*;
             if (remove) begin
                 head <= head + 5'd1;
             end
-            // if (rob_table_comb[head].status == done) begin // Commit stage only takes one cycle for cp2. I don't know if this will change
-            //     rob_table_comb[head].status <= empty;
-            // end
             
-            if (rob_table_comb[head].status == done) begin   // critical path
-                // rob_table_comb[head].valid <= '0;
-                // head <= head + 5'd1;
-            end
+            // if (rob_table_comb[head].status == done) begin   // critical path
+            //     rob_table_comb[head].valid <= '0;
+            //     head <= head + 5'd1;
+            // end
 
-
-   
             
             if (insert) begin
                 tail_addr <= tail;
@@ -97,8 +92,6 @@ import rv32i_types::*;
                 2'b01: count <= count - 1'b1; 
                 default: count <= count;      
             endcase
-
-            // Update rs1 and rs2 when next execute arrives
         end
    end
     always_comb begin 
@@ -118,8 +111,6 @@ import rv32i_types::*;
             end
         end
         else begin
-   
-
             for (integer unsigned i = 0; i < DEPTH; i++) begin  // Writeback rd & status update
                 if (cdbus.alu_valid && (rob_table[i].rd_addr == cdbus.alu_rd_addr) && (rob_table[i].rd_rob_idx == cdbus.alu_rob_idx) && rob_table[i].valid) begin
                     rob_table_comb[i].status = done;
@@ -176,7 +167,7 @@ import rv32i_types::*;
             end
             
             for (integer i = 0; i < 4; i++) begin
-                if (next_execute[i].valid && rob_table[next_execute[i].rd_rob_idx].status==rob_wait) begin  // add this in deeper_rsv too
+                if (next_execute[i].valid && rob_table[next_execute[i].rd_rob_idx].status==rob_wait) begin
                     rob_table_comb[next_execute[i].rd_rob_idx].rs1_data = next_execute[i].rs1_data;
                     rob_table_comb[next_execute[i].rd_rob_idx].rs2_data = next_execute[i].rs2_data;
                 end

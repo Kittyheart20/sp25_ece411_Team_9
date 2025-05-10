@@ -27,8 +27,7 @@ import rv32i_types::*;
 
     always_comb begin
         decode_struct_out = '0;
-        // decode_struct_out.valid = 1'b0;
-        // if (!stall) begin
+
         decode_struct_out.inst = decode_struct_in.inst;
         decode_struct_out.pc = decode_struct_in.pc;
         decode_struct_out.order = decode_struct_in.order;
@@ -37,8 +36,6 @@ import rv32i_types::*;
         decode_struct_out.funct3 = funct3;
         decode_struct_out.funct7 = funct7;
         decode_struct_out.rd_addr = rd_addr;
-        // decode_struct_out.rs1_addr = rs1_addr;
-        // decode_struct_out.rs2_addr = rs2_addr;
         decode_struct_out.aluop = alu_ops'('x);
         decode_struct_out.multop = mult_ops'('x);
         decode_struct_out.brop = branch_f3_t'('x);
@@ -129,8 +126,6 @@ import rv32i_types::*;
 			    decode_struct_out.regf_we = 1'b1;
                 decode_struct_out.rd_addr = rd_addr;
                 decode_struct_out.op_type = br;
-               // decode_struct_out.a = decode_struct_out.pc;
-                //decode_struct_out.b = j_imm;
             end
             op_b_jalr : begin
                 decode_struct_out.imm = i_imm;
@@ -138,8 +133,6 @@ import rv32i_types::*;
                 decode_struct_out.rs1_addr = rs1_addr;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.op_type = br;
-                //decode_struct_out.a = i_imm;
-                //decode_struct_out.b = rs1_data;
             end
             op_b_br   : begin
                 decode_struct_out.imm = b_imm;
@@ -151,8 +144,6 @@ import rv32i_types::*;
                 decode_struct_out.op_type = br;
                 decode_struct_out.use_rs1 = 1'b1;
                 decode_struct_out.use_rs2 = 1'b1;
-               // decode_struct_out.a = decode_struct_out.pc;
-               // decode_struct_out.b = b_imm;
             end
             op_b_load : begin
                 decode_struct_out.rs1_addr = rs1_addr; 
@@ -217,7 +208,6 @@ import rv32i_types::*;
             end
             default   : ;
         endcase
-        // end
     end
 
 endmodule

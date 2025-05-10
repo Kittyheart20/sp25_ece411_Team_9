@@ -1,19 +1,12 @@
 module alu_unit 
 import rv32i_types::*;
 (
-    // input  logic            rst,
     input  reservation_station_t next_execute,
     output to_writeback_t   execute_output
 );
 
     logic [31:0] aluout;
     logic [31:0] a, b;
-    /*logic [31:0] rs1_for, rs2_for;
-
-    always_comb begin           
-        rs1_for = next_execute.rs1_data;   
-        rs2_for = next_execute.rs2_data;
-    end*/
 
     always_comb begin
         a = '0;
@@ -74,10 +67,6 @@ import rv32i_types::*;
             execute_output.rd_data = aluout;
             execute_output.regf_we = next_execute.regf_we;
         end 
-        // else begin
-        //     execute_output = '0;
-	    //     execute_output.valid = 1'b0;
-        // end
     end
 
 endmodule

@@ -186,7 +186,6 @@ import rv32i_types::*;
     always_comb begin
         station_input = '{4{default_reservation_station}};
         
-        // if (dispatch_struct_in.valid) begin : new_rs_entry_to_station
         if (!inserted || use_new_rs_entry) begin
             case (dispatch_struct_in.op_type)
                 alu : station_input[0] = use_new_rs_entry ? new_rs_entry : rs_entry;
@@ -200,40 +199,31 @@ import rv32i_types::*;
 
 
     reservation_station alu_rs (
-        //.is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[0]),
         .cdbus(cdbus),
-        // .dmem_resp(dmem_resp),
         .rs_available(integer_alu_available),
         .next_execute(next_execute_alu)
-        // .store_no_mem(store_no_mem)
     );
 
     
     reservation_station mul_rs (
-        //.is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[1]),
         .cdbus(cdbus),
-        // .dmem_resp(dmem_resp),
         .rs_available(mul_alu_available),
         .next_execute(next_execute_mult_div)
-        // .store_no_mem(store_no_mem)
     );
 
     reservation_station br_rs (
-        //.is_mem(1'b0),
         .clk(clk),
         .rst(rst),
         .new_rs_entry(station_input[2]),
         .cdbus(cdbus),
-        // .dmem_resp(dmem_resp),
         .rs_available(br_alu_available),
         .next_execute(next_execute_branch)
-        // .store_no_mem(store_no_mem)
     );
 
     split_lsq mem_rs (

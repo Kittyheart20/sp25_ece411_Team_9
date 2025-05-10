@@ -114,7 +114,6 @@ import rv32i_types::*;
             // Update existing stations with the cdbus
             for (integer unsigned i = 0; i < DEPTH; i++) begin
                 if (cdb_update) begin : update_from_writeback
-                   // if (new_rs_entry.regf_we) begin
                     // update store queue
                     if ((st_queue[i].rs1_ready == 1'b0) && (st_queue[i].rs1_addr != '0)) begin 
                         if (cdbus.alu_valid && (st_queue[i].rs1_addr == cdbus.alu_rd_addr) && (st_queue[i].rs1_rob_idx == cdbus.alu_rob_idx))begin

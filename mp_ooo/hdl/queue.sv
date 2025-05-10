@@ -21,9 +21,7 @@ module queue #(
     localparam PTR_WIDTH = $clog2(DEPTH);
 
     
-    logic [WIDTH-1:0] data [DEPTH-1:0];
-    // logic [PTR_WIDTH-1:0] head, tail;
-    // logic [PTR_WIDTH:0] count; 
+    logic [WIDTH-1:0] data [DEPTH-1:0]; 
     logic [31:0] head, tail, count; 
     
     

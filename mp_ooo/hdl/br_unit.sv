@@ -1,7 +1,6 @@
 module br_unit // and jumps
     import rv32i_types::*;
     (
-        // input  logic            rst,
         input  reservation_station_t next_execute,
         output to_writeback_t   execute_output
     );
@@ -10,8 +9,6 @@ module br_unit // and jumps
 
     logic [31:0] a, b, rd_new, pc_new; 
     logic br_en;    // Since we assume all branches are not taken. This also acts as our flushing signal
-
-    // assign rd_new = next_execute.pc + 4;
 
     always_comb begin
         a = '0;
@@ -34,14 +31,9 @@ module br_unit // and jumps
                     br_en = 1'b1;
                     rd_new = next_execute.pc + 4;
                 end
-                // op_b_auipc: begin
-                //     a = next_execute.pc;
-                //     b = '0;
-                // end
                 op_b_br: begin
                     a = next_execute.pc;
                     b = next_execute.imm_sext;
-                   // rd_new = '0;
                     unique case (next_execute.brop)
                         branch_f3_beq : br_en = (next_execute.rs1_data == next_execute.rs2_data);
                         branch_f3_bne : br_en = (next_execute.rs1_data != next_execute.rs2_data);
@@ -49,14 +41,10 @@ module br_unit // and jumps
                         branch_f3_bge : br_en = unsigned'(signed'(next_execute.rs1_data) >= signed'(next_execute.rs2_data));
                         branch_f3_bltu: br_en = (next_execute.rs1_data <  next_execute.rs2_data);
                         branch_f3_bgeu: br_en = (next_execute.rs1_data >= next_execute.rs2_data);
-                        default       : /*br_en = 1'b0*/;
+                        default       : ;
                     endcase
                 end
                 default: ;
-                // begin
-                //     a = '0;
-                //     b = '0;
-                // end
             endcase
 
             if (br_en)
@@ -67,20 +55,12 @@ module br_unit // and jumps
 
     always_comb begin 
         execute_output = '0;
-	    // execute_output.valid = 1'b0;
         
         if (next_execute.valid) begin
             execute_output.valid = next_execute.valid;
             execute_output.pc = next_execute.pc;
             execute_output.inst = next_execute.inst;
             execute_output.prediction = next_execute.prediction;
-            // if (br_en) begin
-            //     ex_mem_reg_next.pc_next = pc_branch;
-            // end
-            // ex_mem_reg_next.order = id_ex_reg.order;
-            // if (!load_use_hazard) begin
-            //     ex_mem_reg_next.valid = id_ex_reg.valid;
-            // end
 
             execute_output.rd_addr = next_execute.rd_addr;
             execute_output.rs1_addr = next_execute.rs1_addr;
@@ -96,10 +76,6 @@ module br_unit // and jumps
             else 
                 execute_output.pc_new = next_execute.pc_new;
         end 
-        // else begin
-        //     execute_output = '0;
-	    //     // execute_output.valid <= 1'b0;
-        // end
     end
 
 endmodule

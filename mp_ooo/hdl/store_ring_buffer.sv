@@ -23,10 +23,6 @@ import rv32i_types::*;
     
     localparam PTR_WIDTH = $clog2(DEPTH);
 
-    
-    // store_buffer_entry data [DEPTH-1:0];
-    // logic [PTR_WIDTH-1:0] head, tail;
-    // logic [PTR_WIDTH:0] count; 
     logic [31:0] head, tail, count; 
     
     
@@ -98,8 +94,6 @@ import rv32i_types::*;
                 
                 if (dequeue_i && !empty_o) begin
                     head <= (head == $unsigned(DEPTH-1)) ? 32'd0 : head + 32'd1;
-                   // if(!(enqueue_i && (!full_o || dequeue_i))) data[head].valid <= 1'b0; 
-                   //data[head].addr <= '0;
                 end
                 
                 

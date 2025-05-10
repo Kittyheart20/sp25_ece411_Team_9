@@ -88,13 +88,6 @@ package rv32i_types;
         mult_op_rem    = 3'b110,
         mult_op_remu   = 3'b111
     } mult_ops;
-
-    // typedef enum logic [1:0] {
-    //     pc_norm = 2'b00,
-    //     imm_off_uncon = 2'b01,
-    //     rs1_off = 2'b10,
-    //     imm_off = 2'b11
-    //  } pc_sel_t;
      
     typedef enum logic [2:0] {
         branch_f3_beq  = 3'b000,
@@ -159,7 +152,6 @@ package rv32i_types;
     typedef struct packed {
         logic   [31:0]      inst;
         logic   [31:0]      pc;
-        // logic   [31:0]      pc_next;
         logic   [63:0]      order;
     	logic         	    valid;
         logic   [6:0]       opcode;
@@ -193,8 +185,6 @@ package rv32i_types;
         logic use_rs1;
         logic use_rs2;
         logic prediction;
-        //logic[31:0] a;
-        //logic[31:0] b;
 
     } id_dis_stage_reg_t;
     
@@ -223,7 +213,6 @@ package rv32i_types;
         types_t         op_type;
         alu_ops         aluop;
         mult_ops        multop;
-        // pc_sel_t            pc_sel;
         branch_f3_t     brop;
         mem_ops         memop;
         logic [3:0]     mem_rmask;
@@ -247,13 +236,7 @@ package rv32i_types;
         logic   [4:0]   rd_rob_idx;
         logic           rd_valid;
         logic           regf_we;
-        // logic   [4:0]   rs1_rob_idx;
-        // logic   [4:0]   rs2_rob_idx;
-        // logic           br_pred;
-        // logic           br_result;
         
-        // Monitoring Signals
-        // logic [63:0] order;
         logic [31:0] pc;
         logic [31:0] inst;
         logic [4:0] rs1_addr;
@@ -273,16 +256,6 @@ package rv32i_types;
     } rob_entry_t;
 
     typedef struct packed {
-        logic [31:0] pc;
-        logic        valid;
-        logic [31:0] mem_addr;
-        // logic [3:0]  mem_rmask;
-        logic [3:0]  mem_wmask;
-        logic [31:0] mem_rdata;
-        logic [31:0] mem_wdata;
-    } mem_commit_t;
-
-    typedef struct packed {
         logic   [31:0]  data;
         logic           ready;
         logic   [4:0]   rob_idx;
@@ -295,9 +268,6 @@ package rv32i_types;
         logic   [4:0]   rd_addr;
         logic   [4:0]   rs1_addr;
         logic   [4:0]   rs2_addr;
-        // logic   [4:0]   rd_paddr;
-        // logic   [4:0]   rs1_paddr;
-        // logic   [4:0]   rs2_paddr;
 
         logic           regf_we;
         logic   [4:0]   rd_rob_idx;

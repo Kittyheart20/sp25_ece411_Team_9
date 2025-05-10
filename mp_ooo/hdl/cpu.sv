@@ -117,9 +117,6 @@ import rv32i_types::*;
 
     logic gselect_taken_prev;
 
-    // logic   [31:0]      bmem_addr_old;
-    // assign bmem_addr = dfp_write ? dfp_addr : bmem_addr_old;
-
     deserializer cache_line_adapter (
         .clk        (clk),
         .rst        (rst),
@@ -240,17 +237,6 @@ import rv32i_types::*;
     end
 
     logic inst_mem_stall;       // MEM STALL STARTS AT SAME TIME AS INST_MEM_STALL
-    /*logic [63:0] cycles_since_inst_mem_stall;
-
-    always_ff @(posedge clk) begin
-        if (rst) begin
-            cycles_since_inst_mem_stall <= 64'd0;
-        end else if (inst_mem_stall) begin
-            cycles_since_inst_mem_stall <= cycles_since_inst_mem_stall + 64'd1;
-        end else begin
-            cycles_since_inst_mem_stall <= '0;
-        end
-    end*/
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -369,8 +355,6 @@ import rv32i_types::*;
         .next_execute_mem(dispatch_struct_out[3]),
         .store_no_mem(store_no_mem)
     );
-
-    // logic mul_ready;
     
     alu_unit alu_inst (
         .next_execute(next_execute[0]),
@@ -522,7 +506,7 @@ import rv32i_types::*;
                 end else if (pc[31:5] == last_instr_addr[31:5] && ~&ufp_rmask) begin    // ~& is bitwise NAND   critical path
                     ufp_rmask <= '0;
                     data_i <= {prediction && prediction_followed, order, pc, last_instr_data[32*pc[4:2] +: 32]};
-                    if (!full_o && !stall_except_empty) begin // stall_except_empty = !empty && stall
+                    if (!full_o && !stall_except_empty) begin
                         enqueue_i <= 1'b1;
                         pc <= pc_next;
                         order <= order + 'd1;
@@ -666,36 +650,21 @@ import rv32i_types::*;
         if (rst || cdbus.flush) begin
             dispatch_struct_in <= '0;
             next_execute <= '{NUM_FUNC_UNIT{default_reservation_station}};
-            // next_writeback <= '{NUM_FUNC_UNIT{default_to_writeback}};
         end
         else begin
             if (!rsv_stall)
                 dispatch_struct_in <= decode_struct_out;
-            // dispatch_struct_in.valid <= !rsv_stall;
-            // dispatch_struct_in.valid <= !stall;
             
-            //dispatch_struct_in.prediction <= prediction && prediction_followed;
             next_execute[0] <= dispatch_struct_out[0];
             next_execute[1] <= dispatch_struct_out[1];
             next_execute[2] <= dispatch_struct_out[2];
             if (!mem_stall)
                 next_execute[3] <= dispatch_struct_out[3];
-
-            // next_writeback <= execute_output;
-
-            // for (integer i = 0; i < 4; i++) begin
-            //     if (execute_output[i].valid)
-            //         next_writeback[i] <= execute_output[i];
-            //     else
-            //         next_writeback[i] <= '0;
-            // end
         end
     end
 
     always_comb begin
         if (rst || cdbus.flush) begin
-            // dispatch_struct_in <= '0;
-            // next_execute = '{NUM_FUNC_UNIT{default_reservation_station}};
             next_writeback = '{NUM_FUNC_UNIT{default_to_writeback}};
         end
         else begin
@@ -706,7 +675,6 @@ import rv32i_types::*;
                 else
                     next_writeback[i] = '0;
             end
-            // next_writeback = execute_output;
         end
     end
 
@@ -720,31 +688,7 @@ import rv32i_types::*;
             gselect_taken_prev <= gselect_taken;
         end
     end
-    // logic[31:0] pc_plus_4;
-    // logic[31:0] imm_plus_pc;
-    // logic[31:0] rob_pc_plus_4;
-    // logic[31:0] flush_pc_registered;
 
-    // always_ff @(posedge clk) begin 
-    //     if (rst) begin
-    //         flush_registered <= '0;
-    //         flush_pc_registered <= '0;
-    //     end else begin
-    //         if (rob_entry_o.valid && rob_entry_o.status == done && (!flush_registered)) begin
-    //             if(rob_entry_o.br_en != rob_entry_o.prediction) begin
-    //                 if(rob_entry_o.br_en == 0) begin
-    //                     flush_pc_registered <= rob_pc_plus_4;
-    //                     flush_registered <= '1;
-    //                 end else begin
-    //                     flush_pc_registered <= rob_entry_o.pc_new;
-    //                     flush_registered <= '1;
-    //                 end
-    //             end else flush_registered <= '0;
-    //         end else flush_registered <= '0;
-    //     end
-    // end
-
- 
     always_comb begin : update_rs_we_cdbus
         cdbus = '0;
         pc_next = pc + 32'd4;
@@ -760,9 +704,6 @@ import rv32i_types::*;
                 end
             end
         end
-        if (rst || stall) begin
-            cdbus = '0;
-        end 
 
         // broadcast writeback
         if (next_writeback[0].valid) begin 
@@ -802,7 +743,6 @@ import rv32i_types::*;
             cdbus.commit_data = rob_entry_o.rd_data;
             cdbus.commit_rd_addr = rob_entry_o.rd_addr;
             cdbus.commit_rob_idx = rob_entry_o.rd_rob_idx;
-            // cdbus.regf_we = rob_entry_o.regf_we;
             cdbus.regf_we = 1'b1;
             cdbus.rs1_addr = rob_entry_o.rs1_addr;
             cdbus.rs2_addr = rob_entry_o.rs2_addr;
@@ -810,10 +750,6 @@ import rv32i_types::*;
             cdbus.rs2_data = rob_entry_o.rs2_data; 
             cdbus.pc = rob_entry_o.pc;
             cdbus.inst = rob_entry_o.inst;
-            // if(rob_entry_o.br_en) begin
-            //     pc_next = rob_entry_o.pc_new;
-            //     cdbus.flush = '1;
-            // end 
             if(rob_entry_o.br_en != rob_entry_o.prediction) begin
                 if(rob_entry_o.br_en == 0) begin
                     pc_next = rob_entry_o.pc + 32'd4;
@@ -840,7 +776,6 @@ import rv32i_types::*;
 
     always_comb begin : update_stall
         stall = 1'b0;
-        // stall_except_empty = 1'b0;
         rsv_stall = 1'b0;
 
         alu_stall_unit  = !int_alu_available && (decode_struct_out.op_type == alu);
@@ -863,9 +798,7 @@ import rv32i_types::*;
             rsv_stall = 1'b1;
         end 
         
-
         stall_except_empty = !empty_o & stall;
-
     end
 
     always_ff @(posedge clk) begin

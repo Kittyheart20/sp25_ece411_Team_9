@@ -26,9 +26,6 @@ import rv32i_types::*;
     logic is_load, is_store, curr_store;
     assign is_load = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_load);
     assign is_store = (rv32i_opcode'(next_execute.inst[6:0]) == op_b_store);
-    
-    // logic            store_done;
-    // logic   [4:0]    next_store_rob_idx;
 
     logic   [31:0]   addr;
     logic   [3:0]    rmask;
@@ -46,9 +43,7 @@ import rv32i_types::*;
     store_buffer_entry data_i, data_o;
     store_buffer_entry data [DEPTH-1:0];
     logic[31:0]   prev_dmem_addr;
-    //logic[31:0]   prev_dmem_rdata;
-
-    //logic[31:0]   last_pc_on_dmem;
+    
     logic was_read;
     logic dmem_addr_loaded;
     logic mem_stall_local;
@@ -84,7 +79,6 @@ import rv32i_types::*;
         addr = {next_addr[31:2], 2'd0};
         rmask = next_execute.mem_rmask << next_addr[1:0];
         wmask = next_execute.mem_wmask << next_addr[1:0];
-       // wdata = next_execute.rs2_data;
     end
     
     logic addr_in_buffer;
@@ -108,7 +102,6 @@ import rv32i_types::*;
                 entry_to_queue.wdata = rob_entry_o.mem_wdata;
                 entry_to_queue.wmask = rob_entry_o.mem_wmask;
                 entry_to_queue.valid = 1'b1;
-                // data_i = entry_to_queue; 
             end
         end
     end
@@ -122,11 +115,9 @@ import rv32i_types::*;
             enqueue_i <= 1'b0;
             dequeue_i <= 1'b0;
             store_no_mem <= 1'b0;
-            //last_pc_on_dmem <= '0;
             prev_dmem_addr <= '0;
             was_read <= '0;
             dmem_addr_loaded <= '0;
-            //prev_dmem_rdata <= '0;
             prev_rd_rob_idx <= '0;
         end else begin
             prev_rd_rob_idx <= next_execute.rd_rob_idx;
@@ -135,12 +126,8 @@ import rv32i_types::*;
                 dmem_rmask <= '0;
                 dmem_wmask <= '0;
                 prev_dmem_addr <= dmem_addr;
-                //last_pc_on_dmem <= next_execute.pc;
                 was_read <= |dmem_rmask;
                 dmem_addr_loaded <= '0;
-                /*if(|dmem_rmask) begin
-                    prev_dmem_rdata <= dmem_rdata;
-                end*/
             end
 
             if (!(mem_stall_local) && (!cdbus.flush)) begin
@@ -158,13 +145,8 @@ import rv32i_types::*;
                         store_no_mem <= 1'b0;
                         dmem_addr_loaded <= 1'b1;
                     end else begin
-                        store_no_mem <= 1'b1;   // full_o && addr_in_buffer or !full_o or addr_in_buffer
+                        store_no_mem <= 1'b1;
                     end
-                    // dmem_addr <= rob_entry_o.mem_addr;
-                    // dmem_rmask <= '0;
-                    // dmem_wmask <= rob_entry_o.mem_wmask;
-                    // dmem_wdata <= rob_entry_o.mem_wdata;
-                    // mem_stall_local <= '1;
                 end else if (is_load && next_execute.valid && new_inst && (!(addr_in_buffer && matching_entry.wmask == 4'b1111))) begin
                     dmem_addr <= {next_addr[31:2], 2'd0};
                     dmem_rmask <= next_execute.mem_rmask << next_addr[1:0];
@@ -201,13 +183,10 @@ import rv32i_types::*;
                 merged_load_data = (matching_entry.wdata & wmask_expanded)
                                 | (dmem_rdata         & ~wmask_expanded);
                 if(!dmem_resp && was_read && (prev_dmem_addr == dmem_addr) && dmem_addr_loaded) begin
-                //    merged_load_data = (matching_entry.wdata & wmask_expanded)
-                //                    | (prev_dmem_rdata         & ~wmask_expanded);
                 end
             end else begin
                 merged_load_data = dmem_rdata;
                 if(!dmem_resp && was_read && (prev_dmem_addr == dmem_addr) && dmem_addr_loaded) begin
-                 //   merged_load_data = prev_dmem_rdata;
                 end
             end
             
@@ -228,7 +207,7 @@ import rv32i_types::*;
                     mem_op_w    : execute_output.rd_data = matching_entry.wdata >> 8*next_addr[1:0];
                     default     : execute_output.rd_data = 'x;
                 endcase
-            end else if (is_load && (dmem_resp /*|| (last_pc_on_dmem == next_execute.pc && (prev_dmem_addr == dmem_addr) && was_read && dmem_addr_loaded)*/)) begin
+            end else if (is_load && (dmem_resp)) begin
                 execute_output.valid = 1'b1;
                 execute_output.regf_we = 1'b1;
                 execute_output.pc = next_execute.pc;
