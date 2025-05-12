@@ -1,9 +1,14 @@
 In this cp, we did several advanced features. We completed the 
 -C extension, 
+
 -next line prefetcher
+
 -post commit store buffer with write coalescing 
+
 -a hybrid predictor using gselect and a two level predictor
+
 -split LSQ
+
 -age ordered issuing
 
 **Bugs**
