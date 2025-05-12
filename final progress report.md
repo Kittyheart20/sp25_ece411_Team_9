@@ -1,5 +1,10 @@
-In this cp, we did several advanced features. We completed the C extension, a next line prefetcher, and a post commit store buffer with write coalescing, 
-a hybrid predictor using gselect and a two level predictor. 
+In this cp, we did several advanced features. We completed the 
+-C extension, 
+-next line prefetcher
+-post commit store buffer with write coalescing 
+-a hybrid predictor using gselect and a two level predictor
+-split LSQ
+-age ordered issuing
 
 **Bugs**
 - Updating PC value based on the branch prediction result and whether the instruction is from RV32C extension
@@ -8,7 +13,7 @@ a hybrid predictor using gselect and a two level predictor.
 - Block preemption (issuing a different instruction amid of the other) while implementing split lsq
 
 **Contributions**\
-Alex: \
+Alex: I implemented the branch predictors and post-commit store buffer. 
 Erin: \
 Sujin: I improved reservation station with the parameterizable depth and efficient age-old instruction issuing. 
 For new features, I worked on the C-extension and split lsq.
