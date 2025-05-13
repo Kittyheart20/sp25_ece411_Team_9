@@ -21,5 +21,5 @@ In this cp, we did several advanced features. We completed the
 **Contributions**\
 Alex: I implemented the branch predictors and post-commit store buffer. 
 Erin: I helped increase reservation station depth and implemented age-ordered issue scheduling. I helped debugging for c extension and split lsq
-Sujin: I improved reservation station with the parameterizable depth and efficient age-old instruction issuing. 
+Sujin: I improved reservation station with the parameterizable depth and efficient age-old instruction issuing. \
 For new features, I worked on the C-extension and split lsq.
